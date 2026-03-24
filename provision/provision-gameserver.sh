@@ -731,11 +731,17 @@ fi
 cat > /usr/local/bin/ktp-apply-chrt.sh << CHRTSCRIPT
 #!/bin/bash
 # KTP Game Server CPU Pinning + Real-Time Scheduling
-# Run by: ktp-chrt.timer (every 30 seconds)
+# Run by: ktp-chrt.timer (every 5 minutes)
+# Purpose: Safety net - ensures scheduling survives process restarts
+# Primary setting is done by ktp-scheduled-restart.sh at boot
 $CPU_COMMENT
 $CPU_MAP_LINE
 
-for pid in \$(pgrep -f hlds_linux 2>/dev/null); do
+pids=\$(pgrep -f hlds_linux 2>/dev/null)
+[ -z "\$pids" ] && exit 0
+
+# Check all processes - at 5-minute intervals the overhead is negligible
+for pid in \$pids; do
     port=\$(tr '\\0' ' ' < /proc/\$pid/cmdline 2>/dev/null | grep -oP '(?<=-port )\\d+')
     [ -z "\$port" ] && port=\$(ps -p "\$pid" -o args= 2>/dev/null | grep -oP '(?<=-port )\\d+')
     [ -z "\$port" ] && continue
@@ -745,14 +751,16 @@ for pid in \$(pgrep -f hlds_linux 2>/dev/null); do
 
     # Pin to designated CPU
     current=\$(taskset -cp "\$pid" 2>/dev/null | grep -oP '(?<=: ).*')
-    [ "\$current" != "\$target_cpu" ] && taskset -cp "\$target_cpu" "\$pid" 2>/dev/null && \\
+    [ "\$current" != "\$target_cpu" ] && sudo taskset -cp "\$target_cpu" "\$pid" 2>/dev/null && \\
         logger -t ktp-chrt "Pinned port \$port PID \$pid to CPU \$target_cpu"
 
     # Apply SCHED_FIFO priority 50
     policy=\$(chrt -p "\$pid" 2>/dev/null | grep -o 'SCHED_[A-Z]*')
-    [ "\$policy" != "SCHED_FIFO" ] && chrt -f -p 50 "\$pid" 2>/dev/null && \\
+    [ "\$policy" != "SCHED_FIFO" ] && sudo chrt -f -p 50 "\$pid" 2>/dev/null && \\
         logger -t ktp-chrt "Applied SCHED_FIFO 50 to port \$port PID \$pid"
 done
+
+exit 0
 CHRTSCRIPT
 chmod +x /usr/local/bin/ktp-apply-chrt.sh
 
@@ -767,14 +775,14 @@ Type=oneshot
 ExecStart=/usr/local/bin/ktp-apply-chrt.sh
 CHRTSVC
 
-# Create systemd timer (runs every 30 seconds)
+# Create systemd timer (runs every 5 minutes)
 cat > /etc/systemd/system/ktp-chrt.timer << 'CHRTTIMER'
 [Unit]
 Description=Apply real-time scheduling to KTP game servers
 
 [Timer]
 OnBootSec=60
-OnUnitActiveSec=30
+OnUnitActiveSec=300
 AccuracySec=5
 
 [Install]
@@ -786,7 +794,7 @@ systemctl daemon-reload
 systemctl enable ktp-chrt.timer
 systemctl start ktp-chrt.timer
 
-log_info "chrt auto-apply timer enabled (runs every 30 seconds)"
+log_info "chrt auto-apply timer enabled (runs every 5 minutes, early-exit when already configured)"
 
 # ============================================
 # 16. Co-located HLTV Setup (Optional)

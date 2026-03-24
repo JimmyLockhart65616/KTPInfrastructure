@@ -1060,7 +1060,7 @@ log "Verification: \$RUNNING/\$NUM_SERVERS servers running"
 
 # ============================================================================
 # Apply CPU Pinning + Real-Time Scheduling
-# Note: ktp-chrt.timer handles this automatically every 30s, but we apply
+# Note: ktp-chrt.timer handles this automatically every 5 minutes, but we apply
 # it here immediately after restart for faster effect.
 # ============================================================================
 log "Applying CPU pinning + SCHED_FIFO 50 to all game servers..."
