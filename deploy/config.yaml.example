@@ -12,36 +12,55 @@
 # Cluster Definitions
 # ============================================
 clusters:
-  # Production - Cluster 1
-  cluster1:
-    host: ""                          # Server IP address
-    user: dodserver                   # SSH username
-    password: ""                      # SSH password (or use SSH keys)
-    ports: [27015, 27016, 27017, 27018, 27019]
-    hostname: cluster1                # Used for server naming
-    server_name_prefix: "KTP Cluster1"
-    description: "Production Cluster 1 (5 servers)"
-
-  # Production - Cluster 2
-  cluster2:
+  # Atlanta - Baremetal (Primary)
+  atlanta:
     host: ""                          # Server IP address
     user: dodserver
     password: ""
     ports: [27015, 27016, 27017, 27018, 27019]
-    hostname: cluster2
-    server_name_prefix: "KTP Cluster2"
-    description: "Production Cluster 2 (5 servers)"
+    hostname: neinatl-bm
+    server_name_prefix: "KTP - Atlanta"
+    description: "Atlanta Baremetal (5 servers)"
 
-  # Test Cluster
-  test:
-    host: ""                          # Set when VPS is provisioned
+  # Dallas - Baremetal
+  dallas:
+    host: ""
     user: dodserver
     password: ""
     ports: [27015, 27016, 27017, 27018, 27019]
-    hostname: test
-    server_name_prefix: "KTP Test"
-    test_cluster: true
-    description: "Test Cluster"
+    hostname: neindallas
+    server_name_prefix: "KTP - Dallas"
+    description: "Dallas Baremetal (5 servers)"
+
+  # Denver - Baremetal
+  denver:
+    host: ""
+    user: dodserver
+    password: ""
+    ports: [27015, 27016, 27017, 27018, 27019]
+    hostname: neindenver
+    server_name_prefix: "KTP - Denver"
+    description: "Denver Baremetal (5 servers)"
+
+  # New York - Baremetal
+  newyork:
+    host: ""
+    user: dodserver
+    password: ""
+    ports: [27015, 27016, 27017, 27018, 27019]
+    hostname: neinnewyork
+    server_name_prefix: "KTP - New York"
+    description: "New York Baremetal (5 servers)"
+
+  # Chicago - KVM VPS
+  chicago:
+    host: ""
+    user: dodserver
+    password: ""
+    ports: [27015, 27016, 27017, 27018, 27019]
+    hostname: neinchicago
+    server_name_prefix: "KTP - Chicago"
+    description: "Chicago KVM VPS (5 servers)"
 
 # ============================================
 # Deployment Profiles
@@ -80,15 +99,6 @@ paths:
       chmod: "755"
     - source: ktpamx/modules/dodx_ktp_i386.so
       dest: serverfiles/dod/addons/ktpamx/modules/dodx_ktp_i386.so
-      chmod: "755"
-    - source: ktpamx/modules/fun_ktp_i386.so
-      dest: serverfiles/dod/addons/ktpamx/modules/fun_ktp_i386.so
-      chmod: "755"
-    - source: ktpamx/modules/engine_ktp_i386.so
-      dest: serverfiles/dod/addons/ktpamx/modules/engine_ktp_i386.so
-      chmod: "755"
-    - source: ktpamx/modules/fakemeta_ktp_i386.so
-      dest: serverfiles/dod/addons/ktpamx/modules/fakemeta_ktp_i386.so
       chmod: "755"
     - source: ktpamx/modules/reapi_ktp_i386.so
       dest: serverfiles/dod/addons/ktpamx/modules/reapi_ktp_i386.so

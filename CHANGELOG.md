@@ -2,6 +2,15 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.1] - 2026-04-12
+
+### Updated
+- **curl/Dockerfile** — Upgraded OpenSSL 1.1.1w (EOL) → 3.3.2, curl 8.5.0 → 8.11.1, c-ares 1.19.1 → 1.34.4
+- **config.yaml.example** — Updated cluster definitions to match current infrastructure (Atlanta/Dallas/Denver/NYC/Chicago). Removed unused module paths (fun_ktp, engine_ktp, fakemeta_ktp).
+- **README.md** — Updated server inventory table with all 5 locations and data server. Version bump to 1.5.1.
+
+---
+
 ## [1.5.0] - 2026-03-08
 
 ### Variable Server Count + Co-located HLTV Support
