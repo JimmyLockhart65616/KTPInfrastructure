@@ -1,6 +1,6 @@
 # KTP Infrastructure
 
-**Version 1.4.0** - Server infrastructure, deployment automation, and operational documentation for KTP Day of Defeat competitive servers.
+**Version 1.5.1** - Server infrastructure, deployment automation, and operational documentation for KTP Day of Defeat competitive servers.
 
 ---
 
@@ -8,11 +8,14 @@
 
 KTP runs a multi-server infrastructure for competitive Day of Defeat matches:
 
-| Server Type | Purpose | Ports |
-|-------------|---------|-------|
-| Game Cluster 1 | 5 DoD game servers | 27015-27019 |
-| Game Cluster 2 | 5 DoD game servers | 27015-27019 |
-| Data Server | HLTV, MySQL, HLStatsX, FastDL | 27020-27029 |
+| Server | Type | Ports | Location |
+|--------|------|-------|----------|
+| Atlanta | Baremetal, 5 game servers | 27015-27019 | Atlanta, GA |
+| Dallas | Baremetal, 5 game servers | 27015-27019 | Dallas, TX |
+| Denver | Baremetal, 5 game servers | 27015-27019 | Denver, CO |
+| New York | Baremetal, 5 game servers | 27015-27019 | New York, NY |
+| Chicago | KVM VPS, 5 game servers | 27015-27019 | Chicago, IL |
+| Data Server | HLTV, MySQL, HLStatsX, FastDL | 27020-27044 | Atlanta, GA |
 
 Configure your server IPs in `deploy/config.yaml` (see Initial Setup).
 

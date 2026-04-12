@@ -25,12 +25,12 @@ RUN cd /tmp && \
     make install && \
     cd / && rm -rf /tmp/zlib*
 
-# Build 32-bit OpenSSL
+# Build 32-bit OpenSSL 3.3.2 (replaces EOL 1.1.1w)
 RUN cd /tmp && \
-    wget -q https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
-    tar xzf openssl-1.1.1w.tar.gz && \
-    cd openssl-1.1.1w && \
-    ./Configure linux-generic32 no-shared no-async \
+    wget -q https://github.com/openssl/openssl/releases/download/openssl-3.3.2/openssl-3.3.2.tar.gz && \
+    tar xzf openssl-3.3.2.tar.gz && \
+    cd openssl-3.3.2 && \
+    ./Configure linux-generic32 no-shared no-async no-tests \
         --prefix=/usr/local/lib32 \
         --openssldir=/usr/local/lib32/ssl \
         -m32 -O3 -fPIC && \
@@ -38,11 +38,11 @@ RUN cd /tmp && \
     make install_sw && \
     cd / && rm -rf /tmp/openssl*
 
-# Build 32-bit c-ares (use GitHub releases)
+# Build 32-bit c-ares
 RUN cd /tmp && \
-    wget -q https://github.com/c-ares/c-ares/releases/download/cares-1_19_1/c-ares-1.19.1.tar.gz && \
-    tar xzf c-ares-1.19.1.tar.gz && \
-    cd c-ares-1.19.1 && \
+    wget -q https://github.com/c-ares/c-ares/releases/download/v1.34.4/c-ares-1.34.4.tar.gz && \
+    tar xzf c-ares-1.34.4.tar.gz && \
+    cd c-ares-1.34.4 && \
     CFLAGS="-m32 -O3 -fPIC" LDFLAGS="-m32" \
     ./configure --prefix=/usr/local/lib32 --disable-shared --enable-static \
         --disable-tests --host=i686-pc-linux-gnu && \
@@ -52,9 +52,9 @@ RUN cd /tmp && \
 
 # Build 32-bit curl with static linking
 RUN cd /tmp && \
-    wget -q https://curl.se/download/curl-8.5.0.tar.gz && \
-    tar xzf curl-8.5.0.tar.gz && \
-    cd curl-8.5.0 && \
+    wget -q https://curl.se/download/curl-8.11.1.tar.gz && \
+    tar xzf curl-8.11.1.tar.gz && \
+    cd curl-8.11.1 && \
     CFLAGS="-m32 -O3 -fPIC" LDFLAGS="-m32" \
     PKG_CONFIG_PATH=/usr/local/lib32/lib/pkgconfig \
     ./configure --prefix=/usr/local/lib32 \
