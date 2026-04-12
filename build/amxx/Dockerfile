@@ -10,6 +10,10 @@ COPY metamod-am /build/metamod-am
 
 WORKDIR /build/KTPAMXX
 
+# Clone AMBuild (support/ambuild is .gitignored in KTPAMXX, so it must be
+# populated before building — this mirrors what support/checkout-deps.sh does)
+RUN git clone --depth 1 https://github.com/alliedmodders/ambuild support/ambuild
+
 # Set up Python virtual environment and install AMBuild
 RUN python3 -m venv /opt/ambuild-venv && \
     . /opt/ambuild-venv/bin/activate && \
