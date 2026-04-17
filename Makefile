@@ -9,6 +9,8 @@
 #   make deploy             - Deploy to all clusters
 #   make deploy-atlanta     - Deploy to Atlanta cluster
 #   make deploy-plugins     - Deploy only plugins to all clusters
+#   make local-build        - Build runtime game server image for local dev
+#   make local-up           - Start local game server(s)
 #   make clean              - Remove build artifacts
 
 # ============================================
@@ -190,6 +192,55 @@ configure-names-dallas:
 	$(PYTHON) deploy/deploy.py --cluster dallas --component plugins --configure-names --version $(VERSION)
 
 # ============================================
+# Local Development Targets
+# ============================================
+
+.PHONY: local-build local-up local-down local-logs local-clean
+
+LOCAL_COMPOSE := docker compose -f docker-compose.local.yml
+
+# Build runtime game server image from artifacts
+# Requires: make build && make extract-artifacts (or just make build, which does both)
+local-build:
+	@echo "========================================"
+	@echo "Building KTP game server image (version: $(VERSION))"
+	@echo "========================================"
+	@if [ ! -d "$(ARTIFACTS_DIR)/engine" ]; then \
+		echo "ERROR: No artifacts found at $(ARTIFACTS_DIR)/"; \
+		echo "Run 'make build' first to compile KTP components."; \
+		exit 1; \
+	fi
+	@mkdir -p local/plugins
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) build ktp-game-1
+	@echo ""
+	@echo "Image built: ktp-gameserver:$(VERSION)"
+	@echo "Run 'make local-up' to start."
+
+# Start local game server(s)
+local-up:
+	@mkdir -p local/plugins
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) up -d
+	@echo ""
+	@echo "Game servers running:"
+	@echo "  ktp-game-1: localhost:27015 (dod_anzio)"
+	@echo "  ktp-game-2: localhost:27016 (dod_flash)"
+	@echo ""
+	@echo "Drop .amxx files in local/plugins/ and restart to load custom plugins."
+
+# Stop local game server(s)
+local-down:
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) down
+
+# Tail logs from local game server(s)
+local-logs:
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) logs -f
+
+# Remove local runtime image
+local-clean:
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) down --rmi local 2>/dev/null || true
+	@echo "Local runtime image removed."
+
+# ============================================
 # Utility Targets
 # ============================================
 
@@ -220,6 +271,7 @@ clean-images: clean
 	-docker rmi ktp-reapi:$(VERSION) 2>/dev/null
 	-docker rmi ktp-curl:$(VERSION) 2>/dev/null
 	-docker rmi ktp-plugins:$(VERSION) 2>/dev/null
+	-docker rmi ktp-gameserver:$(VERSION) 2>/dev/null
 
 # Clean up any leftover extraction containers
 clean-containers:
@@ -255,6 +307,13 @@ help:
 	@echo "  make deploy-denver   - Deploy to Denver (test) cluster"
 	@echo "  make deploy-plugins  - Deploy only plugins to all"
 	@echo "  make configure-names - Configure server names (all clusters)"
+	@echo ""
+	@echo "Local development:"
+	@echo "  make local-build     - Build runtime game server image"
+	@echo "  make local-up        - Start local game server(s)"
+	@echo "  make local-down      - Stop local game server(s)"
+	@echo "  make local-logs      - Tail game server logs"
+	@echo "  make local-clean     - Remove local runtime image"
 	@echo ""
 	@echo "Utility:"
 	@echo "  make package-dod-base- Package base DoD files (maps, configs)"

@@ -1,0 +1,68 @@
+# KTP Local Development Environment
+#
+# Runs KTP game server(s) locally using the same binaries as production.
+# No Metamod, no jives/hlds:dod runtime — purpose-built from KTP artifacts.
+#
+# Prerequisites:
+#   make build                      # compile all KTP components
+#   make extract-artifacts          # extract to artifacts/VERSION/
+#   make local-build                # build runtime image
+#
+# Usage:
+#   make local-up                   # start game server(s)
+#   make local-down                 # stop
+#   make local-logs                 # tail logs
+#
+# Or directly:
+#   docker compose -f docker-compose.local.yml up -d
+#
+# Adding custom plugins (e.g., HUD Observer):
+#   Drop .amxx files in local/plugins/ — they're mounted into the container
+#   and copied into the KTPAMXX plugins directory at startup.
+#
+# Environment variables:
+#   VERSION     - Artifact version to use (default: latest)
+
+services:
+  # ============================================================
+  # Game Server 1 — dod_anzio
+  # ============================================================
+  ktp-game-1:
+    build:
+      context: .
+      dockerfile: runtime/Dockerfile
+      args:
+        VERSION: ${VERSION:-latest}
+    image: ktp-gameserver:${VERSION:-latest}
+    environment:
+      MAP: dod_anzio
+      MAXPLAYERS: "14"
+      RCON_PASSWORD: "${RCON_PASSWORD:-changeme}"
+    volumes:
+      # Config profile (modules.ini, plugins.ini, dodserver.cfg, etc.)
+      - ./config/local:/config:ro
+      # Additional plugins (HUD Observer, etc.) — drop .amxx files here
+      - ./local/plugins:/plugins:ro
+    ports:
+      - "27015:27015/udp"
+      - "27015:27015/tcp"
+      - "26900:26900/udp"
+
+  # ============================================================
+  # Game Server 2 — dod_flash (optional, comment out if not needed)
+  # ============================================================
+  ktp-game-2:
+    image: ktp-gameserver:${VERSION:-latest}
+    depends_on:
+      - ktp-game-1
+    environment:
+      MAP: dod_flash
+      MAXPLAYERS: "14"
+      RCON_PASSWORD: "${RCON_PASSWORD:-changeme}"
+    volumes:
+      - ./config/local:/config:ro
+      - ./local/plugins:/plugins:ro
+    ports:
+      - "27016:27015/udp"
+      - "27016:27015/tcp"
+      - "26901:26900/udp"
