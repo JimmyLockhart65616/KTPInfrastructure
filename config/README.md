@@ -20,6 +20,13 @@ Self-contained configuration for LAN events with a local data server:
 **Important:** LAN mode requires setting up a local data server first.
 See [LAN_SETUP.md](../docs/LAN_SETUP.md) for complete instructions.
 
+### `local/` - Local Docker Development
+Configuration for `docker-compose.local.yml` (local game server containers):
+- All external services disabled (Discord, HLTV, HLStatsX)
+- `sv_lan 1` (no Steam auth required)
+- Short timelimit for quick iteration
+- Drop custom plugins in `local/plugins/` and list them in `plugins.ini`
+
 ## Configuration Files
 
 | File | Purpose |

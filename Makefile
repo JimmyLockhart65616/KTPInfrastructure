@@ -9,6 +9,8 @@
 #   make deploy             - Deploy to all clusters
 #   make deploy-atlanta     - Deploy to Atlanta cluster
 #   make deploy-plugins     - Deploy only plugins to all clusters
+#   make local-build        - Build runtime game server image for local dev
+#   make local-up           - Start local game server(s)
 #   make clean              - Remove build artifacts
 
 # ============================================
@@ -31,6 +33,7 @@ COMPOSE := docker compose -f $(COMPOSE_FILE)
 
 # Artifact output directory
 ARTIFACTS_DIR := artifacts/$(VERSION)
+ARTIFACTS_LATEST := artifacts/latest
 
 # Python for deployment scripts
 PYTHON := python3
@@ -39,9 +42,30 @@ PYTHON := python3
 # Build Targets
 # ============================================
 
-.PHONY: all build build-base build-engine build-amxx build-reapi build-curl build-plugins clean
+.PHONY: all build build-base build-engine build-amxx build-reapi build-curl build-plugins clean seed-from-latest publish-latest
 
 all: build
+
+# Seed the dated artifact dir from artifacts/latest/ so single-component builds
+# produce a self-contained snapshot. Safe to call repeatedly.
+# Why: each build-* target only extracts its own component. Without seeding,
+# a dated dir built from a single target lacks every other component's outputs,
+# which breaks runtime image builds that copy from artifacts/$(VERSION)/.
+seed-from-latest:
+	@if [ -d "$(ARTIFACTS_LATEST)" ] && [ "$(ARTIFACTS_DIR)" != "$(ARTIFACTS_LATEST)" ]; then \
+		mkdir -p $(ARTIFACTS_DIR); \
+		cp -rn $(ARTIFACTS_LATEST)/. $(ARTIFACTS_DIR)/ 2>/dev/null || true; \
+	fi
+
+# Publish the dated artifact dir to artifacts/latest/. Overlays only — does not
+# delete files in latest that aren't in the dated dir, so latest remains the
+# rolling assembly of the most recent build of each component.
+publish-latest:
+	@if [ -d "$(ARTIFACTS_DIR)" ] && [ "$(ARTIFACTS_DIR)" != "$(ARTIFACTS_LATEST)" ]; then \
+		mkdir -p $(ARTIFACTS_LATEST); \
+		cp -rf $(ARTIFACTS_DIR)/. $(ARTIFACTS_LATEST)/; \
+		echo "Published $(ARTIFACTS_DIR) -> $(ARTIFACTS_LATEST)"; \
+	fi
 
 # Build everything
 build: build-base
@@ -57,6 +81,7 @@ build: build-base
 	@echo ""
 	@echo "Step 3: Extracting artifacts..."
 	@$(MAKE) extract-artifacts
+	@$(MAKE) publish-latest
 	@echo ""
 	@echo "========================================"
 	@echo "Build complete! Artifacts in: $(ARTIFACTS_DIR)"
@@ -98,53 +123,58 @@ extract-artifacts:
 	@ls -la $(ARTIFACTS_DIR)/plugins/ 2>/dev/null || echo "  (no plugins)"
 
 # Individual component builds
-build-engine: build-base
+build-engine: build-base seed-from-latest
 	@echo "Building KTPReHLDS..."
 	$(COMPOSE) build ktp-rehlds
 	@mkdir -p $(ARTIFACTS_DIR)/engine
 	@docker create --name ktp-extract-rehlds ktp-rehlds:$(VERSION) 2>/dev/null || true
 	@docker cp ktp-extract-rehlds:/output/engine/. $(ARTIFACTS_DIR)/engine/
 	@docker rm ktp-extract-rehlds 2>/dev/null || true
+	@$(MAKE) publish-latest
 	@echo "Engine artifacts:"
 	@ls -la $(ARTIFACTS_DIR)/engine/
 
-build-amxx: build-base
+build-amxx: build-base seed-from-latest
 	@echo "Building KTPAMXX..."
 	$(COMPOSE) build ktp-amxx
 	@mkdir -p $(ARTIFACTS_DIR)/ktpamx
 	@docker create --name ktp-extract-amxx ktp-amxx:$(VERSION) 2>/dev/null || true
 	@docker cp ktp-extract-amxx:/output/ktpamx/. $(ARTIFACTS_DIR)/ktpamx/
 	@docker rm ktp-extract-amxx 2>/dev/null || true
+	@$(MAKE) publish-latest
 	@echo "AMXX artifacts:"
 	@ls -laR $(ARTIFACTS_DIR)/ktpamx/
 
-build-reapi: build-base
+build-reapi: build-base seed-from-latest
 	@echo "Building KTPReAPI..."
 	$(COMPOSE) build ktp-reapi
 	@mkdir -p $(ARTIFACTS_DIR)/ktpamx/modules
 	@docker create --name ktp-extract-reapi ktp-reapi:$(VERSION) 2>/dev/null || true
 	@docker cp ktp-extract-reapi:/output/ktpamx/modules/. $(ARTIFACTS_DIR)/ktpamx/modules/
 	@docker rm ktp-extract-reapi 2>/dev/null || true
+	@$(MAKE) publish-latest
 	@echo "ReAPI artifacts:"
 	@ls -la $(ARTIFACTS_DIR)/ktpamx/modules/reapi*
 
-build-curl: build-base
+build-curl: build-base seed-from-latest
 	@echo "Building KTPAmxxCurl..."
 	$(COMPOSE) build ktp-curl
 	@mkdir -p $(ARTIFACTS_DIR)/ktpamx/modules
 	@docker create --name ktp-extract-curl ktp-curl:$(VERSION) 2>/dev/null || true
 	@docker cp ktp-extract-curl:/output/ktpamx/modules/. $(ARTIFACTS_DIR)/ktpamx/modules/
 	@docker rm ktp-extract-curl 2>/dev/null || true
+	@$(MAKE) publish-latest
 	@echo "Curl artifacts:"
 	@ls -la $(ARTIFACTS_DIR)/ktpamx/modules/amxxcurl*
 
-build-plugins: build-base build-amxx
+build-plugins: build-base build-amxx seed-from-latest
 	@echo "Building plugins..."
 	$(COMPOSE) build ktp-plugins
 	@mkdir -p $(ARTIFACTS_DIR)/plugins
 	@docker create --name ktp-extract-plugins ktp-plugins:$(VERSION) 2>/dev/null || true
 	@docker cp ktp-extract-plugins:/output/plugins/. $(ARTIFACTS_DIR)/plugins/
 	@docker rm ktp-extract-plugins 2>/dev/null || true
+	@$(MAKE) publish-latest
 	@echo "Plugin artifacts:"
 	@ls -la $(ARTIFACTS_DIR)/plugins/
 
@@ -190,6 +220,55 @@ configure-names-dallas:
 	$(PYTHON) deploy/deploy.py --cluster dallas --component plugins --configure-names --version $(VERSION)
 
 # ============================================
+# Local Development Targets
+# ============================================
+
+.PHONY: local-build local-up local-down local-logs local-clean
+
+LOCAL_COMPOSE := docker compose -f docker-compose.local.yml
+
+# Build runtime game server image from artifacts
+# Requires: make build && make extract-artifacts (or just make build, which does both)
+local-build:
+	@echo "========================================"
+	@echo "Building KTP game server image (version: $(VERSION))"
+	@echo "========================================"
+	@if [ ! -d "$(ARTIFACTS_DIR)/engine" ]; then \
+		echo "ERROR: No artifacts found at $(ARTIFACTS_DIR)/"; \
+		echo "Run 'make build' first to compile KTP components."; \
+		exit 1; \
+	fi
+	@mkdir -p local/plugins
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) build ktp-game-1
+	@echo ""
+	@echo "Image built: ktp-gameserver:$(VERSION)"
+	@echo "Run 'make local-up' to start."
+
+# Start local game server(s)
+local-up:
+	@mkdir -p local/plugins
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) up -d
+	@echo ""
+	@echo "Game servers running:"
+	@echo "  ktp-game-1: localhost:27015 (dod_anzio)"
+	@echo "  ktp-game-2: localhost:27016 (dod_flash)"
+	@echo ""
+	@echo "Drop .amxx files in local/plugins/ and restart to load custom plugins."
+
+# Stop local game server(s)
+local-down:
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) down
+
+# Tail logs from local game server(s)
+local-logs:
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) logs -f
+
+# Remove local runtime image
+local-clean:
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) down --rmi local 2>/dev/null || true
+	@echo "Local runtime image removed."
+
+# ============================================
 # Utility Targets
 # ============================================
 
@@ -220,6 +299,7 @@ clean-images: clean
 	-docker rmi ktp-reapi:$(VERSION) 2>/dev/null
 	-docker rmi ktp-curl:$(VERSION) 2>/dev/null
 	-docker rmi ktp-plugins:$(VERSION) 2>/dev/null
+	-docker rmi ktp-gameserver:$(VERSION) 2>/dev/null
 
 # Clean up any leftover extraction containers
 clean-containers:
@@ -255,6 +335,13 @@ help:
 	@echo "  make deploy-denver   - Deploy to Denver (test) cluster"
 	@echo "  make deploy-plugins  - Deploy only plugins to all"
 	@echo "  make configure-names - Configure server names (all clusters)"
+	@echo ""
+	@echo "Local development:"
+	@echo "  make local-build     - Build runtime game server image"
+	@echo "  make local-up        - Start local game server(s)"
+	@echo "  make local-down      - Stop local game server(s)"
+	@echo "  make local-logs      - Tail game server logs"
+	@echo "  make local-clean     - Remove local runtime image"
 	@echo ""
 	@echo "Utility:"
 	@echo "  make package-dod-base- Package base DoD files (maps, configs)"
