@@ -223,7 +223,7 @@ configure-names-dallas:
 # Local Development Targets
 # ============================================
 
-.PHONY: local-build local-up local-down local-logs local-clean
+.PHONY: local-build local-up local-up-full local-down local-logs local-clean
 
 LOCAL_COMPOSE := docker compose -f docker-compose.local.yml
 
@@ -244,28 +244,48 @@ local-build:
 	@echo "Image built: ktp-gameserver:$(VERSION)"
 	@echo "Run 'make local-up' to start."
 
-# Start local game server(s)
+# Start local game server(s) — game servers only, no data service.
+# Works on a fresh KTPInfrastructure checkout without needing any sibling repo.
 local-up:
 	@mkdir -p local/plugins
 	VERSION=$(VERSION) $(LOCAL_COMPOSE) up -d
 	@echo ""
 	@echo "Game servers running:"
-	@echo "  ktp-game-1: localhost:27015 (dod_anzio)"
-	@echo "  ktp-game-2: localhost:27016 (dod_flash)"
+	@echo "  ktp-game-1: localhost:27016 (dod_anzio, internal 27015)"
+	@echo "  ktp-game-2: localhost:27017 (dod_flash, internal 27015)"
 	@echo ""
 	@echo "Drop .amxx files in local/plugins/ and restart to load custom plugins."
+	@echo "For the full stack (game servers + HUD Observer data service): make local-up-full"
 
-# Stop local game server(s)
+# Start local game server(s) + data service (HUD Observer backend, HLTV proxies,
+# MySQL, HLStatsX stub). Requires the sibling DoD-hud-observer repo — set
+# DOD_HUD_PATH if it's not at ../DoD-hud-observer.
+local-up-full:
+	@mkdir -p local/plugins
+	@if [ -z "$${DOD_HUD_PATH:-../DoD-hud-observer}" ] || [ ! -d "$${DOD_HUD_PATH:-../DoD-hud-observer}" ]; then \
+		echo "ERROR: DoD-hud-observer not found at $${DOD_HUD_PATH:-../DoD-hud-observer}"; \
+		echo "Clone it as a sibling directory or set DOD_HUD_PATH to point at it."; \
+		exit 1; \
+	fi
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) --profile full up -d
+	@echo ""
+	@echo "Full stack running:"
+	@echo "  ktp-game-1: localhost:27016 (dod_anzio)"
+	@echo "  ktp-game-2: localhost:27017 (dod_flash)"
+	@echo "  data       (HUD Observer frontend): http://localhost:3000"
+	@echo "  data       (HUD Observer backend):  http://localhost:3001"
+
+# Stop local game server(s) — use --profile full to also stop the data service.
 local-down:
-	VERSION=$(VERSION) $(LOCAL_COMPOSE) down
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) --profile full down
 
 # Tail logs from local game server(s)
 local-logs:
-	VERSION=$(VERSION) $(LOCAL_COMPOSE) logs -f
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) --profile full logs -f
 
 # Remove local runtime image
 local-clean:
-	VERSION=$(VERSION) $(LOCAL_COMPOSE) down --rmi local 2>/dev/null || true
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) --profile full down --rmi local 2>/dev/null || true
 	@echo "Local runtime image removed."
 
 # ============================================
@@ -338,9 +358,10 @@ help:
 	@echo ""
 	@echo "Local development:"
 	@echo "  make local-build     - Build runtime game server image"
-	@echo "  make local-up        - Start local game server(s)"
-	@echo "  make local-down      - Stop local game server(s)"
-	@echo "  make local-logs      - Tail game server logs"
+	@echo "  make local-up        - Start local game server(s) (game only)"
+	@echo "  make local-up-full   - Start game servers + HUD Observer data service (needs sibling repo)"
+	@echo "  make local-down      - Stop local stack"
+	@echo "  make local-logs      - Tail logs"
 	@echo "  make local-clean     - Remove local runtime image"
 	@echo ""
 	@echo "Utility:"

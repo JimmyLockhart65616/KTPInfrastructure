@@ -38,9 +38,14 @@ RUN dpkg --add-architecture i386 && \
         libc6-i386 \
         libssl3:i386 \
         libcurl4:i386 \
+        libsdl2-2.0-0:i386 \
         ca-certificates \
         steamcmd \
     && rm -rf /var/lib/apt/lists/*
+# Note: libsdl2-2.0-0:i386 is pulled in transitively on bare-metal installs via
+# LinuxGSM dependencies. In this minimal Docker image it must be installed
+# explicitly — the HLDS `-console` mode links against SDL2 and boot fails with
+# `libSDL2-2.0.so.0: cannot open shared object file` without it.
 
 # --- HLDS DoD 1.3 install via SteamCMD ---
 # App 90 is Half-Life Dedicated Server; `mod dod` selects the Day of Defeat mod.
