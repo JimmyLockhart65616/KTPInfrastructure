@@ -7,7 +7,7 @@
 #
 # Environment variables:
 #   MAP           - Starting map (default: dod_anzio)
-#   MAXPLAYERS    - Max player slots (default: 14)
+#   MAXPLAYERS    - Max player slots (default: 13, matches production)
 #   RCON_PASSWORD - RCON password (default: changeme)
 
 set -e
