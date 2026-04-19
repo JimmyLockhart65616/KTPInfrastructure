@@ -17,9 +17,9 @@ RUN mkdir -p /usr/local/lib32/lib /usr/local/lib32/include
 
 # Build 32-bit zlib
 RUN cd /tmp && \
-    wget -q https://zlib.net/zlib-1.3.1.tar.gz && \
-    tar xzf zlib-1.3.1.tar.gz && \
-    cd zlib-1.3.1 && \
+    wget -q https://zlib.net/zlib-1.3.2.tar.gz && \
+    tar xzf zlib-1.3.2.tar.gz && \
+    cd zlib-1.3.2 && \
     CFLAGS="-m32 -O3 -fPIC" ./configure --prefix=/usr/local/lib32 --static && \
     make -j$(nproc) && \
     make install && \

@@ -48,6 +48,9 @@ Thumbs.db
 # Build artifacts
 artifacts/
 
+# Local dev environment (user-specific plugins, runtime state)
+/local/
+
 # Docker environment
 build/.env
 
