@@ -35,9 +35,9 @@ services:
       args:
         VERSION: ${VERSION:-latest}
     image: ktp-gameserver:${VERSION:-latest}
-    depends_on:
-      data:
-        condition: service_started
+    # depends_on removed — game servers boot fine without the data service.
+    # The HUD ingest URL resolves to a stub when data is absent; no runtime error.
+    # Bring up the data service alongside game servers with `--profile full`.
     environment:
       MAP: dod_anzio
       MAXPLAYERS: "13"
@@ -66,9 +66,7 @@ services:
   # ============================================================
   ktp-game-2:
     image: ktp-gameserver:${VERSION:-latest}
-    depends_on:
-      data:
-        condition: service_started
+    # depends_on removed — see ktp-game-1. Use `--profile full` to include data.
     environment:
       MAP: dod_flash
       MAXPLAYERS: "13"
@@ -96,7 +94,13 @@ services:
   # Data Server — MySQL, HLTV proxies, HLStatsX stub,
   #               HUD Observer backend + frontend (supervisord)
   # ============================================================
+  # Behind the `full` profile so the standard `make local-up` works without
+  # needing the sibling DoD-hud-observer checkout. Opt in with:
+  #   DOD_HUD_PATH=../DoD-hud-observer make local-up-full
+  # or:
+  #   docker compose -f docker-compose.local.yml --profile full up -d
   data:
+    profiles: ["full"]
     build:
       # Context is DoD-hud-observer — its .dockerignore excludes node_modules/.git.
       # Dockerfile lives there too, with COPY paths relative to its own root.
