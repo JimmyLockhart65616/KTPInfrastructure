@@ -21,6 +21,7 @@ scripts/ktp-scheduled-restart.sh
 scripts/ktp-organize-hltv-demos.sh
 scripts/hltv-api.py
 scripts/ktp-backup.sh
+scripts/audit-fleet.json
 
 # Private documentation (contains IPs/credentials)
 ktp_gameserver_setup.md
