@@ -12,14 +12,23 @@ RELAY_URL="https://discord-relay-78814186981.us-central1.run.app/reply"
 EDIT_URL="https://discord-relay-78814186981.us-central1.run.app/edit"
 AUTH_SECRET="ff661895111b948c8d5b6d732a50bbfff58e93798b4d4ecf0fc0d12f6c4db18e"
 
-# Detect game server instances dynamically from ~/dod-* directories
+# Detect game server instances dynamically from ~/dod-* directories.
+# An instance can be excluded from the restart cycle by creating a
+# `.ktp-disabled` marker file in its directory — used on Chicago VPS to
+# skip port 27019 (4-instance trial, disabled 2026-04-10).
 PORTS=()
+SKIPPED=()
 for dir in ~/dod-2701*; do
-    [ -d "$dir" ] && PORTS+=($(basename "$dir" | sed 's/dod-//'))
+    [ -d "$dir" ] || continue
+    if [ -f "$dir/.ktp-disabled" ]; then
+        SKIPPED+=($(basename "$dir" | sed 's/dod-//'))
+        continue
+    fi
+    PORTS+=($(basename "$dir" | sed 's/dod-//'))
 done
 NUM_SERVERS=${#PORTS[@]}
 if [ "$NUM_SERVERS" -eq 0 ]; then
-    echo "ERROR: No dod-* directories found"
+    echo "ERROR: No dod-* directories found (or all are .ktp-disabled)"
     exit 1
 fi
 
@@ -140,6 +149,10 @@ trap restore_cron EXIT
 # Send Initial "Restarting" Message
 # ============================================================================
 log "Starting scheduled restart for $SERVER_NAME"
+log "Active ports: ${PORTS[*]}"
+if [ ${#SKIPPED[@]} -gt 0 ]; then
+    log "Skipped ports (.ktp-disabled): ${SKIPPED[*]}"
+fi
 FOOTER_TIMESTAMP=$(TZ='America/New_York' date '+%m/%d/%Y %I:%M %p EST')
 
 INIT_TITLE="$KTP_EMOJI Server Restart In Progress"
