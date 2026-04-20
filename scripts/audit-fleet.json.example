@@ -1,0 +1,53 @@
+{
+  "_comment": "Copy to /etc/ktp/audit-fleet.json (mode 600, root-owned) or point KTP_AUDIT_FLEET_CONFIG at your own location. Do NOT commit the real file — it contains SSH credentials. See scripts/audit-fleet-drift.py for the schema.",
+
+  "hosts": [
+    {
+      "name": "Atlanta",
+      "host": "__GAMESERVER_ATLANTA_IP__",
+      "user": "dodserver",
+      "password": "__CHANGE_ME__",
+      "group": "baremetal",
+      "sample_port": 27015
+    },
+    {
+      "name": "Dallas",
+      "host": "__GAMESERVER_DALLAS_IP__",
+      "user": "dodserver",
+      "password": "__CHANGE_ME__",
+      "group": "baremetal",
+      "sample_port": 27015
+    },
+    {
+      "name": "Denver",
+      "host": "__GAMESERVER_DENVER_IP__",
+      "user": "dodserver",
+      "password": "__CHANGE_ME__",
+      "group": "baremetal",
+      "sample_port": 27015
+    },
+    {
+      "name": "NewYork",
+      "host": "__GAMESERVER_NEWYORK_IP__",
+      "user": "dodserver",
+      "password": "__CHANGE_ME__",
+      "group": "baremetal",
+      "sample_port": 27015
+    },
+    {
+      "name": "Chicago",
+      "host": "__GAMESERVER_CHICAGO_IP__",
+      "user": "dodserver",
+      "password": "__CHANGE_ME__",
+      "group": "vps",
+      "sample_port": 27015
+    }
+  ],
+
+  "_auth_notes": [
+    "password:     plaintext SSH password (simplest; matches existing dodserver creds)",
+    "key_filename: path to SSH private key (use instead of password for key-based auth)",
+    "If both are omitted, paramiko falls back to agent + ~/.ssh/id_* key discovery.",
+    "Migrate to key_filename when feasible — the shared dodserver password is weak."
+  ]
+}
