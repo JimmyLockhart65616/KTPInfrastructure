@@ -167,17 +167,37 @@ for port in "${PORTS[@]}"; do
     ./$SERVER_EXEC stop >/dev/null 2>&1 &
 done
 
-# Wait for stops to complete
-log "Waiting for servers to stop..."
-sleep 10
+# Wait for stops to complete — poll until BOTH hlds_linux processes and
+# dodserver tmux sessions are gone. The previous implementation slept for a
+# fixed 10 seconds, which wasn't enough for the worst case: LinuxGSM's STOP
+# fires graceful `quit` to hlds_linux, waits up to 3s for it to exit, then
+# tears down the tmux session. If the graceful quit drags, the total stop
+# duration exceeds 10s. The sequential starts that follow would race against
+# still-pending tmux teardown and abort with "NOT SET is already running",
+# leaving the affected instance down until manual intervention — observed on
+# Denver 27015 at 2026-04-20 03:00.
+log "Waiting for servers to stop (polling)..."
+MAX_WAIT=30
+ELAPSED=0
+while [ $ELAPSED -lt $MAX_WAIT ]; do
+    HLDS_COUNT=$(pgrep -c hlds_linux 2>/dev/null || echo "0")
+    HLDS_COUNT=${HLDS_COUNT//[^0-9]/}
+    TMUX_COUNT=$(pgrep -cf 'tmux -L dodserver' 2>/dev/null || echo "0")
+    TMUX_COUNT=${TMUX_COUNT//[^0-9]/}
+    if [ "${HLDS_COUNT:-0}" -eq 0 ] && [ "${TMUX_COUNT:-0}" -eq 0 ]; then
+        log "All hlds_linux processes and dodserver tmux sessions stopped (after ${ELAPSED}s)"
+        break
+    fi
+    sleep 1
+    ELAPSED=$((ELAPSED + 1))
+done
 
-# Check if any still running
-STILL_RUNNING=$(pgrep -c hlds_linux 2>/dev/null || echo "0")
-STILL_RUNNING=${STILL_RUNNING//[^0-9]/}  # Strip non-numeric chars
-if [ "${STILL_RUNNING:-0}" -gt 0 ]; then
-    log "WARNING: $STILL_RUNNING servers still running after graceful stop, force killing..."
+# Force-kill anything stuck after max wait
+if [ $ELAPSED -ge $MAX_WAIT ]; then
+    log "WARNING: Stops did not complete in ${MAX_WAIT}s (hlds=$HLDS_COUNT tmux=$TMUX_COUNT), force-killing..."
     pkill -9 hlds_run 2>/dev/null
     pkill -9 hlds_linux 2>/dev/null
+    pkill -9 -f 'tmux -L dodserver' 2>/dev/null
     sleep 3
 fi
 
