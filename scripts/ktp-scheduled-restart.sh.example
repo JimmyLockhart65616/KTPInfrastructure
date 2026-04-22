@@ -174,6 +174,42 @@ fi
 log "All servers stopped"
 
 # ============================================================================
+# Swap in any pending `.new` files (safe: all servers are stopped here)
+# ============================================================================
+# Binary deploys stage `.new` files next to their targets; the nightly restart
+# is the only safe moment to move them into place (.so files are memory-mapped
+# while hlds_linux runs, so overwriting mid-run crashes the process).
+#
+# Covered locations:
+#   ~/dod-*/serverfiles/*.new                         # engine_i486.so, hlds_linux, libsteam_api.so
+#   ~/dod-*/serverfiles/dod/addons/ktpamx/dlls/*.new  # ktpamx_i386.so
+#   ~/dod-*/serverfiles/dod/addons/ktpamx/modules/*.new  # dodx, reapi, amxxcurl
+log "Checking for staged .new files..."
+SWAP_COUNT=0
+SWAP_FAILED=0
+for port in 27015 27016 27017 27018 27019; do
+    BASE=~/dod-$port/serverfiles
+    for new_file in "$BASE"/*.new \
+                    "$BASE"/dod/addons/ktpamx/dlls/*.new \
+                    "$BASE"/dod/addons/ktpamx/modules/*.new; do
+        [ -f "$new_file" ] || continue
+        target="${new_file%.new}"
+        if mv -f "$new_file" "$target"; then
+            log "  [$port] swapped: $(basename "$target")"
+            SWAP_COUNT=$((SWAP_COUNT + 1))
+        else
+            log "  [$port] FAILED to swap: $new_file"
+            SWAP_FAILED=$((SWAP_FAILED + 1))
+        fi
+    done
+done
+if [ "$SWAP_COUNT" -eq 0 ] && [ "$SWAP_FAILED" -eq 0 ]; then
+    log "No .new files pending — nothing to swap"
+else
+    log "Swap complete: $SWAP_COUNT succeeded, $SWAP_FAILED failed"
+fi
+
+# ============================================================================
 # Start All Servers
 # ============================================================================
 log "Starting servers..."
