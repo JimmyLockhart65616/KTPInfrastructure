@@ -35,6 +35,9 @@ mkdir -p "$STATE_DIR"
 EXPECTED=5
 THRESHOLD_MINUTES=3
 WEBHOOK_URL="https://discord.com/api/webhooks/1453179712862949528/0brgSCOTFzEoMnNuaCN4u1cf1COrkqpbq58XYbm-E0LzNlrCtpwt8b8iUroZVfY5nzDn"
+# Discord user to @-mention on alerts. Webhooks require explicit `allowed_mentions.users`
+# to actually deliver the ping — bare <@ID> in content alone gets silently stripped.
+MENTION_USER_ID="218890328273321984"
 
 # Load per-host overrides
 [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
@@ -69,9 +72,15 @@ send_alert() {
     local safe_title safe_desc
     safe_title=$(json_escape "$title")
     safe_desc=$(json_escape "$desc")
+    local content=""
+    local allowed_mentions='"allowed_mentions":{"parse":[]}'
+    if [ -n "${MENTION_USER_ID:-}" ]; then
+        content="\"content\":\"<@${MENTION_USER_ID}>\","
+        allowed_mentions="\"allowed_mentions\":{\"users\":[\"${MENTION_USER_ID}\"]}"
+    fi
     local payload
-    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%s}]}' \
-        "$safe_title" "$safe_desc" "$color")
+    payload=$(printf '{%s"embeds":[{"title":"%s","description":"%s","color":%s}],%s}' \
+        "$content" "$safe_title" "$safe_desc" "$color" "$allowed_mentions")
     curl -s -m 10 -X POST "$WEBHOOK_URL" \
         -H "Content-Type: application/json" \
         -d "$payload" >/dev/null 2>&1 || true
