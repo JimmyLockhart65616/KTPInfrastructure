@@ -39,6 +39,17 @@ WEBHOOK_URL="https://discord.com/api/webhooks/1453179712862949528/0brgSCOTFzEoMn
 # to actually deliver the ping — bare <@ID> in content alone gets silently stripped.
 MENTION_USER_ID="218890328273321984"
 
+# Map the raw hostname (-s) to a short location code for the alert title.
+# Falls back to the raw hostname when no mapping matches.
+case "$HOSTNAME_SHORT" in
+    neinatl*|neinatlanta)    LOCATION="ATL" ;;
+    neindallas|neindal*)     LOCATION="DAL" ;;
+    neindenver|neinden*)     LOCATION="DEN" ;;
+    neinnewyork|neinny*)     LOCATION="NY"  ;;
+    neinchicago|neinchi*)    LOCATION="CHI" ;;
+    *)                       LOCATION="$HOSTNAME_SHORT" ;;
+esac
+
 # Load per-host overrides
 [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 
@@ -101,18 +112,24 @@ down_ports() {
 # State transitions
 if [ "$CONSECUTIVE_BAD" -ge "$THRESHOLD_MINUTES" ] && [ "$ALERT_STATE" = "healthy" ]; then
     PORTS_DOWN=$(down_ports)
+    # Format the ports-down line. If enumeration returned nothing but the counter
+    # says we're under expected (weird state — e.g. all processes running but count
+    # mismatch from some other cause), say so explicitly instead of "unknown".
+    if [ -n "$PORTS_DOWN" ]; then
+        PORTS_LINE="**Missing:** ${PORTS_DOWN// /, }"
+    else
+        PORTS_LINE="**Missing:** (no port missing from enumeration — investigate count source mismatch)"
+    fi
     send_alert \
-        "🚨 Fleet Health: ${HOSTNAME_SHORT} DEGRADED" \
-        "Running: ${RUNNING}/${EXPECTED} for ${CONSECUTIVE_BAD} consecutive minutes.
-Ports down: ${PORTS_DOWN:-unknown}
-Host: ${HOSTNAME_SHORT}" \
+        "🚨 ${LOCATION} DEGRADED — ${RUNNING}/${EXPECTED} hlds_linux" \
+        "Below expected for **${CONSECUTIVE_BAD} min**.
+${PORTS_LINE}" \
         15158332
     ALERT_STATE=unhealthy
 elif [ "$RUNNING" -eq "$EXPECTED" ] && [ "$ALERT_STATE" = "unhealthy" ]; then
     send_alert \
-        "✅ Fleet Health: ${HOSTNAME_SHORT} recovered" \
-        "Running: ${RUNNING}/${EXPECTED}. Recovery confirmed.
-Host: ${HOSTNAME_SHORT}" \
+        "✅ ${LOCATION} recovered — ${RUNNING}/${EXPECTED} hlds_linux" \
+        "Back to expected instance count. Outage window: previous alert → now." \
         3066993
     ALERT_STATE=healthy
 fi
