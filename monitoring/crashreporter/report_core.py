@@ -1,0 +1,422 @@
+#!/usr/bin/env python3
+"""KTP crashreporter — watches /tmp/core.* and posts gdb backtraces to Discord.
+
+Daemon design:
+  1. Startup: backfill any unreported cores already on disk.
+  2. Steady state: inotifywait subprocess streams CREATE events on /tmp/.
+  3. Periodic safety net: every 5 min, rescan /tmp/ for cores inotify missed.
+  4. On new core: gdb -batch -ex bt → parse signal + top frame + backtrace,
+     write a sidecar `.bt` (full detail) + `.reported` (state), POST embed
+     to Discord Relay's #ktp-crashes channel.
+
+Config: /etc/ktp/crashreporter.conf (bash-style KEY=value).
+  RELAY_URL          - Discord Relay base URL (e.g. https://relay.example/api)
+  RELAY_SECRET       - X-Auth-Key header value
+  CRASHES_CHANNEL_ID - Discord channel ID
+  KTP_REGION         - Three-letter region code (ATL/DAL/DEN/NY/CHI)
+
+Requires: gdb, inotify-tools, python3-requests on the host.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import select
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+try:
+    import requests
+except ImportError:
+    sys.stderr.write("ERROR: python3-requests missing. Run: apt install python3-requests\n")
+    sys.exit(1)
+
+
+# --------------------------------------------------------------------------
+# Config
+
+CONFIG_PATH = "/etc/ktp/crashreporter.conf"
+CORE_DIR = Path("/tmp")
+CORE_GLOB = "core.*"
+SCAN_INTERVAL_SEC = 300            # safety-net rescan
+GDB_TIMEOUT_SEC = 60               # cap any single gdb invocation
+HERE_PING_COOLDOWN_SEC = 3600      # one @here per server per hour
+DISCORD_EMBED_RED = 15548997       # Discord brand danger red
+BACKTRACE_FRAMES_IN_EMBED = 20
+BACKTRACE_CHARS_IN_EMBED = 1500    # field-value cap is 1024; we use a 1500-char ceiling and truncate
+
+
+def load_config(path: str) -> dict:
+    cfg = {}
+    if not os.path.exists(path):
+        sys.stderr.write(f"ERROR: config not found at {path}\n")
+        sys.exit(2)
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            cfg[k.strip()] = v.strip().strip('"').strip("'")
+    for required in ("RELAY_URL", "RELAY_SECRET", "CRASHES_CHANNEL_ID", "KTP_REGION"):
+        if not cfg.get(required):
+            sys.stderr.write(f"ERROR: missing {required} in {path}\n")
+            sys.exit(2)
+    return cfg
+
+
+# --------------------------------------------------------------------------
+# Port resolution: map a dead PID's core file back to the dod-{port} instance
+
+CMDLINE_PORT_RE = re.compile(rb"\+port\s+(\d{5})")
+DOD_PATH_PORT_RE = re.compile(r"/dod-(\d{5})/")
+
+
+def scan_pid_port_table() -> dict[int, int]:
+    """Walk /proc/*/cmdline for live hlds_linux processes; return {pid: port}."""
+    table: dict[int, int] = {}
+    for proc_dir in Path("/proc").glob("[0-9]*"):
+        cmdline_path = proc_dir / "cmdline"
+        try:
+            data = cmdline_path.read_bytes()
+        except (PermissionError, FileNotFoundError):
+            continue
+        if b"hlds_linux" not in data:
+            continue
+        m = CMDLINE_PORT_RE.search(data)
+        if m:
+            try:
+                table[int(proc_dir.name)] = int(m.group(1))
+            except ValueError:
+                pass
+    return table
+
+
+def resolve_port(pid: int, pid_port_cache: dict[int, int]) -> int | None:
+    """Try /proc/<pid>/cmdline first (process may still be in zombie state),
+    then fall back to a periodically-refreshed cache built from live PIDs."""
+    cmdline_path = Path(f"/proc/{pid}/cmdline")
+    if cmdline_path.exists():
+        try:
+            m = CMDLINE_PORT_RE.search(cmdline_path.read_bytes())
+            if m:
+                return int(m.group(1))
+        except (PermissionError, FileNotFoundError):
+            pass
+    return pid_port_cache.get(pid)
+
+
+def find_binary_for_port(port: int) -> str | None:
+    """Locate hlds_linux binary belonging to a specific game port."""
+    home = Path(os.path.expanduser("~"))
+    candidates = [
+        home / f"dod-{port}" / "serverfiles" / "hlds_linux",
+        Path(f"/home/dodserver/dod-{port}/serverfiles/hlds_linux"),
+    ]
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    return None
+
+
+# --------------------------------------------------------------------------
+# Core file parsing
+
+CORE_FILENAME_RE = re.compile(r"^core\.(?P<exe>[^.]+)\.(?P<pid>\d+)\.(?P<ts>\d+)$")
+
+
+def parse_core_filename(path: Path) -> tuple[str, int, int] | None:
+    m = CORE_FILENAME_RE.match(path.name)
+    if not m:
+        return None
+    return m.group("exe"), int(m.group("pid")), int(m.group("ts"))
+
+
+def core_is_complete(path: Path, settle_sec: float = 2.0) -> bool:
+    """Cores can take seconds to fully write under load. Wait for size to
+    stabilise before invoking gdb."""
+    try:
+        prev = path.stat().st_size
+    except FileNotFoundError:
+        return False
+    time.sleep(settle_sec)
+    try:
+        return path.stat().st_size == prev and prev > 0
+    except FileNotFoundError:
+        return False
+
+
+# --------------------------------------------------------------------------
+# gdb invocation
+
+GDB_BATCH_ARGS = [
+    "-batch",
+    "-ex", "set pagination off",
+    "-ex", "set print pretty on",
+    "-ex", "info program",
+    "-ex", "bt",
+    "-ex", "thread apply all bt",
+    "-ex", "info registers",
+    "-ex", "info proc mappings",
+]
+
+
+def run_gdb(binary: str, core: Path) -> tuple[str, str]:
+    """Returns (stdout_full, stderr_tail)."""
+    try:
+        r = subprocess.run(
+            ["gdb", *GDB_BATCH_ARGS, binary, str(core)],
+            capture_output=True,
+            text=True,
+            timeout=GDB_TIMEOUT_SEC,
+        )
+        return r.stdout, r.stderr[-500:]
+    except subprocess.TimeoutExpired:
+        return "", f"gdb timed out after {GDB_TIMEOUT_SEC}s"
+
+
+# --------------------------------------------------------------------------
+# gdb output parsing
+
+SIGNAL_RE = re.compile(r"Program terminated with signal\s+([A-Z]+)\s*,\s*([^.]+)\.")
+TOP_FRAME_RE = re.compile(r"^#0\s+(?:0x[0-9a-f]+\s+in\s+)?(.+?)(?:\s+from\s+|\s*$)", re.MULTILINE)
+BT_BLOCK_RE = re.compile(r"^#\d+\s.+$", re.MULTILINE)
+
+
+def parse_gdb_output(stdout: str) -> dict:
+    info: dict = {"signal": "?", "signal_desc": "", "top_frame": "?", "bt_lines": []}
+    sig = SIGNAL_RE.search(stdout)
+    if sig:
+        info["signal"] = sig.group(1)
+        info["signal_desc"] = sig.group(2).strip()
+    top = TOP_FRAME_RE.search(stdout)
+    if top:
+        info["top_frame"] = top.group(1).strip()
+    info["bt_lines"] = BT_BLOCK_RE.findall(stdout)[:BACKTRACE_FRAMES_IN_EMBED]
+    return info
+
+
+# --------------------------------------------------------------------------
+# Friendly hostname helpers
+
+def friendly_alias(region: str, port: int) -> str:
+    instance = port - 27014  # 27015→1, …, 27019→5
+    return f"{region}{instance}" if 1 <= instance <= 5 else f"{region}?"
+
+
+# --------------------------------------------------------------------------
+# Discord posting
+
+class HerePingDeduper:
+    def __init__(self, cooldown_sec: int = HERE_PING_COOLDOWN_SEC):
+        self.cooldown = cooldown_sec
+        self.last_ping: dict[str, float] = {}
+
+    def should_ping(self, key: str) -> bool:
+        now = time.time()
+        last = self.last_ping.get(key, 0)
+        if now - last >= self.cooldown:
+            self.last_ping[key] = now
+            return True
+        return False
+
+
+def build_embed(alias: str, host_ip: str, port: int, info: dict, core_path: Path,
+                pid: int, exe: str, core_ts: int) -> dict:
+    bt_text = "\n".join(info["bt_lines"]) or "(no frames parsed — see core.bt sidecar)"
+    if len(bt_text) > BACKTRACE_CHARS_IN_EMBED:
+        bt_text = bt_text[:BACKTRACE_CHARS_IN_EMBED] + "\n…(truncated; full bt in sidecar)"
+
+    title_frame = info["top_frame"][:80] if info["top_frame"] else "?"
+    return {
+        "title": f"{alias} ({host_ip}:{port}) — {info['signal']} in {title_frame}",
+        "color": DISCORD_EMBED_RED,
+        "fields": [
+            {"name": "Binary", "value": f"`{exe}`", "inline": True},
+            {"name": "PID", "value": str(pid), "inline": True},
+            {"name": "Signal", "value": f"{info['signal']} ({info['signal_desc']})".strip(" ()"), "inline": True},
+            {"name": "Top frame", "value": f"`{info['top_frame']}`"[:1024], "inline": False},
+            {"name": f"Backtrace (top {BACKTRACE_FRAMES_IN_EMBED})",
+             "value": f"```\n{bt_text}\n```"[:1024], "inline": False},
+            {"name": "Core file", "value": f"`{core_path}`", "inline": False},
+        ],
+        "footer": {"text": f"crashed at {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime(core_ts))} · gdb -batch -ex bt"},
+    }
+
+
+def post_to_discord(cfg: dict, embed: dict, ping_here: bool) -> bool:
+    body = {
+        "channelId": cfg["CRASHES_CHANNEL_ID"],
+        "embeds": [embed],
+    }
+    if ping_here:
+        body["content"] = "@here"
+        body["allowed_mentions"] = {"parse": ["everyone"]}
+    try:
+        r = requests.post(
+            f"{cfg['RELAY_URL'].rstrip('/')}/message",
+            json=body,
+            headers={"X-Auth-Key": cfg["RELAY_SECRET"], "Content-Type": "application/json"},
+            timeout=15,
+        )
+        if r.status_code >= 300:
+            sys.stderr.write(f"discord post failed: {r.status_code} {r.text[:300]}\n")
+            return False
+        return True
+    except requests.RequestException as e:
+        sys.stderr.write(f"discord post exception: {e}\n")
+        return False
+
+
+# --------------------------------------------------------------------------
+# Main per-core processing
+
+def process_core(cfg: dict, core: Path, pid_port_cache: dict[int, int],
+                 deduper: HerePingDeduper, host_ip: str) -> None:
+    sidecar_reported = core.with_suffix(core.suffix + ".reported")
+    if sidecar_reported.exists():
+        return  # already handled
+
+    parsed = parse_core_filename(core)
+    if parsed is None:
+        sys.stderr.write(f"unrecognised core filename: {core}\n")
+        return
+    exe, pid, core_ts = parsed
+
+    if not core_is_complete(core):
+        return  # still being written; will be retried on next event/scan
+
+    port = resolve_port(pid, pid_port_cache)
+    binary = find_binary_for_port(port) if port else None
+    if binary is None:
+        # Fall back to which(exe) so we still get *something* — but stripped.
+        which = subprocess.run(["which", exe], capture_output=True, text=True)
+        binary = which.stdout.strip() or f"/home/dodserver/{exe}"
+
+    sys.stderr.write(f"processing {core.name} pid={pid} port={port} binary={binary}\n")
+
+    stdout, stderr_tail = run_gdb(binary, core)
+    if stderr_tail:
+        sys.stderr.write(f"gdb stderr tail: {stderr_tail}\n")
+
+    info = parse_gdb_output(stdout)
+    alias = friendly_alias(cfg["KTP_REGION"], port) if port else f"{cfg['KTP_REGION']}?"
+
+    # Sidecars: full gdb output for human review, JSON state for sweeps
+    bt_sidecar = core.with_suffix(core.suffix + ".bt")
+    bt_sidecar.write_text(stdout or "(empty)\n", encoding="utf-8")
+
+    state = {
+        "core": str(core),
+        "exe": exe, "pid": pid, "core_ts": core_ts,
+        "port": port, "alias": alias,
+        "signal": info["signal"], "signal_desc": info["signal_desc"],
+        "top_frame": info["top_frame"],
+        "reported_at": int(time.time()),
+    }
+
+    embed = build_embed(alias, host_ip, port or 0, info, core, pid, exe, core_ts)
+    ping_here = deduper.should_ping(alias)
+    posted = post_to_discord(cfg, embed, ping_here)
+    state["discord_posted"] = posted
+
+    sidecar_reported.write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+
+# --------------------------------------------------------------------------
+# Daemon loop
+
+def get_host_ip() -> str:
+    """Best-effort primary IP for the embed. Falls back to hostname."""
+    try:
+        out = subprocess.run(
+            ["hostname", "-I"], capture_output=True, text=True, timeout=2
+        ).stdout.strip().split()
+        return out[0] if out else subprocess.run(
+            ["hostname"], capture_output=True, text=True
+        ).stdout.strip()
+    except Exception:
+        return "unknown"
+
+
+def scan_existing(cfg: dict, pid_port_cache: dict[int, int],
+                  deduper: HerePingDeduper, host_ip: str) -> None:
+    for core in CORE_DIR.glob(CORE_GLOB):
+        if core.name.endswith((".reported", ".bt")):
+            continue
+        process_core(cfg, core, pid_port_cache, deduper, host_ip)
+
+
+def main() -> int:
+    cfg = load_config(CONFIG_PATH)
+    deduper = HerePingDeduper()
+    host_ip = get_host_ip()
+    pid_port_cache = scan_pid_port_table()
+    last_pid_scan = time.time()
+    last_safety_scan = 0.0
+
+    sys.stderr.write(f"crashreporter started · region={cfg['KTP_REGION']} · ip={host_ip}\n")
+
+    # Initial backfill
+    scan_existing(cfg, pid_port_cache, deduper, host_ip)
+    last_safety_scan = time.time()
+
+    def spawn_inotify() -> subprocess.Popen:
+        """inotifywait can die (e.g. /tmp remount); we restart it on demand."""
+        return subprocess.Popen(
+            ["inotifywait", "-m", "-e", "create", "-e", "close_write", "-q",
+             "--format", "%f", str(CORE_DIR)],
+            stdout=subprocess.PIPE, text=True,
+        )
+
+    inotify = spawn_inotify()
+
+    def cleanup(*_):
+        try:
+            inotify.terminate()
+        except Exception:
+            pass
+        sys.exit(0)
+    signal.signal(signal.SIGTERM, cleanup)
+    signal.signal(signal.SIGINT, cleanup)
+
+    while True:
+        # Refresh PID table periodically (cheap; ~1ms per call)
+        if time.time() - last_pid_scan > 60:
+            pid_port_cache = scan_pid_port_table()
+            last_pid_scan = time.time()
+
+        # Safety-net rescan in case inotify missed an event
+        if time.time() - last_safety_scan > SCAN_INTERVAL_SEC:
+            scan_existing(cfg, pid_port_cache, deduper, host_ip)
+            last_safety_scan = time.time()
+
+        # Restart inotifywait if it died (e.g. /tmp remount)
+        if inotify.poll() is not None:
+            sys.stderr.write(f"inotifywait exited with {inotify.returncode}; restarting in 5s\n")
+            time.sleep(5)
+            inotify = spawn_inotify()
+            continue
+
+        # Poll stdout with 1s timeout so the loop can do periodic work even
+        # when inotify is silent. select() returns ([fd], [], []) when ready.
+        ready, _, _ = select.select([inotify.stdout], [], [], 1.0)
+        if not ready:
+            continue
+        line = inotify.stdout.readline()
+        if not line:
+            continue  # EOF — caught by inotify.poll() check next iteration
+        fname = line.strip()
+        if not fname.startswith("core."):
+            continue
+        if fname.endswith((".reported", ".bt")):
+            continue
+        process_core(cfg, CORE_DIR / fname, pid_port_cache, deduper, host_ip)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
