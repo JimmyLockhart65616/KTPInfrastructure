@@ -4,17 +4,19 @@
 
 **No Metamod Required** - Runs on Linux and Windows via ReHLDS Extension Mode
 
-**Last Updated:** 2026-04-25 (architecture diagram refreshed with current versions + 3 new components; full per-layer modernization pass still pending — see TODO.md)
+**Last Updated:** 2026-04-26 (per-layer body refresh: all `**Version:**` callouts refreshed across Layer 1-6 + supporting services; modernization-status banner below tracks remaining gaps)
 
 **Doc home note:** This file (and `DEVELOPMENT_HISTORY.md`) used to live in `KTPMatchHandler/` for historical reasons — they predated the existence of `KTPInfrastructure/`. Moved to their proper home 2026-04-25.
 
-**Modernization status (2026-04-25):**
+**Modernization status (2026-04-25 → 2026-04-26):**
 - ✅ Architecture diagram (top of doc) refreshed with current versions
-- ✅ Three new April 2026 components added: KTPAntiCheat, KTPAdminBot, KTPProfileAggregator
+- ✅ Three new April 2026 components added: KTPAntiCheat, KTPAdminBot, KTPProfileAggregator (all private repos; high-level orientation only — methodology lives in their respective in-repo docs)
 - ✅ GitHub Repositories section refreshed
-- ⏳ Per-layer detail sections (Layer 1-6) — version refs in bodies still cite 2026-03 versions; bodies themselves are accurate to current behavior. Refresh deferred.
-- ⏳ "Wall Penetration Discovery" historical narrative (~200 lines) — candidate for moving to DEVELOPMENT_HISTORY. Deferred.
-- ⏳ Possible split into per-layer docs (ENGINE.md / SCRIPTING.md / MODULES.md / PLUGINS.md / SERVICES.md / ADMIN.md). Deferred — multi-session restructure.
+- ✅ Wall Penetration Discovery moved to DEVELOPMENT_HISTORY as ADR-001
+- ✅ Per-section `**Version:**` callouts refreshed across Layer 1-6 + supporting infrastructure (engine 920, KTPAMXX 2.7.13, ReAPI 5.29.0.364-ktp, AmxxCurl 1.3.8-ktp, plus all plugin + service versions)
+- ⏳ **Missing component sections:** KTPPracticeMode, KTPGrenadeLoadout, KTPGrenadeDamage, KTPScoreTracker — these plugins exist but lack dedicated subsections under Layer 6. Adding them is content-write, not version-refresh. Deferred to a follow-on pass.
+- ⏳ Inline "(introduced in vX.Y)" markers in section prose are intentionally left as-is — those are historical attribution, not current-version claims.
+- ⏳ Possible split into per-layer docs (ENGINE.md / SCRIPTING.md / MODULES.md / PLUGINS.md / SERVICES.md / ADMIN.md). Multi-session restructure; sequence after the missing-section content lands.
 
 [Architecture](#six-layer-architecture) | [Components](#component-documentation) | [Installation](#complete-installation-guide) | [Repositories](#github-repositories)
 
@@ -267,7 +269,7 @@ rehlds/
 ### Layer 1: KTP-ReHLDS (Engine)
 
 **Repository:** [github.com/afraznein/KTPReHLDS](https://github.com/afraznein/KTPReHLDS)
-**Version:** 3.22.0.912
+**Version:** 3.22.0.920
 **License:** MIT
 
 <details>
@@ -514,7 +516,7 @@ void SV_ParseCvarValue(client_t *cl, sizebuf_t *msg) {
 ### Layer 2: KTPAMXX (Scripting Platform)
 
 **Repository:** [github.com/afraznein/KTPAMXX](https://github.com/afraznein/KTPAMXX)
-**Version:** 2.7.4
+**Version:** 2.7.13
 **License:** GPL v3
 **Base:** AMX Mod X 1.10.0.5468-dev
 
@@ -877,7 +879,7 @@ addons/ktpamx/
 ### Layer 3: KTP-ReAPI (Engine Bridge Module)
 
 **Repository:** [github.com/afraznein/KTPReAPI](https://github.com/afraznein/KTPReAPI)
-**Version:** 5.29.0.363-ktp
+**Version:** 5.29.0.364-ktp
 **License:** GPL v3
 **Base:** ReAPI 5.26+
 
@@ -990,7 +992,7 @@ public OnPausedHUDUpdate() {
 ### Layer 4: KTP AMXX Curl (HTTP Module)
 
 **Repository:** [github.com/afraznein/KTPAMXXCurl](https://github.com/afraznein/KTPAMXXCurl)
-**Version:** 1.3.6-ktp
+**Version:** 1.3.8-ktp
 **License:** MIT
 **Base:** AmxxCurl by Polarhigh
 
@@ -1031,7 +1033,7 @@ void CurlFrameCallback() {
 ### Layer 5: DODX Stats Module
 
 **Included in:** KTPAMXX
-**Version:** 2.7.4
+**Version:** 2.7.13
 **Purpose:** Day of Defeat weapon stats, shot tracking, HLStatsX integration
 
 <details>
@@ -1208,7 +1210,7 @@ forward dod_stats_flush(id);
 #### KTPMatchHandler
 
 **Repository:** [github.com/afraznein/KTPMatchHandler](https://github.com/afraznein/KTPMatchHandler)
-**Version:** 0.10.110
+**Version:** 0.10.116
 **License:** MIT
 
 <details>
@@ -1383,7 +1385,7 @@ KTPMatchHandler updates HUD:
 #### KTPCvarChecker
 
 **Repository:** [github.com/afraznein/KTPCvarChecker](https://github.com/afraznein/KTPCvarChecker)
-**Version:** 7.22
+**Version:** 7.23
 **License:** GPL v2
 
 <details>
@@ -1456,7 +1458,7 @@ If a player has `cl_filterstuffcmd 1`, enforcement commands are silently dropped
 #### KTPFileChecker
 
 **Repository:** [github.com/afraznein/KTPFileChecker](https://github.com/afraznein/KTPFileChecker)
-**Version:** 2.5
+**Version:** 2.7
 **License:** Custom
 
 <details>
@@ -1485,7 +1487,7 @@ fc_exactweapons "0"  // Same hitbox bounds allowed (public servers)
 #### KTPAdminAudit
 
 **Repository:** [github.com/afraznein/KTPAdminAudit](https://github.com/afraznein/KTPAdminAudit)
-**Version:** 2.7.12
+**Version:** 2.7.13
 **License:** MIT
 
 <details>
@@ -1663,7 +1665,7 @@ gcloud run deploy ktp-relay \
 #### KTPHLStatsX
 
 **Repository:** [github.com/afraznein/KTPHLStatsX](https://github.com/afraznein/KTPHLStatsX)
-**Version:** 0.3.2
+**Version:** 0.3.3
 **Platform:** HLStatsX:CE Fork (Perl daemon + MySQL)
 **License:** GPL v2
 **Base:** HLStatsX:CE by NomisCZ
@@ -1873,7 +1875,7 @@ GROUP BY (match_id IS NULL);
 #### KTPFileDistributor
 
 **Repository:** [github.com/afraznein/KTPFileDistributor](https://github.com/afraznein/KTPFileDistributor)
-**Version:** 1.1.1
+**Version:** 1.1.2
 **Platform:** .NET 8 Worker Service (Linux VPS)
 **License:** MIT
 
@@ -1986,7 +1988,7 @@ WantedBy=multi-user.target
 #### KTPHLTVRecorder
 
 **Repository:** [github.com/afraznein/KTPHLTVRecorder](https://github.com/afraznein/KTPHLTVRecorder)
-**Version:** 1.5.6
+**Version:** 1.5.7
 **Platform:** AMX/Pawn Plugin
 **License:** GPL-3.0
 **Requires:** KTPMatchHandler v0.10.4+ (for forwards), Curl module (for HTTP API)
