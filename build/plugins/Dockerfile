@@ -26,6 +26,14 @@ COPY KTPAdminAudit /build/plugins/KTPAdminAudit
 COPY KTPGrenades /build/plugins/KTPGrenades
 COPY KTPPracticeMode /build/plugins/KTPPracticeMode
 
+# AMXX stock plugins pulled from KTPAMXX source tree — prod load order
+# lists admin.amxx (admin flag infrastructure) and stats_logging.amxx
+# (DoD stats DODX hook) at the top of plugins.ini. Matches what's deployed
+# on Denver 5 / ATL1 / NY1 (compiled against KTPAMXX includes, not stock
+# AMXX 1.10 — hence built here instead of pulled from upstream tarball).
+COPY --from=amxx-compiler /build/KTPAMXX/plugins/admin.sma          /build/plugins/amxx-stock/admin.sma
+COPY --from=amxx-compiler /build/KTPAMXX/plugins/dod/stats_logging.sma /build/plugins/amxx-stock/stats_logging.sma
+
 WORKDIR /build
 
 # Make compiler executable
@@ -74,6 +82,10 @@ compile_plugin "KTPAdminAudit" "KTPAdminAudit" "KTPAdminAudit.sma"\n\
 compile_plugin "KTPGrenades" "KTPGrenadeLoadout" "KTPGrenadeLoadout.sma"\n\
 compile_plugin "KTPGrenades" "KTPGrenadeDamage" "KTPGrenadeDamage.sma"\n\
 compile_plugin "KTPPracticeMode" "KTPPracticeMode" "KTPPracticeMode.sma"\n\
+\n\
+# AMXX stock plugins (compiled from KTPAMXX source — see above)\n\
+compile_plugin "amxx-stock" "admin" "admin.sma"\n\
+compile_plugin "amxx-stock" "stats_logging" "stats_logging.sma"\n\
 \n\
 echo ""\n\
 echo "========================================"\n\

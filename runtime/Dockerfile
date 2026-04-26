@@ -20,7 +20,13 @@
 #   docker compose -f docker-compose.local.yml build
 #   docker compose -f docker-compose.local.yml up -d
 
-FROM ubuntu:22.04
+# Base: Ubuntu 24.04 (Noble, glibc 2.39). Matches production fleet exactly
+# (Denver 5 / ATL1 / NY1 / Dallas / Chicago / Data all run Ubuntu 24.04.4 LTS
+# with glibc 2.39 — verified 2026-04-22). Do NOT downgrade to 22.04: the KTP
+# stack binaries built on fleet hosts require GLIBC_2.38+ symbols, and 22.04's
+# glibc 2.35 will refuse to dlopen dodx_ktp_i386.so, cascading every KTP
+# plugin into "xstats class required" failures.
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 

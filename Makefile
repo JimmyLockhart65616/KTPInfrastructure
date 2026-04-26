@@ -20,8 +20,10 @@
 # Version defaults to today's date
 VERSION ?= $(shell date +%Y%m%d)
 
-# Project root (parent of KTPInfrastructure)
-KTP_PROJECT_ROOT ?= $(shell cd .. && pwd)
+# Project root (parent of KTPInfrastructure). On Windows/MSYS Docker needs
+# native paths (d:/Git), not MSYS paths (/d/Git) — use `pwd -W` where available
+# to emit Windows-style, fall back to POSIX `pwd` elsewhere.
+KTP_PROJECT_ROOT ?= $(shell cd .. && (pwd -W 2>/dev/null || pwd))
 
 # Export for docker-compose
 export VERSION
@@ -163,6 +165,10 @@ build-amxx: build-base seed-from-latest
 	@docker create --name ktp-extract-amxx ktp-amxx:$(VERSION) 2>/dev/null || true
 	@docker cp ktp-extract-amxx:/output/ktpamx/. $(ARTIFACTS_DIR)/ktpamx/
 	@docker rm ktp-extract-amxx 2>/dev/null || true
+	@# Record source SHA for staleness detection. See check-artifacts target.
+	@if [ -d "$(KTP_PROJECT_ROOT)/KTPAMXX/.git" ]; then \
+		git -C "$(KTP_PROJECT_ROOT)/KTPAMXX" rev-parse HEAD > $(ARTIFACTS_DIR)/ktpamx/SOURCE_SHA 2>/dev/null || true; \
+	fi
 	@$(MAKE) publish-latest
 	@echo "AMXX artifacts:"
 	@ls -laR $(ARTIFACTS_DIR)/ktpamx/
@@ -245,7 +251,7 @@ configure-names-dallas:
 # Local Development Targets
 # ============================================
 
-.PHONY: local-build build-data local-up local-up-full local-down local-logs local-clean
+.PHONY: local-build build-data local-up local-up-full local-down local-logs local-clean refresh refresh-local
 
 LOCAL_COMPOSE := docker compose -f docker-compose.local.yml
 
@@ -266,9 +272,33 @@ local-build:
 	@echo "Image built: ktp-gameserver:$(VERSION)"
 	@echo "Run 'make local-up' to start."
 
+# Check artifact freshness against sibling repo HEADs. Warns (does not fail)
+# when the baked KTPAMXX source SHA doesn't match the current working tree —
+# silent staleness has bitten us before (local tests against yesterday's code
+# while prod runs a post-canary binary). Runs automatically before local-up.
+.PHONY: check-artifacts
+check-artifacts:
+	@if [ -f "$(ARTIFACTS_LATEST)/ktpamx/SOURCE_SHA" ] && [ -d "$(KTP_PROJECT_ROOT)/KTPAMXX/.git" ]; then \
+		artifact_sha=$$(cat $(ARTIFACTS_LATEST)/ktpamx/SOURCE_SHA); \
+		current_sha=$$(git -C "$(KTP_PROJECT_ROOT)/KTPAMXX" rev-parse HEAD); \
+		if [ "$$artifact_sha" != "$$current_sha" ]; then \
+			echo ""; \
+			echo "WARNING: KTPAMXX artifacts are stale"; \
+			echo "  artifact:  $$artifact_sha"; \
+			echo "  current:   $$current_sha"; \
+			echo "  run 'make build-amxx' to refresh"; \
+			echo ""; \
+		fi; \
+	elif [ ! -f "$(ARTIFACTS_LATEST)/ktpamx/SOURCE_SHA" ]; then \
+		echo ""; \
+		echo "WARNING: no SOURCE_SHA in $(ARTIFACTS_LATEST)/ktpamx/"; \
+		echo "  artifacts predate staleness tracking — run 'make build-amxx' to refresh and record"; \
+		echo ""; \
+	fi
+
 # Start local game server(s) — game servers only, no data service.
 # Works on a fresh KTPInfrastructure checkout without needing any sibling repo.
-local-up:
+local-up: check-artifacts
 	@mkdir -p local/plugins
 	VERSION=$(VERSION) $(LOCAL_COMPOSE) up -d
 	@echo ""
@@ -295,7 +325,7 @@ build-data:
 # Start local game server(s) + data service (HUD Observer backend, HLTV proxies,
 # MySQL, HLStatsX stub). Requires the sibling DoD-hud-observer repo — set
 # DOD_HUD_PATH if it's not at ../DoD-hud-observer.
-local-up-full:
+local-up-full: check-artifacts
 	@mkdir -p local/plugins
 	@if [ -z "$${DOD_HUD_PATH:-../DoD-hud-observer}" ] || [ ! -d "$${DOD_HUD_PATH:-../DoD-hud-observer}" ]; then \
 		echo "ERROR: DoD-hud-observer not found at $${DOD_HUD_PATH:-../DoD-hud-observer}"; \
@@ -317,6 +347,56 @@ local-down:
 # Tail logs from local game server(s)
 local-logs:
 	VERSION=$(VERSION) $(LOCAL_COMPOSE) --profile full logs -f
+
+# One-shot refresh: rebuild all KTP components from current sibling source
+# trees, re-extract artifacts, and stamp SOURCE_SHA files for staleness
+# tracking. Use this instead of `make build` when you want a clean, auditable
+# build from the current working copies (no layer cache reuse).
+#
+# Does NOT rebuild the runtime game-server image or touch local stack state —
+# use `refresh-local` for that.
+refresh:
+	@echo "========================================"
+	@echo "Refreshing KTP artifacts from sibling source (no-cache)"
+	@echo "  KTP_PROJECT_ROOT=$(KTP_PROJECT_ROOT)"
+	@echo "  VERSION=$(VERSION)"
+	@echo "========================================"
+	@$(MAKE) build-base
+	$(COMPOSE) build --no-cache ktp-rehlds ktp-amxx ktp-reapi ktp-curl
+	$(COMPOSE) build --no-cache ktp-plugins
+	@$(MAKE) extract-artifacts
+	@# Stamp per-component SOURCE_SHA files so check-artifacts can detect drift
+	@for repo in KTPAMXX KTPReHLDS KTPReAPI KTPAmxxCurl; do \
+		case $$repo in \
+			KTPAMXX)     out=$(ARTIFACTS_DIR)/ktpamx/SOURCE_SHA ;; \
+			KTPReHLDS)   out=$(ARTIFACTS_DIR)/engine/SOURCE_SHA ;; \
+			KTPReAPI)    out=$(ARTIFACTS_DIR)/ktpamx/SOURCE_SHA_reapi ;; \
+			KTPAmxxCurl) out=$(ARTIFACTS_DIR)/ktpamx/SOURCE_SHA_curl ;; \
+		esac; \
+		if [ -d "$(KTP_PROJECT_ROOT)/$$repo/.git" ]; then \
+			git -C "$(KTP_PROJECT_ROOT)/$$repo" rev-parse HEAD > $$out 2>/dev/null || true; \
+		fi; \
+	done
+	@$(MAKE) publish-latest
+	@echo ""
+	@echo "========================================"
+	@echo "Refresh complete. Stamped SHAs:"
+	@for f in $(ARTIFACTS_DIR)/ktpamx/SOURCE_SHA* $(ARTIFACTS_DIR)/engine/SOURCE_SHA; do \
+		[ -f "$$f" ] && printf "  %-50s %s\n" "$$f" "$$(cat $$f)"; \
+	done
+	@echo "========================================"
+
+# Refresh artifacts AND rebuild the local runtime game-server image, then
+# restart the local stack. The reliable one-shot for "I just pulled KTPAMXX
+# and want to test my change in the local stack."
+refresh-local: refresh
+	@echo ""
+	@echo "Rebuilding local runtime image..."
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) build ktp-game-1
+	@echo ""
+	@echo "Bouncing local stack..."
+	VERSION=$(VERSION) $(LOCAL_COMPOSE) --profile full down 2>/dev/null || true
+	@$(MAKE) local-up-full
 
 # Remove local runtime image
 local-clean:
@@ -392,6 +472,10 @@ help:
 	@echo "  make configure-names - Configure server names (all clusters)"
 	@echo ""
 	@echo "Local development:"
+	@echo "  make refresh         - Rebuild all KTP components (no-cache) + stamp SOURCE_SHAs"
+	@echo "  make refresh-local   - refresh + rebuild runtime image + bounce local stack"
+	@echo "                         (runs compose down - anonymous volumes are wiped;"
+	@echo "                          named volumes are preserved)"
 	@echo "  make local-build     - Build runtime game server image"
 	@echo "  make build-data      - Build HUD Observer data image only (NO_CACHE=1 to force clean)"
 	@echo "  make local-up        - Start local game server(s) (game only)"
@@ -399,6 +483,7 @@ help:
 	@echo "  make local-down      - Stop local stack"
 	@echo "  make local-logs      - Tail logs"
 	@echo "  make local-clean     - Remove local runtime image"
+	@echo "  make check-artifacts - Warn if baked artifact SHA != sibling repo HEAD"
 	@echo ""
 	@echo "Utility:"
 	@echo "  make package-dod-base- Package base DoD files (maps, configs)"
