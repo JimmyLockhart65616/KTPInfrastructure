@@ -1,7 +1,17 @@
 # KTP Test Infrastructure Plan
 
-**Status:** Planning scoped 2026-04-24. Three open questions pending resolution (see bottom). Execution not yet started.
+**Status:** Planning scoped 2026-04-24. **Tier 3 Project 1 partially shipped 2026-04-25** as a side effect of KTPAdminBot Phase 8.2 work (see "Already shipped" section below). Tiers 1 + 2 not started. Three planning questions resolved at bottom.
 **Scope:** Three-tier test infrastructure across the KTP stack — build-time smoke tests, pre-deploy integration tests, and continuous production baseline monitoring.
+
+## Already shipped (overlaps with this plan)
+
+KTPAdminBot Phase 8.2 + 8.3 (2026-04-25) shipped infrastructure that overlaps with parts of this plan:
+
+- **`[KTP_PROFILE]` aggregation daemon** (Tier 3 Project 1) — exists at `/opt/ktp-profile-aggregator/` on the data server. Paramiko-tails 25 game-server logs on a **5-min cycle** (the plan called for 60s but 5 min is sufficient for v1), parses `[KTP_PROFILE]` + `[KTP_SPIKE_*]`, persists to MySQL. Watermark-driven (clean restart re-sync). **Real schema names:** `ktp_telemetry_metrics` + `ktp_telemetry_watermarks` (the plan's planned names — `profile_samples`, `profile_rollups_daily`, `spikes`, `spike_signatures`, `crashes`, `ingest_watermarks` — were aspirational and supersede the actual table names below).
+- **Ad-hoc query commands** — `/ops fps`, `/ops spikes`, `/ops pull-spikes` (AdminBot 8.2). Reads the aggregator's data on demand. Does **not** include auto-rollup + 2σ-deviation alerting; that piece of Tier 3 still needs to ship.
+- **Adjacent: `/ops versions`** (AdminBot 8.3) — md5sums engine + KTPAMXX binary + KTPMatchHandler.amxx fleet-wide via async SSH fan-out. **Not the same** as the Tier 2 prerequisite `amx_ktp_versions` rcon — `/ops versions` covers 3 specific files, `amx_ktp_versions` would be a per-plugin reporter that every plugin registers. The latter is still an open dependency for Tier 2.
+
+**What's still TODO in Tier 3:** auto-rollup + alerting on profile deviations, core-dump auto-reporter, `[KTP_SPIKE]` categorizer with new-signature alerts. ~40 hours remaining (down from the planned 60).
 
 ## Motivation
 
@@ -147,9 +157,9 @@ Strict flake rule: test failing twice in a row on unchanged main is quarantined 
 **Goal.** Detect performance regressions and crashes in production before users or manual log inspection do, using data the engine already emits.
 
 ### In scope for v1
-- **`[KTP_PROFILE]` aggregation daemon.** Paramiko-pull from fleet on 60s interval (parallelized via asyncio), tails each active log file since last watermark. Watermarks persist in `ktp_telemetry.ingest_watermarks` (per-server last-parsed timestamp) so daemon restarts re-sync cleanly. Parses profile lines, writes to `ktp_profile_samples`. Daily rollup computes per-server per-phase p50/p95/p99, diffs vs trailing-7-day median, alerts on >2σ deviation.
+- **`[KTP_PROFILE]` aggregation daemon.** ✅ **Partially shipped** as `/opt/ktp-profile-aggregator/` (AdminBot Phase 8.2, 2026-04-25). Paramiko-tails fleet on **5-min cycle**, parses `[KTP_PROFILE]` + `[KTP_SPIKE_*]`, persists to `ktp_telemetry_metrics` + `ktp_telemetry_watermarks`. Watermark-driven, clean restart re-sync. **Still TODO:** daily rollup computing per-server per-phase p50/p95/p99 + diff vs trailing-7-day median + alert on >2σ deviation routing to `#ktp-perf`.
 - **Core-dump auto-reporter.** 2026-04-22 core-dump infrastructure writes cores to known path. systemd path unit (or inotify watcher) per baremetal runs `gdb -batch -ex bt` on new cores, extracts top-20 frames, posts to Discord `#ktp-crashes` with server, binary, timestamp, top frame.
-- **`[KTP_SPIKE]` categorizer.** Parses spike lines, buckets by (phase, map, cause-if-detectable). Daily digest to Discord; **new categories (never-seen-before signature) get immediate alert**, not daily digest.
+- **`[KTP_SPIKE]` categorizer.** Parser already exists in the aggregator (sees the data). **Still TODO:** signature bucketing by (phase, map, cause-if-detectable), daily digest to Discord, immediate alert on never-seen-before signatures.
 
 ### Deferred to later
 - Real-time sub-minute alerting on profile deviations (daily rollup enough for v1)
@@ -158,22 +168,22 @@ Strict flake rule: test failing twice in a row on unchanged main is quarantined 
 - Memory growth tracking (separate concern, existing ad-hoc tooling)
 
 ### Tooling stack
-- **Language:** Python — matches existing `KTPInfrastructure/monitoring/ktp-server-monitor.py`, `profiling-report.py`, `scripts/*.py`.
-- **Storage:** MySQL on data server. New schema `ktp_telemetry` with tables: `profile_samples`, `profile_rollups_daily`, `spikes`, `spike_signatures`, `crashes`, `ingest_watermarks`.
-- **Scheduling:** cron on data server (already schedules `nightly_match_monitor.py` etc).
-- **CI host:** N/A — Tier 3 is a production daemon with its own deploy story via existing KTPInfrastructure deploy patterns.
+- **Language:** Python — matches existing `KTPInfrastructure/monitoring/ktp-server-monitor.py`, `profiling-report.py`, `scripts/*.py`, and the now-shipped aggregator at `/opt/ktp-profile-aggregator/`.
+- **Storage:** MySQL on data server. **Real schema:** `ktp_telemetry_metrics` (raw samples + parsed spike rows) + `ktp_telemetry_watermarks` (per-server-per-port last-parsed timestamps). The aspirational separate tables (`profile_samples`, `profile_rollups_daily`, `spikes`, `spike_signatures`, `crashes`) are not (and need not be) created — rollups will be SQL views/queries against `ktp_telemetry_metrics`; signatures + crashes get their own tables when those projects start.
+- **Scheduling:** systemd timer for the aggregator already in place. Daily rollup will be a separate cron (or systemd timer) when it ships.
+- **CI host:** N/A — Tier 3 is a production daemon with its own deploy story.
 
-### Project coverage order
-1. **`[KTP_PROFILE]` ingest + rollup + alert** — directly addresses cmd_ready 163ms regression. Highest ROI; data already exists (127k-sample baseline in `monitoring/fps_baselines/`).
-2. **Core-dump auto-reporter** — addresses HPAK class directly. Low LoC, high ops value.
-3. **`[KTP_SPIKE]` categorizer** — depends on (1)'s parser infrastructure.
+### Project coverage order (revised 2026-04-25)
+1. ✅ **`[KTP_PROFILE]` ingest** — shipped as AdminBot Phase 8.2. **Remaining:** rollup + alert on >2σ deviation. ~10-15 hours.
+2. **Core-dump auto-reporter** — addresses HPAK class directly. Low LoC, high ops value. ~10-15 hours, ~200 LoC.
+3. **`[KTP_SPIKE]` categorizer + new-signature alerts** — parser already exists in the aggregator; this layer adds bucketing + daily digest + immediate alert path. ~15 hours.
 
-### New infrastructure required
-- `KTPInfrastructure/monitoring/telemetry_ingest/` — Python package: `profile_parser.py`, `spike_parser.py`, `db_writer.py`, `rollup_daily.py`, `alert_router.py`.
-- MySQL schema migration (5 tables, applied manually).
-- systemd units for ingest daemon + rollup cron.
-- `KTPInfrastructure/monitoring/crashreporter/` — per-baremetal systemd path unit + `report_core.py`.
-- New Discord channels: `#ktp-perf` (digest + regressions), `#ktp-crashes` (cores + new spike signatures). Crashes are pager-level; perf is digest-level.
+### New infrastructure required (revised)
+- ~~`KTPInfrastructure/monitoring/telemetry_ingest/`~~ — superseded by `/opt/ktp-profile-aggregator/` (private repo, deployed via SFTP).
+- **Rollup query/script** layered on top of `ktp_telemetry_metrics` — daily systemd timer, computes p50/p95/p99 per (server, phase) over trailing 7 days, posts deviation alerts to `#ktp-perf`.
+- **`spike_signatures` + `crashes` tables** — added when those projects start, not earlier.
+- **`KTPInfrastructure/monitoring/crashreporter/`** — per-baremetal systemd path unit + `report_core.py` calling `gdb -batch -ex bt`.
+- **New Discord channels:** `#ktp-perf` (digest + regressions, info severity), `#ktp-crashes` (cores + new spike signatures, pager severity).
 
 ### Integration with workflow
 Passive. No workflow change. Complements Netdata (host metrics) vs. Tier 3 (engine-internal metrics).
@@ -185,8 +195,8 @@ Passive. No workflow change. Complements Netdata (host metrics) vs. Tier 3 (engi
 ### Rollout + maintenance
 Daemon owner = infra-on-call. Schema changes require PR + migration SQL. Alert thresholds tuned quarterly based on false-positive rate. Alerts with <1 true-positive per month get loosened.
 
-### Scope
-~2,000 LoC (parsers + rollup + crash reporter + alert router + SQL DDL). ~60 engineering hours to v1-complete.
+### Scope (revised 2026-04-25)
+~2,000 LoC originally planned. **Aggregator (~800 LoC, ~20h equivalent) shipped as Phase 8.2.** Remaining: rollup + alert (~400 LoC, ~12h), core-dump reporter (~200 LoC, ~12h), spike categorizer (~400 LoC, ~15h). **~40 hours remaining** (down from 60).
 
 ---
 
@@ -254,12 +264,13 @@ One Pawn concession: shared `ktp_version_reporter.inc` for `amx_ktp_versions` rc
 
 | Weeks | Track A (build/integration) | Track B (prod monitoring) |
 |---|---|---|
-| 1-2 | Tier 1 for KTPAmxxCurl (prevents 04-14 class) | Tier 3 profile ingest daemon |
-| 2-3 | — | Tier 3 baseline comparison + first alerts live |
+| ~~1-2~~ | ~~Tier 3 profile ingest daemon~~ ✅ shipped as AdminBot Phase 8.2 | |
+| 1-2 | Tier 1 for KTPAmxxCurl (prevents 04-14 class) | Tier 3 rollup + 2σ alert (`#ktp-perf`) |
+| 3-4 | — | Tier 3 core-dump auto-reporter (`#ktp-crashes`) |
 | 3-5 | Tier 1 for KTPMatchHandler + KTPAntiCheat | — |
-| 4-6 | — | Tier 3 core-dump reporter + spike categorizer |
-| 6-10 | Tier 2 scaffolding: live-version diagnostic → match-flow → AntiCheat integration | — |
-| 10-12 | Deploy verification integrated into 3 AM deploy | — |
+| 4-5 | — | Tier 3 spike categorizer + new-signature alerts |
+| 5-9 | Tier 2 scaffolding: live-version diagnostic → match-flow → AntiCheat integration | — |
+| 9-11 | Deploy verification integrated into 3 AM deploy | — |
 
 Tracks A and B are parallel (different skill areas — CI/C#/Python vs. Python/SQL/systemd). Single-dev could sequence as A→B instead.
 
@@ -267,17 +278,17 @@ Tier 2 last because it depends on Tier 1 build reliability + version diagnostic,
 
 ---
 
-## Scope totals
+## Scope totals (revised 2026-04-25)
 
-| Tier | LoC | Hours |
-|---|---|---|
-| Tier 1 | ~1,500 | ~40 |
-| Tier 2 | ~3,500 | ~120 |
-| Tier 3 | ~2,000 | ~60 |
-| Cross-cutting | ~300 | ~20 |
-| **Total** | **~7,300** | **~240** |
+| Tier | LoC planned | Hours planned | Shipped | Hours remaining |
+|---|---|---|---|---|
+| Tier 1 | ~1,500 | ~40 | — | ~40 |
+| Tier 2 | ~3,500 | ~120 | — | ~120 |
+| Tier 3 | ~2,000 | ~60 | aggregator (~800 LoC, ~20h) via AdminBot 8.2 | ~40 |
+| Cross-cutting | ~300 | ~20 | — | ~20 |
+| **Total** | **~7,300** | **~240** | **~20** | **~220** |
 
-~6 weeks focused solo, ~10-12 calendar weeks part-time alongside regular plugin development.
+~5.5 weeks focused solo, ~9-11 calendar weeks part-time alongside regular plugin development.
 
 ---
 
@@ -289,8 +300,8 @@ Runner co-located with ktp-ac-api / HLStatsX / etc. Systemd cgroup: `CPUQuota=50
 **Q2. Branch protection: Tier 1 blocks merges day 1, Tier 2 warn-only until 2 weeks of green-on-main, then flip to blocking.**
 Tier 1 is fast/simple/low-flake — blocking is fine immediately. Tier 2 is minutes-long/complex/high-flake initially — premature blocking causes "disable the integration test to merge urgent fix" antipatterns. Hotfix escape hatch: admin-only "merge without checks" in GitHub branch protection, used sparingly, logged in PR description. Tier 3 is production monitoring, not PR-gating — N/A.
 
-**Q3. Tier 3 log shipping: paramiko-pull with MySQL-persisted watermarks.**
-Single daemon on data server SSHes fleet on 60s interval, parallelized via asyncio, tails each active log file since last watermark. **Watermarks persist in MySQL** (`ktp_telemetry.ingest_watermarks` table, per-server last-parsed timestamp) — daemon restart mid-shift re-syncs cleanly without re-ingesting or gap. Migration path to fluent-bit-push if fleet grows past ~40 instances or sub-second freshness becomes a goal; ingest schema is shipper-agnostic.
+**Q3. Tier 3 log shipping: paramiko-pull with MySQL-persisted watermarks.** ✅ **Implemented 2026-04-25 as AdminBot Phase 8.2.**
+Daemon at `/opt/ktp-profile-aggregator/` SSHes fleet on a **5-minute** interval (revised from the planned 60s — sufficient for v1; sub-minute can be revisited if a regression hits faster than rollup catches it), parallelized via asyncio, tails each active log file since last watermark. **Watermarks persist in MySQL** (`ktp_telemetry_watermarks`, per-server-per-port last-parsed timestamp) — daemon restart mid-shift re-syncs cleanly without re-ingesting or gap. Migration path to fluent-bit-push if fleet grows past ~40 instances or sub-second freshness becomes a goal; ingest schema is shipper-agnostic.
 
 ---
 
@@ -300,4 +311,5 @@ Single daemon on data server SSHes fleet on 60s interval, parallelized via async
 - `KTPInfrastructure/scripts/README.md` — paramiko fleet patterns Tier 1 load-smoke and Tier 2 deploy-verification will reuse.
 - `KTPAmxxCurl/scripts/check_logs.py` — reference paramiko-tail pattern for Tier 3 log ingest.
 - `KTPInfrastructure/monitoring/ktp-server-monitor.py` — existing monitoring daemon; Tier 3 telemetry daemon should co-locate and share config.
-- `KTPInfrastructure/monitoring/fps_baselines/fleet_fps_2026-04-23_pre-jit.json` — 127k-sample starting baseline for Tier 3 profile comparison.
+- `KTPInfrastructure/monitoring/fps_baselines/fleet_fps_2026-04-23_pre-jit.json` + `fleet_fps_2026-04-25_post-jit.json` — pre/post-JIT baselines (127k + 138k samples) for Tier 3 profile comparison + rollup validation.
+- `/opt/ktp-profile-aggregator/` (data server) — actually-shipped aggregator daemon, private repo. Tier 3 rollup + alerting layer goes on top of its `ktp_telemetry_metrics` table.
