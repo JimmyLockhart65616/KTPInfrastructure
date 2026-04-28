@@ -131,12 +131,13 @@ jobs:
       # FAST PATH: minimal extra checkouts (cpp_module only)
       # AMX plugins compile inside the base image — no extra source needed.
       # ============================================================
-      - name: Checkout KTPAMXX (fast path, cpp_module headers)
+      - name: Checkout KTPAMXX (fast path, cpp_module headers — with submodules)
         if: ${{ inputs.use_base_image && inputs.under_test_kind == 'cpp_module' }}
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/KTPAMXX
           path: KTPAMXX
+          submodules: recursive
           token: ${{ secrets.ktp_checkout_token || github.token }}
 
       - name: Checkout KTPhlsdk (fast path, cpp_module headers)
@@ -158,13 +159,25 @@ jobs:
           path: KTPReHLDS
           token: ${{ secrets.ktp_checkout_token || github.token }}
 
-      - name: Checkout KTPAMXX (slow path)
+      - name: Checkout KTPAMXX (slow path, with submodules — public/amtl)
         if: ${{ !inputs.use_base_image && inputs.under_test_kind != 'cpp_module' }}
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/KTPAMXX
           path: KTPAMXX
+          submodules: recursive
           token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      # metamod-am is the AMXX build-time header dep (meta_api.h etc — needed
+      # at compile time even though KTP runs in extension mode and doesn't
+      # load metamod at runtime). Public alliedmodders repo, no token needed.
+      # See TODO.md "Vendor metamod-am headers" for the disentangle followup.
+      - name: Checkout metamod-am (slow path; alliedmodders/metamod-hl1)
+        if: ${{ !inputs.use_base_image }}
+        uses: actions/checkout@v4
+        with:
+          repository: alliedmodders/metamod-hl1
+          path: metamod-am
 
       - name: Checkout KTPReAPI (slow path)
         if: ${{ !inputs.use_base_image }}
