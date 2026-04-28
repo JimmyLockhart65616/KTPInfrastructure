@@ -1,6 +1,6 @@
 # KTP Test Infrastructure Plan
 
-**Status:** Planning scoped 2026-04-24. **Tier 3 Project 1 partially shipped 2026-04-25** as a side effect of KTPAdminBot Phase 8.2 work (see "Already shipped" section below). Tiers 1 + 2 not started. Three planning questions resolved at bottom.
+**Status:** Planning scoped 2026-04-24. **Tier 3 Project 1 partially shipped 2026-04-25** as a side effect of KTPAdminBot Phase 8.2 work (see "Already shipped" section below). **Tier 1 Session 1 — shared smoke harness — shipped 2026-04-26** (see Tier 1 section). Tier 2 not started. Three planning questions resolved at bottom.
 **Scope:** Three-tier test infrastructure across the KTP stack — build-time smoke tests, pre-deploy integration tests, and continuous production baseline monitoring.
 
 ## Already shipped (overlaps with this plan)
@@ -47,6 +47,25 @@ Seven production incidents in recent memory would have been caught earlier by sy
 ## Tier 1 — Fast smoke tests (build-time)
 
 **Goal.** Catch "it doesn't even load" regressions in <60s so CMake/include/symbol breakage never reaches staging.
+
+### Session 1 shipped 2026-04-26 — shared smoke harness
+
+`KTPInfrastructure/tests/smoke/` provides:
+- **`rcon.py`** — GoldSrc UDP rcon client (stdlib only). Wire format verified against `KTPReHLDS/rehlds/engine/sv_main.cpp` (challenge / SV_Rcon / SV_FlushRedirect with A2A_PRINT). Multi-packet response drain.
+- **`server_handle.py`** + **`boot.py`** + **`boot_subprocess.py`** — dual boot drivers. Compose path layered on existing `docker-compose.local.yml`; subprocess path runs hlds_linux directly with WSL trampoline on Windows. Same `ServerHandle` API.
+- **`parse.py`** — fixed-column parser keyed off KTPAMXX's `srvcmd.cpp` format strings (`%-23.22s %-11.10s %-20.19s %-11.10s` for modules; equivalent for plugins). Truncation-aware matcher (`%-12.11s` truncates filenames to 11 chars; matcher handles full-vs-truncated bidirectional with 8-char prefix floor).
+- **`asserts.py`** — `assert_modules_loaded(expected)`, `assert_plugins_running(expected)`, `assert_no_failed_modules`, `assert_no_failed_plugins`. Each names the offender on failure.
+- **`cli.py`** — `python -m tests.smoke.cli {wait-ready,rcon,assert-modules,assert-plugins,assert-no-failed}`. Exit `0` clean / `1` assertion / `2` infrastructure.
+- **`fixtures/test_server.cfg`** — minimal sv_lan boot config.
+- **`test_parse.py`** + **`test_asserts.py`** — 24 unit tests covering the risky paths (parser column drift, AMXX truncation, all four assertion functions on both green and red inputs). Green.
+- **`README.md`** — usage, layout, the truncation gotcha, the WSL DrvFs `_stat` gotcha for local-Windows live boot.
+
+**Live boot validation:** deferred to Session 2 CI run on `ubuntu-latest`. Local Windows path is blocked by WSL DrvFs incompatibility with hlds_linux (engine core-dumps on `_stat` of `liblist.gam` from `/mnt/n`). Docker compose path is the local workaround once Docker Desktop is up. Risk surface (parser correctness, assertion semantics) is covered by unit tests.
+
+**~6h spent of ~40h budget.** Remaining sessions:
+- Session 2 (~6-8h) — `KTPAmxxCurl/.github/workflows/smoke.yml` + shared `compile-amx` composite action. First live boot.
+- Session 3 (~10-12h) — KTPAntiCheat xUnit projects.
+- Session 4 (~8-10h) — config-parse pytest + branch protection wiring.
 
 ### In scope for v1
 - Plugin-load smoke for 3 highest-churn plugins: KTPMatchHandler, KTPAmxxCurl-dependent plugins (KTPMatchHandler, KTPHLTVRecorder), KTPCvarChecker.
@@ -282,11 +301,11 @@ Tier 2 last because it depends on Tier 1 build reliability + version diagnostic,
 
 | Tier | LoC planned | Hours planned | Shipped | Hours remaining |
 |---|---|---|---|---|
-| Tier 1 | ~1,500 | ~40 | — | ~40 |
+| Tier 1 | ~1,500 | ~40 | shared harness (~600 LoC + 24 tests, ~6h) Session 1 2026-04-26 | ~34 |
 | Tier 2 | ~3,500 | ~120 | — | ~120 |
 | Tier 3 | ~2,000 | ~60 | aggregator (~800 LoC, ~20h) via AdminBot 8.2 | ~40 |
 | Cross-cutting | ~300 | ~20 | — | ~20 |
-| **Total** | **~7,300** | **~240** | **~20** | **~220** |
+| **Total** | **~7,300** | **~240** | **~26** | **~214** |
 
 ~5.5 weeks focused solo, ~9-11 calendar weeks part-time alongside regular plugin development.
 

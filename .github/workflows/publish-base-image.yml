@@ -1,0 +1,217 @@
+# KTP Tier 1 — Publish runtime test-base image to GHCR
+#
+# Builds the same full-stack runtime image that smoke-callable.yml builds
+# from scratch on every run, but does it once per night and pushes to GHCR
+# so smoke runs can pull it instead of rebuilding.
+#
+# Per-smoke-run effect: ~12-20 min build → ~30 sec pull. ~75% reduction.
+#
+# Triggers:
+#   - Nightly at 04:30 UTC (~12:30 AM ET, well clear of the 3 AM ET fleet
+#     restart and any matchday traffic)
+#   - workflow_dispatch — for ad-hoc rebuilds when a base component lands
+#     a critical change that smoke needs to pick up immediately
+#
+# Output:
+#   ghcr.io/<owner>/ktp-runtime-test-base:latest
+#   ghcr.io/<owner>/ktp-runtime-test-base:<short-sha>
+#
+# Cost: GHCR storage. Each image is ~2 GB (HLDS DoD install + KTP overlays).
+# Default GitHub retention will accumulate over time — recommend manual
+# cleanup of old SHA tags every few months, or add a cleanup job (see
+# action-cleanup-package or actions/delete-package-versions).
+
+name: Publish runtime test-base image
+
+on:
+  schedule:
+    - cron: '30 4 * * *'   # 04:30 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Build + push ktp-runtime-test-base
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      VERSION: base
+      IMAGE: ghcr.io/${{ github.repository_owner }}/ktp-runtime-test-base
+
+    steps:
+      # --- Same 14-repo sibling checkout as smoke-callable.yml. The base
+      # image needs every component built so it's a complete drop-in for
+      # smoke runs.
+      - name: Checkout KTPInfrastructure
+        uses: actions/checkout@v4
+        with:
+          path: KTPInfrastructure
+
+      - name: Checkout KTPReHLDS
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPReHLDS
+          path: KTPReHLDS
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPAMXX
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPAMXX
+          path: KTPAMXX
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPReAPI
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPReAPI
+          path: KTPReAPI
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPhlsdk
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPhlsdk
+          path: KTPhlsdk
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPAmxxCurl
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPAmxxCurl
+          path: KTPAmxxCurl
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPMatchHandler
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPMatchHandler
+          path: KTPMatchHandler
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPHLTVRecorder
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPHLTVRecorder
+          path: KTPHLTVRecorder
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPCvarChecker
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPCvarChecker
+          path: KTPCvarChecker
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPFileChecker
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPFileChecker
+          path: KTPFileChecker
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPAdminAudit
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPAdminAudit
+          path: KTPAdminAudit
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPGrenades
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPGrenades
+          path: KTPGrenades
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPPracticeMode
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPPracticeMode
+          path: KTPPracticeMode
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      - name: Checkout KTPScoreTracker
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPScoreTracker
+          path: KTPScoreTracker
+          token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
+
+      # --- Strip external HudObserver same as smoke does. The base image
+      # mirrors what smoke runtime expects; including a missing-on-disk
+      # reference would mean every smoke run that uses the base would fire
+      # bad-load on HudObserver.
+      - name: Strip external-repo plugins
+        working-directory: KTPInfrastructure
+        run: |
+          if grep -q KTPHudObserver config/local/plugins.ini; then
+            sed -i '/KTPHudObserver/d' config/local/plugins.ini
+            echo "Stripped KTPHudObserver from plugins.ini"
+          fi
+
+      # --- Full build (engine + amxx + reapi + curl + plugins).
+      - name: Build all KTP components
+        working-directory: KTPInfrastructure
+        run: |
+          export KTP_PROJECT_ROOT="$(cd .. && pwd)"
+          make build VERSION="$VERSION"
+
+      # --- Build the runtime image with our just-built artifacts.
+      - name: Build runtime image
+        working-directory: KTPInfrastructure
+        run: |
+          export KTP_PROJECT_ROOT="$(cd .. && pwd)"
+          docker compose -f docker-compose.local.yml build ktp-game-1
+
+      # --- Push to GHCR. Two tags: `latest` (smoke pulls this) + the short
+      # commit SHA of KTPInfrastructure (so a regression can be pinned).
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag image
+        id: tag
+        run: |
+          SHORT_SHA="$(cd KTPInfrastructure && git rev-parse --short HEAD)"
+          # The compose build produces ktp-gameserver:base by default.
+          docker tag ktp-gameserver:base "$IMAGE:latest"
+          docker tag ktp-gameserver:base "$IMAGE:$SHORT_SHA"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "Tagged: $IMAGE:latest and $IMAGE:$SHORT_SHA"
+
+      - name: Push image
+        run: |
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${{ steps.tag.outputs.short_sha }}"
+          echo ""
+          echo "Pushed:"
+          echo "  $IMAGE:latest"
+          echo "  $IMAGE:${{ steps.tag.outputs.short_sha }}"
+
+      - name: Image size
+        run: docker image inspect "$IMAGE:latest" --format '{{ .Size }}' | numfmt --to=iec
+
+      # --- Cleanup: retain only the N most recent SHA-tagged versions of
+      # the package, plus `:latest` (always preserved). At ~2 GB per tag,
+      # this caps storage at ~20 GB.
+      #
+      # min-versions-to-keep covers PR validation / hotfix windows where
+      # the latest few builds are still actively referenced by smoke runs.
+      # Increase if you find smoke flakes from a freshly-pruned tag being
+      # pulled mid-run.
+      - name: Prune old package versions
+        if: ${{ !cancelled() && steps.tag.outcome == 'success' }}
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ktp-runtime-test-base
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: false

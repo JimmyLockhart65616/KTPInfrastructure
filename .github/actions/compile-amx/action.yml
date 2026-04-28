@@ -1,0 +1,133 @@
+name: Compile AMX plugin
+description: >-
+  Compile a single .sma source file using the KTPAMXX amxxpc compiler.
+  Assumes a sibling-checked-out KTPAMXX repo with `make build-amxx` already
+  run (so the amxxpc binary exists at obj-linux/packages/.../amxxpc).
+  Fails the action on any compile error; warnings are surfaced but do not
+  fail by default (configurable via `fail-on-warning`).
+
+  Used by per-plugin smoke workflows (KTPMatchHandler, KTPCvarChecker, etc.)
+  in KTP Tier 1 Session 3+. KTPAmxxCurl does NOT use this — that's a C++
+  module built via `make build-curl`, different path.
+
+inputs:
+  source-file:
+    description: Path to the .sma source file (relative to workspace root).
+    required: true
+  output-dir:
+    description: Directory to write the .amxx output into. Created if missing.
+    required: false
+    default: compiled
+  amxxpc-path:
+    description: >-
+      Path to the amxxpc binary. Defaults to the post-`make build-amxx` location
+      under a sibling-checked-out KTPAMXX. Override if your build laid it
+      somewhere else.
+    required: false
+    default: ${{ github.workspace }}/KTPAMXX/obj-linux/packages/base/addons/ktpamx/scripting/amxxpc
+  include-dirs:
+    description: >-
+      Comma-separated list of additional include directories. The KTPAMXX
+      core include dir (KTPAMXX/plugins/include) is always added; this input
+      is for plugin-local or shared-helper paths.
+    required: false
+    default: ''
+  fail-on-warning:
+    description: >-
+      Fail the action on any compile warning (not just errors). Recommended
+      for new plugin work where warnings indicate real issues; can be
+      disabled for legacy code under cleanup.
+    required: false
+    default: 'false'
+
+outputs:
+  output-file:
+    description: Path to the compiled .amxx file.
+    value: ${{ steps.compile.outputs.output-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Verify amxxpc exists
+      shell: bash
+      run: |
+        if [ ! -x "${{ inputs.amxxpc-path }}" ]; then
+          echo "::error::amxxpc not found or not executable at: ${{ inputs.amxxpc-path }}"
+          echo "Did the workflow run 'make build-amxx' first?"
+          exit 2
+        fi
+
+    - name: Compile
+      id: compile
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        SRC="${{ inputs.source-file }}"
+        OUT_DIR="${{ inputs.output-dir }}"
+        AMXXPC="${{ inputs.amxxpc-path }}"
+        EXTRA_INCLUDES="${{ inputs.include-dirs }}"
+        FAIL_ON_WARN="${{ inputs.fail-on-warning }}"
+
+        if [ ! -f "$SRC" ]; then
+          echo "::error::Source file not found: $SRC"
+          exit 2
+        fi
+
+        mkdir -p "$OUT_DIR"
+        BASENAME="$(basename "$SRC" .sma)"
+        OUTPUT="$OUT_DIR/${BASENAME}.amxx"
+
+        # Build include flags. The KTPAMXX core include dir is always present.
+        # Additional dirs (plugin-local helpers, shared includes) come from
+        # the input as a comma-separated list.
+        INCLUDE_ARGS=("-i$(dirname "$AMXXPC")/../include")
+        if [ -d "${{ github.workspace }}/KTPAMXX/plugins/include" ]; then
+          INCLUDE_ARGS+=("-i${{ github.workspace }}/KTPAMXX/plugins/include")
+        fi
+        if [ -n "$EXTRA_INCLUDES" ]; then
+          IFS=',' read -ra DIRS <<< "$EXTRA_INCLUDES"
+          for d in "${DIRS[@]}"; do
+            d_trimmed="$(echo "$d" | xargs)"
+            [ -n "$d_trimmed" ] && INCLUDE_ARGS+=("-i$d_trimmed")
+          done
+        fi
+
+        echo "amxxpc: $AMXXPC"
+        echo "source: $SRC"
+        echo "output: $OUTPUT"
+        echo "include args: ${INCLUDE_ARGS[*]}"
+
+        # Run amxxpc. Capture stdout+stderr both for grep + reporting.
+        LOG=$(mktemp)
+        if "$AMXXPC" "$SRC" -o"$OUTPUT" "${INCLUDE_ARGS[@]}" 2>&1 | tee "$LOG"; then
+          STATUS=0
+        else
+          STATUS=$?
+        fi
+
+        # amxxpc prints "Error:" / "warning:" lines for issues. Treat any error
+        # line as a failure regardless of exit code (defensive — older amxxpc
+        # builds occasionally exit 0 on parse errors).
+        ERRORS=$(grep -cE '^.*[Ee]rror:' "$LOG" || true)
+        WARNINGS=$(grep -cE '^.*[Ww]arning:' "$LOG" || true)
+
+        echo "errors=$ERRORS warnings=$WARNINGS exit=$STATUS"
+
+        if [ "$ERRORS" -gt 0 ] || [ "$STATUS" -ne 0 ]; then
+          echo "::error::amxxpc reported $ERRORS error(s) compiling $SRC"
+          exit 1
+        fi
+
+        if [ "$FAIL_ON_WARN" = "true" ] && [ "$WARNINGS" -gt 0 ]; then
+          echo "::error::amxxpc reported $WARNINGS warning(s); fail-on-warning is set"
+          exit 1
+        fi
+
+        if [ ! -f "$OUTPUT" ]; then
+          echo "::error::amxxpc reported success but produced no output at $OUTPUT"
+          exit 1
+        fi
+
+        echo "output-file=$OUTPUT" >> "$GITHUB_OUTPUT"
+        echo "Compiled $SRC -> $OUTPUT"

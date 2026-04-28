@@ -1,0 +1,44 @@
+# Tier 1 smoke-overlay Dockerfile.
+#
+# Takes a pre-built ktp-runtime-test-base image (from GHCR, built nightly by
+# .github/workflows/publish-base-image.yml) and overlays a single just-built
+# under-test artifact on top.
+#
+# The base image already has hlds_linux + KTPAMXX + every module + every
+# plugin baked in. This overlay just replaces ONE file with the version
+# the smoke run is actually testing.
+#
+# Build args:
+#   BASE_IMAGE     — full GHCR image ref (default: latest test-base)
+#   ARTIFACT_SRC   — host path to the just-built artifact (relative to
+#                    docker build context). Required.
+#   ARTIFACT_DST   — path inside the container where the artifact must
+#                    end up (e.g. /opt/hlds/dod/addons/ktpamx/modules/
+#                    amxxcurl_ktp_i386.so). Required.
+#
+# Example invocation:
+#   docker build \
+#     -f runtime/Dockerfile.smoke-overlay \
+#     --build-arg BASE_IMAGE=ghcr.io/owner/ktp-runtime-test-base:latest \
+#     --build-arg ARTIFACT_SRC=artifacts/ci/ktpamx/modules/amxxcurl_ktp_i386.so \
+#     --build-arg ARTIFACT_DST=/opt/hlds/dod/addons/ktpamx/modules/amxxcurl_ktp_i386.so \
+#     -t ktp-gameserver:smoke-overlay \
+#     .
+
+ARG BASE_IMAGE=ghcr.io/owner/ktp-runtime-test-base:latest
+FROM ${BASE_IMAGE}
+
+ARG ARTIFACT_SRC
+ARG ARTIFACT_DST
+
+# COPY refuses to interpolate ARG into its destination on its own — but
+# the destination CAN be a build-time arg if we resolve via shell. Use a
+# two-step shim: COPY into /tmp first, then move with shell-resolved dst.
+COPY ${ARTIFACT_SRC} /tmp/under-test-artifact
+
+RUN test -n "${ARTIFACT_DST}" || (echo "ARTIFACT_DST must be set" && exit 1) && \
+    mkdir -p "$(dirname "${ARTIFACT_DST}")" && \
+    mv /tmp/under-test-artifact "${ARTIFACT_DST}" && \
+    chmod +x "${ARTIFACT_DST}" 2>/dev/null || true
+
+# Inherits ENTRYPOINT, EXPOSE, etc from the base. No further changes needed.
