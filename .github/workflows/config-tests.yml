@@ -1,0 +1,56 @@
+# KTP Tier 1 — Fast config-parse pre-merge gate
+#
+# Runs the pytest suite in tests/config_parse/ against the committed
+# config/{local,online}/* tree. ~0.1s on a warm runner; intended as the
+# first gate in any merge — fails fast on a typo before the slow smoke
+# workflow even spins up Docker.
+#
+# Triggers narrowly: only when the configs OR the tests themselves
+# change. Pure refactors of unrelated code don't pay the round-trip.
+#
+# Catches:
+#   - Typo in plugins.ini / modules.ini referring to a non-existent file
+#   - Duplicate plugin entry
+#   - `debug` flag accidentally promoted to online (would kill JIT fleet-wide)
+#   - Missing required Discord / HLTV / dodserver.cfg keys
+#   - HLTV port outside the 27020-27044 production range
+#
+# This is also exposed as a reusable workflow (workflow_call) so per-project
+# repos that ship their own configs can pull it in.
+
+name: Tier 1 Config Tests
+
+on:
+  push:
+    paths:
+      - 'config/**'
+      - 'tests/config_parse/**'
+      - '.github/workflows/config-tests.yml'
+  pull_request:
+    paths:
+      - 'config/**'
+      - 'tests/config_parse/**'
+      - '.github/workflows/config-tests.yml'
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  config-tests:
+    name: Config parse + assertions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run config-parse tests
+        run: python -m pytest tests/config_parse/ -v --tb=short

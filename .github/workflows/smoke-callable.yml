@@ -1,0 +1,426 @@
+# KTP Tier 1 — Reusable smoke workflow
+#
+# Two paths to a booted, smoke-tested game server:
+#
+#   FAST PATH (default, use_base_image: true):
+#     Pull pre-built ghcr.io/<owner>/ktp-runtime-test-base:latest, build
+#     ONLY the under-test artifact, overlay it onto the base. ~3-5 min.
+#     Base image is rebuilt nightly by publish-base-image.yml.
+#
+#   SLOW PATH (use_base_image: false):
+#     Sibling-checkout 14 repos, run `make build` from scratch, build the
+#     full runtime image. ~12-20 min. Used as a fallback when the base
+#     image is missing or stale, OR for the publish-base-image.yml run
+#     itself (which can't pull what it's about to build).
+#
+# Caller chooses by setting under_test_kind:
+#   'cpp_module'  — KTPAmxxCurl-shape repo. Builds via `make ${make_build_target}`.
+#                   Needs a few extra repo checkouts (KTPAMXX, KTPhlsdk).
+#   'amx_plugin'  — Plugin-shape repo. Compiles via amxxpc inside the base
+#                   image, no extra checkouts needed.
+#
+# See KTPInfrastructure/tests/smoke/README.md and docs/CI_SETUP.md for
+# the design rationale, GHCR setup, and per-caller wiring.
+
+name: Tier 1 Smoke (callable)
+
+on:
+  workflow_call:
+    inputs:
+      under_test_label:
+        description: Display name of the change-under-test
+        required: true
+        type: string
+      under_test_kind:
+        description: "'cpp_module' or 'amx_plugin' — selects build path"
+        required: false
+        type: string
+        default: 'amx_plugin'
+      make_build_target:
+        description: "For cpp_module: which `make` target builds the artifact (e.g. 'build-curl')"
+        required: false
+        type: string
+        default: ''
+      amxx_source:
+        description: "For amx_plugin: path to .sma file relative to caller repo (e.g. 'KTPMatchHandler.sma')"
+        required: false
+        type: string
+        default: ''
+      artifact_host_path:
+        description: >-
+          Path on host (relative to workspace) where the just-built artifact
+          ends up. For cpp_module: e.g. `KTPInfrastructure/artifacts/ci/ktpamx/modules/amxxcurl_ktp_i386.so`.
+          For amx_plugin: e.g. `/tmp/under-test/KTPMatchHandler.amxx` (set by the
+          amx-build step itself; caller doesn't need to pass).
+        required: false
+        type: string
+        default: ''
+      artifact_container_path:
+        description: >-
+          Where in the runtime container the artifact must end up. Required for
+          fast path. Examples:
+            cpp_module: /opt/hlds/dod/addons/ktpamx/modules/amxxcurl_ktp_i386.so
+            amx_plugin: /opt/hlds/dod/addons/ktpamx/plugins/KTPMatchHandler.amxx
+        required: false
+        type: string
+        default: ''
+      use_base_image:
+        description: Use the GHCR base image fast path (default true)
+        required: false
+        type: boolean
+        default: true
+      assert_module:
+        description: Module name to assert loaded (truncation-aware match)
+        required: false
+        type: string
+        default: ''
+      assert_plugin:
+        description: Plugin name to assert running (truncation-aware match)
+        required: false
+        type: string
+        default: ''
+      caller_repo_path:
+        description: >-
+          Path under workspace where the caller's repo should be checked out
+          (e.g. `KTPAmxxCurl`). Defaults to ${{ github.event.repository.name }}.
+        required: false
+        type: string
+        default: ''
+    secrets:
+      ktp_checkout_token:
+        description: PAT for cross-repo checkout (required for private KTP repos)
+        required: false
+
+jobs:
+  smoke:
+    name: ${{ inputs.under_test_label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+
+    env:
+      VERSION: ci
+      RCON_PASSWORD: changeme
+      BASE_IMAGE: ghcr.io/${{ github.repository_owner }}/ktp-runtime-test-base:latest
+      CALLER_REPO_DIR: ${{ inputs.caller_repo_path != '' && inputs.caller_repo_path || github.event.repository.name }}
+
+    steps:
+      # ============================================================
+      # ALWAYS: caller repo + KTPInfrastructure + Python
+      # ============================================================
+      - name: Checkout caller repo (under test)
+        uses: actions/checkout@v4
+        with:
+          path: ${{ inputs.caller_repo_path != '' && inputs.caller_repo_path || github.event.repository.name }}
+
+      - name: Checkout KTPInfrastructure
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPInfrastructure
+          path: KTPInfrastructure
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # ============================================================
+      # FAST PATH: minimal extra checkouts (cpp_module only)
+      # AMX plugins compile inside the base image — no extra source needed.
+      # ============================================================
+      - name: Checkout KTPAMXX (fast path, cpp_module headers)
+        if: ${{ inputs.use_base_image && inputs.under_test_kind == 'cpp_module' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPAMXX
+          path: KTPAMXX
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPhlsdk (fast path, cpp_module headers)
+        if: ${{ inputs.use_base_image && inputs.under_test_kind == 'cpp_module' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPhlsdk
+          path: KTPhlsdk
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      # ============================================================
+      # SLOW PATH: full 14-repo sibling checkout
+      # ============================================================
+      - name: Checkout KTPReHLDS (slow path)
+        if: ${{ !inputs.use_base_image }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPReHLDS
+          path: KTPReHLDS
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPAMXX (slow path)
+        if: ${{ !inputs.use_base_image && inputs.under_test_kind != 'cpp_module' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPAMXX
+          path: KTPAMXX
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPReAPI (slow path)
+        if: ${{ !inputs.use_base_image }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPReAPI
+          path: KTPReAPI
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPhlsdk (slow path)
+        if: ${{ !inputs.use_base_image && inputs.under_test_kind != 'cpp_module' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPhlsdk
+          path: KTPhlsdk
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPAmxxCurl (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPAmxxCurl' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPAmxxCurl
+          path: KTPAmxxCurl
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPMatchHandler (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPMatchHandler' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPMatchHandler
+          path: KTPMatchHandler
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPHLTVRecorder (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPHLTVRecorder' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPHLTVRecorder
+          path: KTPHLTVRecorder
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPCvarChecker (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPCvarChecker' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPCvarChecker
+          path: KTPCvarChecker
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPFileChecker (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPFileChecker' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPFileChecker
+          path: KTPFileChecker
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPAdminAudit (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPAdminAudit' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPAdminAudit
+          path: KTPAdminAudit
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPGrenades (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPGrenades' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPGrenades
+          path: KTPGrenades
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPPracticeMode (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPPracticeMode' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPPracticeMode
+          path: KTPPracticeMode
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      - name: Checkout KTPScoreTracker (slow path)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPScoreTracker' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/KTPScoreTracker
+          path: KTPScoreTracker
+          token: ${{ secrets.ktp_checkout_token || github.token }}
+
+      # ============================================================
+      # ALWAYS: strip HudObserver (lives in external repo, not built here)
+      # Both paths' runtime configs reference it; both need it stripped.
+      # ============================================================
+      - name: Strip external-repo plugins from smoke profile
+        working-directory: KTPInfrastructure
+        run: |
+          if grep -q KTPHudObserver config/local/plugins.ini; then
+            sed -i '/KTPHudObserver/d' config/local/plugins.ini
+            echo "Stripped KTPHudObserver from plugins.ini"
+          fi
+
+      # ============================================================
+      # FAST PATH: pull base image, build under-test, overlay
+      # ============================================================
+      - name: Log in to GHCR
+        if: ${{ inputs.use_base_image }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull base image
+        if: ${{ inputs.use_base_image }}
+        run: docker pull "$BASE_IMAGE"
+
+      - name: Compile AMX plugin against base image
+        if: ${{ inputs.use_base_image && inputs.under_test_kind == 'amx_plugin' }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/under-test
+          SRC="${{ inputs.amxx_source }}"
+          if [ -z "$SRC" ]; then
+            echo "::error::amx_plugin path requires `amxx_source` input"
+            exit 2
+          fi
+          # Run amxxpc INSIDE the base image. Includes for KTPAMXX core +
+          # ktp_discord.inc etc. live at /opt/hlds/dod/addons/ktpamx/scripting/include
+          # and amxxpc auto-searches there. Plugin-local include/ dir mounted
+          # alongside if present.
+          INCLUDES_ARG=""
+          if [ -d "${CALLER_REPO_DIR}/include" ]; then
+            INCLUDES_ARG="-i/work/include"
+          fi
+          BASENAME="$(basename "$SRC" .sma)"
+          docker run --rm \
+            -v "${PWD}/${CALLER_REPO_DIR}:/work:ro" \
+            -v /tmp/under-test:/output \
+            --entrypoint bash \
+            "$BASE_IMAGE" \
+            -c "cd /opt/hlds/dod/addons/ktpamx/scripting && \
+                ./amxxpc /work/${SRC} ${INCLUDES_ARG} -o/output/${BASENAME}.amxx"
+          echo "ARTIFACT_HOST_PATH=/tmp/under-test/${BASENAME}.amxx" >> "$GITHUB_ENV"
+
+      - name: Build C++ module
+        if: ${{ inputs.use_base_image && inputs.under_test_kind == 'cpp_module' }}
+        working-directory: KTPInfrastructure
+        run: |
+          set -euo pipefail
+          TARGET="${{ inputs.make_build_target }}"
+          if [ -z "$TARGET" ]; then
+            echo "::error::cpp_module path requires `make_build_target` input"
+            exit 2
+          fi
+          export KTP_PROJECT_ROOT="$(cd .. && pwd)"
+          make build-base "$TARGET" VERSION="$VERSION"
+          ARTIFACT="${{ inputs.artifact_host_path }}"
+          if [ -z "$ARTIFACT" ]; then
+            echo "::error::cpp_module path requires `artifact_host_path` input"
+            exit 2
+          fi
+          if [ ! -f "../$ARTIFACT" ]; then
+            echo "::error::artifact not found at ../$ARTIFACT after $TARGET"
+            exit 1
+          fi
+          echo "ARTIFACT_HOST_PATH=$ARTIFACT" >> "$GITHUB_ENV"
+
+      - name: Build smoke overlay image
+        if: ${{ inputs.use_base_image }}
+        run: |
+          set -euo pipefail
+          if [ -z "${{ inputs.artifact_container_path }}" ]; then
+            echo "::error::fast path requires `artifact_container_path` input"
+            exit 2
+          fi
+          # The artifact is at $ARTIFACT_HOST_PATH (set by the build step
+          # above). Resolve to a path relative to the docker context root
+          # (workspace).
+          ART="${ARTIFACT_HOST_PATH}"
+          if [ ! -f "$ART" ]; then
+            ART="${GITHUB_WORKSPACE}/$ART"
+          fi
+          # Copy into a known location in the workspace so docker build
+          # can see it (build context = workspace).
+          mkdir -p "${GITHUB_WORKSPACE}/.smoke-artifact"
+          cp "$ART" "${GITHUB_WORKSPACE}/.smoke-artifact/payload"
+          docker build \
+            -f "${GITHUB_WORKSPACE}/KTPInfrastructure/runtime/Dockerfile.smoke-overlay" \
+            --build-arg BASE_IMAGE="$BASE_IMAGE" \
+            --build-arg ARTIFACT_SRC=.smoke-artifact/payload \
+            --build-arg ARTIFACT_DST="${{ inputs.artifact_container_path }}" \
+            -t "ktp-gameserver:$VERSION" \
+            "${GITHUB_WORKSPACE}"
+
+      # ============================================================
+      # SLOW PATH: full make build + runtime image build
+      # ============================================================
+      - name: Build all KTP components (slow path)
+        if: ${{ !inputs.use_base_image }}
+        working-directory: KTPInfrastructure
+        run: |
+          export KTP_PROJECT_ROOT="$(cd .. && pwd)"
+          echo "KTP_PROJECT_ROOT=$KTP_PROJECT_ROOT"
+          ls -la "$KTP_PROJECT_ROOT"
+          make build VERSION="$VERSION"
+
+      - name: Build runtime image (slow path)
+        if: ${{ !inputs.use_base_image }}
+        working-directory: KTPInfrastructure
+        run: |
+          export KTP_PROJECT_ROOT="$(cd .. && pwd)"
+          docker compose -f docker-compose.local.yml build ktp-game-1
+
+      # ============================================================
+      # ALWAYS: boot, smoke, diagnostics, teardown
+      # docker-compose.local.yml is configured to use ktp-gameserver:${VERSION}.
+      # Both paths produced ktp-gameserver:ci above, so --no-build picks it up.
+      # ============================================================
+      - name: Boot ktp-game-1 container
+        working-directory: KTPInfrastructure
+        run: |
+          export KTP_PROJECT_ROOT="$(cd .. && pwd)"
+          docker compose -f docker-compose.local.yml up -d --no-build ktp-game-1
+
+      - name: Wait for server rcon-ready
+        working-directory: KTPInfrastructure
+        run: python -m tests.smoke.cli wait-ready --port 27016 --rcon-password "$RCON_PASSWORD" --timeout 120
+
+      - name: Assert no failed modules or plugins
+        working-directory: KTPInfrastructure
+        run: python -m tests.smoke.cli assert-no-failed --port 27016 --rcon-password "$RCON_PASSWORD"
+
+      - name: Assert module loaded
+        if: ${{ inputs.assert_module != '' }}
+        working-directory: KTPInfrastructure
+        run: python -m tests.smoke.cli assert-modules --port 27016 --rcon-password "$RCON_PASSWORD" --expect "${{ inputs.assert_module }}"
+
+      - name: Assert plugin running
+        if: ${{ inputs.assert_plugin != '' }}
+        working-directory: KTPInfrastructure
+        run: python -m tests.smoke.cli assert-plugins --port 27016 --rcon-password "$RCON_PASSWORD" --expect "${{ inputs.assert_plugin }}"
+
+      - name: Container logs on failure
+        if: failure()
+        working-directory: KTPInfrastructure
+        run: docker compose -f docker-compose.local.yml logs --tail 400 --no-color ktp-game-1
+
+      - name: Live amxx state on failure
+        if: failure()
+        working-directory: KTPInfrastructure
+        continue-on-error: true
+        run: |
+          python -m tests.smoke.cli rcon "amxx modules" --port 27016 --rcon-password "$RCON_PASSWORD" || true
+          python -m tests.smoke.cli rcon "amxx plugins" --port 27016 --rcon-password "$RCON_PASSWORD" || true
+
+      - name: Tear down
+        if: always()
+        working-directory: KTPInfrastructure
+        run: docker compose -f docker-compose.local.yml down -v
