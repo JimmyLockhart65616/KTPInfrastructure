@@ -158,13 +158,25 @@ class PluginParserTests(unittest.TestCase):
 
 class NormalisationTests(unittest.TestCase):
     def test_module_name_strips_so_suffix(self):
-        self.assertEqual(normalise_module_name("amxxcurl_ktp_i386.so"), "amxxcurl")
+        # Filename forms canonicalise to the bare identity; `amxx` is
+        # stripped as a vendor-wrapper token so amxxcurl → curl.
+        self.assertEqual(normalise_module_name("amxxcurl_ktp_i386.so"), "curl")
         self.assertEqual(normalise_module_name("reapi_ktp_i386.so"), "reapi")
         self.assertEqual(normalise_module_name("dodx_ktp_i386.so"), "dodx")
 
     def test_module_name_idempotent(self):
-        self.assertEqual(normalise_module_name("amxxcurl"), "amxxcurl")
-        self.assertEqual(normalise_module_name("AmxxCurl_ktp"), "amxxcurl")
+        # Different surface forms of the same module canonicalise the same way.
+        self.assertEqual(normalise_module_name("amxxcurl"), "curl")
+        self.assertEqual(normalise_module_name("AmxxCurl_ktp"), "curl")
+        self.assertEqual(normalise_module_name("curl"), "curl")
+
+    def test_module_name_handles_display_format(self):
+        """KTPAMXX `amx modules` rcon output uses `KTP <X> AMXX` display
+        names. These should canonicalise to the same key as the filename."""
+        self.assertEqual(normalise_module_name("KTP CURL AMXX"), "curl")
+        self.assertEqual(normalise_module_name("DoDX"), "dodx")
+        self.assertEqual(normalise_module_name("ReAPI"), "reapi")
+        self.assertEqual(normalise_module_name("FakeMeta"), "fakemeta")
 
     def test_plugin_name_strips_amxx_and_normalises_spaces(self):
         self.assertEqual(normalise_plugin_name("KTPMatchHandler.amxx"), "ktpmatchhandler")
