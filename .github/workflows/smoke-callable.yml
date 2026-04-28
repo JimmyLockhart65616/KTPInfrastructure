@@ -268,17 +268,20 @@ jobs:
           path: KTPScoreTracker
           token: ${{ secrets.ktp_checkout_token || github.token }}
 
-      # ============================================================
-      # ALWAYS: strip HudObserver (lives in external repo, not built here)
-      # Both paths' runtime configs reference it; both need it stripped.
-      # ============================================================
-      - name: Strip external-repo plugins from smoke profile
-        working-directory: KTPInfrastructure
-        run: |
-          if grep -q KTPHudObserver config/local/plugins.ini; then
-            sed -i '/KTPHudObserver/d' config/local/plugins.ini
-            echo "Stripped KTPHudObserver from plugins.ini"
-          fi
+      # KTPHudObserver lives in an external repo (JimmyLockhart65616/DoD-hud-
+      # observer). First-class member of the smoke runtime — built into the
+      # GHCR base image alongside KTP plugins; the slow path also needs the
+      # source on disk so `make build-plugins` compiles it.
+      # Skip when the caller IS HudObserver — its own checkout placed source
+      # at CALLER_REPO_DIR (default = github.event.repository.name, which
+      # would be "DoD-hud-observer", or KTPHudObserver if caller_repo_path
+      # was set explicitly to align with the local convention).
+      - name: Checkout KTPHudObserver (slow path; JimmyLockhart65616/DoD-hud-observer)
+        if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPHudObserver' && env.CALLER_REPO_DIR != 'DoD-hud-observer' }}
+        uses: actions/checkout@v4
+        with:
+          repository: JimmyLockhart65616/DoD-hud-observer
+          path: KTPHudObserver
 
       # ============================================================
       # FAST PATH: pull base image, build under-test, overlay

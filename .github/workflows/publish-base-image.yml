@@ -154,17 +154,15 @@ jobs:
           path: KTPScoreTracker
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
-      # --- Strip external HudObserver same as smoke does. The base image
-      # mirrors what smoke runtime expects; including a missing-on-disk
-      # reference would mean every smoke run that uses the base would fire
-      # bad-load on HudObserver.
-      - name: Strip external-repo plugins
-        working-directory: KTPInfrastructure
-        run: |
-          if grep -q KTPHudObserver config/local/plugins.ini; then
-            sed -i '/KTPHudObserver/d' config/local/plugins.ini
-            echo "Stripped KTPHudObserver from plugins.ini"
-          fi
+      # KTPHudObserver lives in an external repo (JimmyLockhart65616/DoD-hud-
+      # observer). First-class member of the smoke runtime — built into the
+      # base image alongside KTP plugins, listed in config/local/plugins.ini.
+      # Public alliedmodders-style repo, no token needed.
+      - name: Checkout KTPHudObserver (JimmyLockhart65616/DoD-hud-observer)
+        uses: actions/checkout@v4
+        with:
+          repository: JimmyLockhart65616/DoD-hud-observer
+          path: KTPHudObserver
 
       # --- Full build (engine + amxx + reapi + curl + plugins).
       - name: Build all KTP components

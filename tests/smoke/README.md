@@ -172,6 +172,7 @@ workflow checks out each repo into the runner's workspace root:
 | `KTPReAPI/` | engine bridge | reapi module |
 | `KTPhlsdk/` | sdk | header dependency |
 | `KTPMatchHandler/`, `KTPHLTVRecorder/`, `KTPCvarChecker/`, `KTPFileChecker/`, `KTPAdminAudit/`, `KTPGrenades/`, `KTPPracticeMode/`, `KTPScoreTracker/` | plugins | compiled into runtime by `make build-plugins` |
+| `KTPHudObserver/` | plugin (external — checked out from `JimmyLockhart65616/DoD-hud-observer`) | compiled into runtime alongside KTP plugins; first-class smoke runtime member |
 
 ### Auth for cross-repo checkout
 

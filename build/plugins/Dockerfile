@@ -25,6 +25,10 @@ COPY KTPFileChecker /build/plugins/KTPFileChecker
 COPY KTPAdminAudit /build/plugins/KTPAdminAudit
 COPY KTPGrenades /build/plugins/KTPGrenades
 COPY KTPPracticeMode /build/plugins/KTPPracticeMode
+# KTPHudObserver source lives in JimmyLockhart65616/DoD-hud-observer
+# (external repo, separate maintainer). Workflows check it out to the
+# local path `KTPHudObserver/` so this COPY finds it.
+COPY KTPHudObserver /build/plugins/KTPHudObserver
 
 # AMXX stock plugins pulled from KTPAMXX source tree — prod load order
 # lists admin.amxx (admin flag infrastructure) and stats_logging.amxx
@@ -82,6 +86,7 @@ compile_plugin "KTPAdminAudit" "KTPAdminAudit" "KTPAdminAudit.sma"\n\
 compile_plugin "KTPGrenades" "KTPGrenadeLoadout" "KTPGrenadeLoadout.sma"\n\
 compile_plugin "KTPGrenades" "KTPGrenadeDamage" "KTPGrenadeDamage.sma"\n\
 compile_plugin "KTPPracticeMode" "KTPPracticeMode" "KTPPracticeMode.sma"\n\
+compile_plugin "KTPHudObserver" "KTPHudObserver" "KTPHudObserver.sma"\n\
 \n\
 # AMXX stock plugins (compiled from KTPAMXX source — see above)\n\
 compile_plugin "amxx-stock" "admin" "admin.sma"\n\
