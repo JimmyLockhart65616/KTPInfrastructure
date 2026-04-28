@@ -171,15 +171,40 @@ def _slice_fixed(body: str, widths: list[int]) -> list[str] | None:
 
 
 def normalise_module_name(name: str) -> str:
-    """Strip platform suffixes so `amxxcurl_ktp_i386.so`, `amxxcurl_ktp`, and
-    `amxxcurl` all match. Kept conservative — only strips well-known endings."""
+    """Canonicalise an AMXX module identity across filename / display-name flavours.
+
+    The same module shows up as different strings in different places:
+      filename: `amxxcurl_ktp_i386.so`
+      bare:     `amxxcurl`
+      AMXX display name (rcon output): `KTP CURL AMXX`
+
+    All three should map to the same key `curl` so callers can pass any
+    of them to assert_modules_loaded(expected=...). The strip rules:
+
+    1. Lowercase
+    2. Drop platform/build suffixes: `_i386.so`, `_amd64.so`, `.so`, `.dll`,
+       `_i386`, `_amd64`, `_ktp`
+    3. Tokenise on whitespace / punctuation
+    4. Within each token, strip `amxx` and `ktp` substrings (these are the
+       "vendor wrapper" tokens that AMXX uses in display names but aren't
+       part of the underlying module identity)
+    5. Concatenate the surviving tokens
+    """
+    import re
     n = name.lower()
-    for suffix in ("_i386.so", "_amd64.so", ".so", ".dll"):
+    for suffix in ("_i386.so", "_amd64.so", ".so", ".dll", "_i386", "_amd64", "_ktp"):
         if n.endswith(suffix):
             n = n[: -len(suffix)]
-    if n.endswith("_ktp"):
-        n = n[: -len("_ktp")]
-    return n
+    tokens = re.split(r'[\s\-_/]+', n)
+    cleaned = []
+    for t in tokens:
+        # Strip 'amxx' and 'ktp' substrings inside the token — handles
+        # 'amxxcurl' → 'curl' and 'curl' → 'curl' (idempotent).
+        for noise in ("amxx", "ktp"):
+            t = t.replace(noise, "")
+        if t:
+            cleaned.append(t)
+    return "".join(cleaned)
 
 
 def normalise_plugin_name(name: str) -> str:
