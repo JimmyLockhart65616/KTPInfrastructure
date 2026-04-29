@@ -2151,7 +2151,9 @@ Each game server should have a 1:1 pairing with an HLTV instance. 25 game server
 
 ### Admin Infrastructure (added April 2026)
 
-Three components launched April 2026 forming a separate admin/ops tier that runs alongside the game stack. **All three live in private repos** — see their respective in-repo documentation for design and implementation specifics.
+Four components launched April 2026 forming a separate admin/ops tier that runs alongside the game stack. The first three (KTPAntiCheat, KTPAdminBot, KTPProfileAggregator) live in private repos — see their respective in-repo documentation for design and implementation specifics. The fourth (KTPCrashReporter) ships in-tree under `monitoring/crashreporter/` since it's a thin gdb wrapper with no IP worth siloing.
+
+**Friendly-alias convention.** Across this tier, fleet hosts are referenced by their **region-3 + instance** shorthand: `ATL1...ATL5`, `DAL1...DAL5`, `DEN1...DEN5`, `NY1...NY5`, `CHI1...CHI5`. The mapping is `<region-code>{port - 27014}`. Region codes: `atlanta → ATL`, `dallas → DAL`, `denver → DEN`, `newyork → NY`, `chicago → CHI`. This shorthand was already in use in `match_id` (`{unix_ts}-ATL5`), is the canonical embed key for `ktp-crashreporter` (`ATL3 (74.91.121.9:27017) — SIGSEGV in Mem_Free`), and is the operator vernacular ("ATL3 just died") — KTPAdminBot's `/ops` cog migrates to it incrementally so all admin-facing surfaces speak the same language.
 
 #### KTPAntiCheat
 
@@ -2187,6 +2189,35 @@ Standalone metrics aggregator daemon on the data server. Consumes engine-emitted
 - **Cycle:** 5-minute paramiko-pull from each game-server log
 - **Schema:** `ktp_telemetry_metrics` + `ktp_telemetry_watermarks` (the latter for clean restart re-sync without gaps)
 - **Distinct from** the existing `ktp-server-monitor.py` cron — that polls RCON `stats` every minute for runtime stats; KTPProfileAggregator handles engine-emitted profiler/spike lines
+
+---
+
+#### KTPCrashReporter
+
+Per-host inotify watcher + gdb wrapper that turns kernel-emitted core dumps into Discord embeds in `#ktp-crashes`. Runs as `ktp-crashreporter.service` on every game host (5 hosts × one service). The pre-condition (`kernel.core_pattern = /tmp/core.%e.%p.%t`) was set fleet-wide 2026-04-22 and persisted in `/etc/sysctl.d/99-ktp-coredump.conf`.
+
+- **Path in this repo:** `monitoring/crashreporter/` — Python daemon (`report_core.py`), systemd unit, install script, Discord-embed schema, README
+- **Trigger:** new `core.*` file appears in `/tmp` → inotify wakes the daemon
+- **Discord post:** embed with the friendly-alias header (e.g. `ATL3 (74.91.121.9:27017) — SIGSEGV in Mem_Free`), top-20 backtrace, signal name, gdb command line. Posted via the Discord Relay's `/reply` endpoint with `X-Relay-Auth`. `@here` ping on first crash per server-alias per hour; subsequent crashes within the cooldown post silently
+- **Sidecar files:** `*.bt` (full `gdb -batch` output: `bt`, `thread apply all bt`, `info registers`, `info proc mappings` — for deep dives) and `*.reported` (JSON state — alias, port, signal, top frame, post status; consumable by future MySQL trend ingestion)
+- **The core itself is preserved** — never deleted by the reporter. Run `gdb hlds_linux /tmp/core.hlds_linux.<pid>.<ts>` interactively for any deeper analysis
+
+To run gdb on a saved core yourself (after the embed has surfaced):
+
+```bash
+ssh dodserver@<host>
+gdb -q ~/dod-<port>/serverfiles/hlds_linux /tmp/core.hlds_linux.<pid>.<ts>
+(gdb) bt
+(gdb) thread apply all bt
+(gdb) info registers
+```
+
+Install on a single host (idempotent — re-run anytime to update the daemon binary + service unit):
+
+```bash
+sudo ./monitoring/crashreporter/install.sh                # auto-detects region from primary IP
+sudo ./monitoring/crashreporter/install.sh --region ATL   # override
+```
 
 ---
 

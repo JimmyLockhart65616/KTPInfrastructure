@@ -1006,7 +1006,9 @@ All 9 .amxx files compile clean and are locally staged. Production deploy held t
 
 ## New Components — April 2026
 
-Three new repositories joined the stack this month. **All three are private repos** — what follows is a high-level acknowledgement; design and implementation specifics live in their respective in-repo documentation.
+Four new components joined the stack this month, forming a separate admin/ops tier alongside the game stack. The first three (KTPAntiCheat, KTPAdminBot, KTPProfileAggregator) are **private repos** — what follows is a high-level acknowledgement; design and implementation specifics live in their respective in-repo documentation. The fourth (KTPCrashReporter) ships in-tree under this repo's `monitoring/crashreporter/`.
+
+A friendly-alias convention (`ATL1...CHI5`) was formalized this month across the admin tier — already in use in `match_id` formatting, adopted as the canonical embed key for KTPCrashReporter, and migrating into KTPAdminBot's `/ops` cog. See `TECHNICAL_GUIDE.md` § Admin Infrastructure for the mapping.
 
 ### KTPAntiCheat
 
@@ -1019,6 +1021,10 @@ Discord admin/ops bot. Python / discord.py 2.x. Runs on the data server as a sys
 ### KTPProfileAggregator
 
 Metrics aggregator daemon on the data server that paramiko-tails fleet console logs every 5 min, parses engine-emitted profiler data, and persists to MySQL for downstream querying. Implementation lives in its private repo. Distinct from the existing `ktp-server-monitor.py` cron (which polls RCON `stats` per minute) — different data source, different cadence.
+
+### KTPCrashReporter
+
+Per-host inotify watcher + `gdb` wrapper that turns kernel-emitted core dumps into Discord embeds in `#ktp-crashes`. Lives in this repo at `monitoring/crashreporter/` (no separate repo — it's a thin gdb wrapper with no IP worth siloing). Runs as `ktp-crashreporter.service` on every game host, fleet-deployed 2026-04-22 in conjunction with the fleet-wide `kernel.core_pattern` change. Adopts the friendly-alias convention formalized this month — embeds lead with `ATLn`/`NYn`/`CHIn` headers so operators can grep crash history alongside `match_id`. Sidecar `.bt` and `.reported` files persist next to each core for human triage; the core itself is never deleted, so any `gdb` session can be reopened later. See `TECHNICAL_GUIDE.md` § Admin Infrastructure → KTPCrashReporter for install + operate detail.
 
 ---
 
