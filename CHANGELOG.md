@@ -2,6 +2,32 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.4] - 2026-04-29
+
+### Tier 1 smoke — defenses against GHCR `:latest` propagation race
+
+#### Fixed
+On 2026-04-29 06:42 UTC, a manual `publish-base-image` rebuilt the GHCR base image with newly-promoted `KTPHudObserver.amxx` baked in. Plugin pushes at 06:49 UTC triggered Tier 1 Smoke runs across 7 plugin repos. Each runner pulled `ghcr.io/.../ktp-runtime-test-base:latest` within ~7 minutes of publish; GHCR's edge caches hadn't yet propagated the new manifest, so each smoke pulled the previous image (no HudObserver) → `Plugin file open error` → `assert-no-failed` failure across the entire fleet. Re-running ~8h later, after propagation settled, succeeded against the same `:latest` tag — confirming the failure was purely registry-side, not a code bug.
+
+Two layers of defense added.
+
+#### Changed — `.github/workflows/publish-base-image.yml` (Layer 1: publish-side propagation verify)
+- New step `Verify :latest propagation` runs after `docker push :latest` and `:<short_sha>`. Both tags were pushed from the same local image and MUST resolve to the same manifest digest globally — the step polls `docker buildx imagetools inspect` for `:latest` and compares its manifest digest to `:<short_sha>`'s. Up to 6 attempts × 10s sleep; if `:latest` is still serving the previous manifest after 60s, the publish workflow fails rather than silently shipping a stale tag. Catches the most common race window cleanly.
+
+#### Changed — `.github/workflows/smoke-callable.yml` (Layer 2: smoke-side fallback retry)
+- Combined four sequential steps (`Boot ktp-game-1 container`, `Wait for server rcon-ready`, `Wait for plugins to finish initializing`, `Assert no failed modules or plugins`) into one composite step `Boot, wait, and assert (with single retry on fast-path)`.
+- On first failure, if `inputs.use_base_image: true` (fast path), step tears down the container, force-removes the local copy of the base image, re-pulls from GHCR, rebuilds the smoke overlay using the existing under-test artifact at `${GITHUB_WORKSPACE}/.smoke-artifact/payload`, and retries the boot+assert sequence once. Slow path (`use_base_image: false`) builds the runtime image locally from source — it doesn't touch GHCR, so a failure there is real and isn't retried.
+- Retry success is annotated with `::warning::` so the run is visibly flaky-recovered rather than silently passing.
+- Real failures (under-test plugin compile bug, KTPAMXX runtime crash, etc.) still surface — they fail on first attempt AND on retry, terminating the workflow.
+
+#### Why both layers
+Layer 1 catches the publisher-side race (where `:latest` lookup at the same edge that pushed it might still be stale for a few seconds). Layer 2 catches the consumer-side race (where a smoke runner in a different region pulls `:latest` while THAT region's edge cache is still serving the previous manifest, even after Layer 1 verified propagation against ITS local edge). Together, the user-visible flake from this incident class becomes essentially zero, while real failures still surface unmasked.
+
+#### Compatibility
+Purely additive on the publish side. On the smoke side, the four-step → one-step refactor changes the workflow run's step structure visible in the GHA UI; no functional change for first-attempt-success runs (~99% of cases).
+
+---
+
 ## [1.5.3] - 2026-04-29
 
 ### `scripts/ktp-scheduled-restart.sh` — plugins glob added
