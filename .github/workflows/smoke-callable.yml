@@ -399,44 +399,101 @@ jobs:
       # ALWAYS: boot, smoke, diagnostics, teardown
       # docker-compose.local.yml is configured to use ktp-gameserver:${VERSION}.
       # Both paths produced ktp-gameserver:ci above, so --no-build picks it up.
+      #
+      # Boot + wait-ready + wait-plugin_init + assert-no-failed are combined
+      # here so the whole cluster can retry once on the fast path. The Layer 1
+      # propagation check in publish-base-image.yml catches most GHCR
+      # `:latest` cache races at publish time, but smoke runs triggered by
+      # plugin pushes minutes later from a different runner could still pull
+      # a stale manifest from a different GHCR edge. On retry, we tear down,
+      # force-remove the local copy of the base image, re-pull, rebuild the
+      # smoke overlay, and re-boot once. Slow path (use_base_image: false)
+      # builds the runtime image locally and isn't subject to this race —
+      # the retry is gated to fast path only.
       # ============================================================
-      - name: Boot ktp-game-1 container
+      - name: Boot, wait, and assert (with single retry on fast-path)
         working-directory: KTPInfrastructure
+        env:
+          ARTIFACT_CONTAINER_PATH: ${{ inputs.artifact_container_path }}
+          USE_BASE_IMAGE: ${{ inputs.use_base_image && '1' || '0' }}
         run: |
-          export KTP_PROJECT_ROOT="$(cd .. && pwd)"
-          docker compose -f docker-compose.local.yml up -d --no-build ktp-game-1
+          set -uo pipefail
 
-      - name: Wait for server rcon-ready
-        working-directory: KTPInfrastructure
-        run: python -m tests.smoke.cli wait-ready --port 27016 --rcon-password "$RCON_PASSWORD" --timeout 120
+          boot_and_check() {
+            export KTP_PROJECT_ROOT="$(cd .. && pwd)"
+            docker compose -f docker-compose.local.yml up -d --no-build ktp-game-1 || return 1
+            python -m tests.smoke.cli wait-ready --port 27016 --rcon-password "$RCON_PASSWORD" --timeout 120 || return 1
 
-      # KTPAMXX defers plugin_init until AFTER precache phase finishes (the
-      # boot log line is "Loaded N plugin(s) during precache (plugin_init
-      # deferred)"). rcon answers ~1s after container start, but `amx plugins`
-      # returns empty until plugin_init completes — usually 5-15s after rcon.
-      # Poll until at least one plugin row is visible.
-      - name: Wait for plugins to finish initializing
-        working-directory: KTPInfrastructure
-        run: |
-          set -euo pipefail
-          for i in $(seq 1 60); do
-            out=$(python -m tests.smoke.cli rcon "amx plugins" --port 27016 --rcon-password "$RCON_PASSWORD" 2>/dev/null || true)
-            # Parse format: ` [  N] name ...` — count rows that match.
-            rows=$(echo "$out" | grep -cE '^\s*\[\s*[0-9]+\]' || true)
-            if [ "$rows" -gt 0 ]; then
-              echo "plugins ready after ${i}s ($rows plugin rows)"
-              exit 0
+            # KTPAMXX defers plugin_init until AFTER precache phase finishes
+            # (boot logs "Loaded N plugin(s) during precache (plugin_init
+            # deferred)"). rcon answers ~1s after container start, but
+            # `amx plugins` returns empty until plugin_init completes —
+            # usually 5-15s after rcon. Poll until at least one plugin row.
+            local rows=0
+            local out=""
+            for i in $(seq 1 60); do
+              out=$(python -m tests.smoke.cli rcon "amx plugins" --port 27016 --rcon-password "$RCON_PASSWORD" 2>/dev/null || true)
+              rows=$(echo "$out" | grep -cE '^\s*\[\s*[0-9]+\]' || true)
+              if [ "$rows" -gt 0 ]; then
+                echo "plugins ready after ${i}s ($rows plugin rows)"
+                break
+              fi
+              sleep 1
+            done
+            if [ "${rows:-0}" -eq 0 ]; then
+              echo "::error::plugin_init did not complete within 60s after rcon-ready"
+              echo "--- last amx plugins output ---"
+              echo "$out"
+              return 1
             fi
-            sleep 1
-          done
-          echo "::error::plugin_init did not complete within 60s after rcon-ready"
-          echo "--- last amx plugins output ---"
-          echo "$out"
-          exit 1
 
-      - name: Assert no failed modules or plugins
-        working-directory: KTPInfrastructure
-        run: python -m tests.smoke.cli assert-no-failed --port 27016 --rcon-password "$RCON_PASSWORD"
+            python -m tests.smoke.cli assert-no-failed --port 27016 --rcon-password "$RCON_PASSWORD"
+          }
+
+          refresh_base_image_and_overlay() {
+            docker compose -f docker-compose.local.yml down -v 2>/dev/null || true
+            # Force GHCR re-pull by removing the local copy first.
+            docker rmi "$BASE_IMAGE" 2>/dev/null || true
+            docker pull --quiet "$BASE_IMAGE"
+            # Rebuild the smoke overlay with the freshly-pulled base. The
+            # original overlay build saved the under-test artifact at
+            # ${GITHUB_WORKSPACE}/.smoke-artifact/payload — reuse that.
+            if [ ! -f "${GITHUB_WORKSPACE}/.smoke-artifact/payload" ]; then
+              echo "::error::overlay payload missing at retry time — cannot rebuild"
+              return 1
+            fi
+            docker build \
+              -f "${GITHUB_WORKSPACE}/KTPInfrastructure/runtime/Dockerfile.smoke-overlay" \
+              --build-arg BASE_IMAGE="$BASE_IMAGE" \
+              --build-arg ARTIFACT_SRC=.smoke-artifact/payload \
+              --build-arg ARTIFACT_DST="$ARTIFACT_CONTAINER_PATH" \
+              -t "ktp-gameserver:$VERSION" \
+              "${GITHUB_WORKSPACE}"
+          }
+
+          # First attempt
+          if boot_and_check; then
+            exit 0
+          fi
+
+          # Retry only on fast path. Slow path's runtime image was built
+          # locally from source — it has no GHCR involvement, so a failure
+          # there is real, not staleness.
+          if [ "$USE_BASE_IMAGE" != "1" ]; then
+            echo "::error::Slow-path boot+assert failed (no retry)"
+            exit 1
+          fi
+
+          echo "::warning::Tier 1 smoke initial boot+assert failed on fast path."
+          echo "::warning::Retrying once with forced GHCR re-pull (suspected :latest propagation race)."
+          echo "::warning::See publish-base-image.yml Layer 1 verify step + KTPInfrastructure CHANGELOG 1.5.4 for context."
+          refresh_base_image_and_overlay || exit 1
+          if boot_and_check; then
+            echo "::warning::Retry succeeded — original failure was GHCR propagation race, not a real bug."
+            exit 0
+          fi
+          echo "::error::Retry also failed — this is likely a real failure, not staleness."
+          exit 1
 
       - name: Assert module loaded
         if: ${{ inputs.assert_module != '' }}

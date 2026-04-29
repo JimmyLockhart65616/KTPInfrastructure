@@ -206,6 +206,38 @@ jobs:
           echo "  $IMAGE:latest"
           echo "  $IMAGE:${{ steps.tag.outputs.short_sha }}"
 
+      # GHCR's edge caches occasionally serve a stale `:latest` manifest for a
+      # handful of seconds after push. Both `:latest` and `:<short_sha>` were
+      # tagged from the same local image and pushed back-to-back, so they MUST
+      # resolve to the same manifest digest globally. Block here until that's
+      # observed, or fail the publish — better than greenlighting a tag that
+      # downstream smoke runs will pull stale.
+      #
+      # Caught 2026-04-29: a manual publish at 06:42 UTC pushed `:latest`,
+      # plugin commits at 06:49 UTC triggered smokes that pulled `:latest`,
+      # but the registry was still serving the previous manifest — the new
+      # KTPHudObserver.amxx wasn't visible, all 7 plugin smokes failed with
+      # `Plugin file open error`. Re-running 8h later succeeded against the
+      # same `:latest` tag. See discord-embeds/CHANGES_SUMMARY_2026-05-01.md
+      # for the full incident write-up.
+      - name: Verify :latest propagation
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${{ steps.tag.outputs.short_sha }}"
+          EXPECTED=$(docker buildx imagetools inspect "$IMAGE:$SHORT_SHA" --format '{{ .Manifest.Digest }}')
+          echo "Expected manifest digest (from :$SHORT_SHA): $EXPECTED"
+          for attempt in 1 2 3 4 5 6; do
+            ACTUAL=$(docker buildx imagetools inspect "$IMAGE:latest" --format '{{ .Manifest.Digest }}' 2>/dev/null || echo "<lookup-failed>")
+            if [ "$ACTUAL" = "$EXPECTED" ]; then
+              echo "Verified: :latest now resolves to $ACTUAL (attempt $attempt)"
+              exit 0
+            fi
+            echo "Attempt $attempt: :latest=$ACTUAL, expected=$EXPECTED — sleeping 10s for GHCR propagation..."
+            sleep 10
+          done
+          echo "::error::GHCR propagation timeout: :latest still doesn't match :$SHORT_SHA after 60s. Downstream smokes triggered now would pull a stale image. Likely a registry-side issue — re-run this workflow in a few minutes."
+          exit 1
+
       - name: Image size
         run: docker image inspect "$IMAGE:latest" --format '{{ .Size }}' | numfmt --to=iec
 
