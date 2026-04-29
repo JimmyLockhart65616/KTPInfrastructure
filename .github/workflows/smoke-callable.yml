@@ -169,16 +169,8 @@ jobs:
           submodules: recursive
           token: ${{ secrets.ktp_checkout_token || github.token }}
 
-      # metamod-am is the AMXX build-time header dep (meta_api.h etc — needed
-      # at compile time even though KTP runs in extension mode and doesn't
-      # load metamod at runtime). Public alliedmodders repo, no token needed.
-      # See TODO.md "Vendor metamod-am headers" for the disentangle followup.
-      - name: Checkout metamod-am (slow path; alliedmodders/metamod-hl1)
-        if: ${{ !inputs.use_base_image }}
-        uses: actions/checkout@v4
-        with:
-          repository: alliedmodders/metamod-hl1
-          path: metamod-am
+      # Metamod headers are vendored in KTPAMXX/third_party/metamod/ since
+      # 2026-04-29 (KTPAMXX 2.7.14); no longer needs an external checkout.
 
       - name: Checkout KTPReAPI (slow path)
         if: ${{ !inputs.use_base_image }}

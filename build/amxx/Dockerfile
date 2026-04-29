@@ -3,10 +3,11 @@
 
 FROM ktp-base:latest
 
-# Copy KTPAMXX source and dependencies
+# Copy KTPAMXX source and dependencies. Metamod headers are vendored
+# inside KTPAMXX/third_party/metamod/ since 2026-04-29 (KTPAMXX 2.7.14)
+# and no longer require a sibling metamod-am checkout.
 COPY KTPAMXX /build/KTPAMXX
 COPY KTPhlsdk /build/KTPhlsdk
-COPY metamod-am /build/metamod-am
 
 WORKDIR /build/KTPAMXX
 
@@ -26,9 +27,7 @@ RUN python3 -m venv /opt/ambuild-venv && \
     cd ../..
 
 # Set environment variables for build
-# Note: METAMOD headers needed for compilation even in extension mode
 ENV HLSDK=/build/KTPhlsdk
-ENV METAMOD=/build/metamod-am
 
 # Fix any line ending issues
 RUN find . -name "*.sh" -exec sed -i 's/\r$//' {} \;
