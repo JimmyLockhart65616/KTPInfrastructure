@@ -2,6 +2,54 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.7] - 2026-04-29
+
+### `scripts/hltv-restart-all.sh` — fix syntax error that broke nightly HLTV restarts since 2026-04-10
+
+#### Fixed
+The for-loop on line 36 was previously:
+
+```bash
+for port in $(seq 27020 27044); do
+```
+
+A 2026-04-10 edit on the deployed copy added a comment about CHI:27044 being disabled, but the comment was placed in a way that broke bash:
+
+```bash
+for port in $(seq 27020 27043)  # 27044 (chi5) disabled 2026-04-10; do
+```
+
+The `; do` ended up INSIDE the comment (after `#`), so bash saw an incomplete `for` statement and threw `syntax error near unexpected token 'if'` at the next line. Every nightly HLTV restart attempt has failed since the edit went in:
+
+- Timer fires correctly twice daily (3:00 AM + 11:00 AM ET, per `hltv-restart.timer`).
+- `hltv-restart.service` immediately exits with `status=2/INVALIDARGUMENT`.
+- No restart actually happens. No Discord notification fires (the Discord post is at the END of the script).
+- Failures only visible via `journalctl -u hltv-restart` — which nobody watches.
+
+Net effect: HLTV proxies ran 3 weeks without restart. By 2026-04-29 (uptime 7 days 13 hours on most instances; some longer windows preceded by other one-off restarts), proxy 27036 was in a degraded state where match-start `mp_clan_restartround` cycles triggered a 14-reconnect storm, causing both halves of a 14:40 ET scrim on NY2 to record as 0-byte demos.
+
+Surfaced 2026-04-29 mid-day when KTPHLTVRecorder 1.6.0's verification fired on the failed recording — the plugin worked correctly; the issue was HLTV-side and the script had been failing for weeks.
+
+#### Changed
+- Canonical `scripts/hltv-restart-all.sh` line 36: `; do` moved to BEFORE the `#` comment, so bash sees a complete for-loop on the line:
+  ```bash
+  for port in $(seq 27020 27043); do  # 27044 (chi5) disabled 2026-04-10
+  ```
+- Range is `27020-27043` (24 ports) — skips 27044 which is the disabled CHI:5 HLTV. Previous canonical had `27020-27044` and would have logged 1 failure per run for the disabled port; the deployed version had `27020-27043` baked in but with the syntax-breaking comment.
+
+#### Recovery applied
+Same-session manual fix on the data server:
+1. `cp -p /usr/local/bin/hltv-restart-all.sh /usr/local/bin/hltv-restart-all.sh.bak-20260429T193507Z-syntax-fix`
+2. SFTP-write the patched version.
+3. `bash -n` clean.
+4. `systemctl reset-failed hltv-restart.service && systemctl start hltv-restart.service` — fired the script via systemd, restarting all 24 active HLTV instances. Verified all came back fresh (uptimes 8-9 seconds post-restart).
+5. Tonight's 03:00 ET 2026-04-30 nightly will be the first scheduled successful run since 2026-04-10.
+
+#### Lesson — surfaced as a gap
+**systemd unit failures should not be silent for weeks.** `hltv-restart.service` failed 24+ times across 2026-04-10 → 2026-04-29 with zero observability. Adding `OnFailure=` to a Discord-alerting unit (or an external systemd-monitor check across the data server's services) would have caught this at the first failed run. Tracked as a follow-up TODO ("HLTV restart service had silent failures for 3 weeks — add monitoring for systemd unit health").
+
+---
+
 ## [1.5.6] - 2026-04-29
 
 ### Deploy preflight integration

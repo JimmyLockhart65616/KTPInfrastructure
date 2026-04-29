@@ -33,7 +33,7 @@ SUCCESS=0
 FAILED=0
 FAILED_PORTS=""
 
-for port in $(seq 27020 27044); do
+for port in $(seq 27020 27043); do  # 27044 (chi5) disabled 2026-04-10
     if systemctl restart hltv@$port 2>/dev/null; then
         ((SUCCESS++))
     else
