@@ -2,6 +2,25 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.5] - 2026-04-29
+
+### Build system — drop external `metamod-am` checkout
+
+#### Changed
+KTPAMXX 2.7.14 vendored its required Metamod headers in-tree at `KTPAMXX/third_party/metamod/`, eliminating the need for the build chain to clone `alliedmodders/metamod-hl1` as a sibling repo. Companion infrastructure cleanup:
+
+- **`build/amxx/Dockerfile`** — Removed `COPY metamod-am /build/metamod-am` and `ENV METAMOD=/build/metamod-am`. The KTPAMXX builder image is now ~self-contained against vendored sources.
+- **`.github/workflows/publish-base-image.yml`** — Removed the `Checkout metamod-am (alliedmodders/metamod-hl1)` step. Saves ~5-10s per nightly base-image publish.
+- **`.github/workflows/smoke-callable.yml`** — Removed the slow-path `Checkout metamod-am` step. Saves ~5-10s per slow-path smoke run; fast-path runs were never affected (they pull a pre-built image).
+
+#### Compatibility
+No runtime change. Anyone who had been passing `--metamod` to KTPAMXX's `configure.py` or setting `METAMOD=` in their environment can drop those — the build no longer recognizes them.
+
+#### Why now
+Closes the corresponding TODO ("Vendor metamod-am headers — drop external build dep"). Removes one external dep, ~6 lines of CI YAML, and a recurring source of "we don't use metamod, why is metamod-am here?" confusion.
+
+---
+
 ## [1.5.4] - 2026-04-29
 
 ### Tier 1 smoke — defenses against GHCR `:latest` propagation race

@@ -66,16 +66,8 @@ jobs:
           submodules: recursive
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
-      # metamod-am is the AMX Mod X build-time header dependency (meta_api.h
-      # etc — needed at compile even though KTP runs in extension mode and
-      # doesn't load metamod at runtime). Public alliedmodders repo, no token
-      # needed. Local convention names the directory `metamod-am`; upstream
-      # repo is `metamod-hl1`.
-      - name: Checkout metamod-am (alliedmodders/metamod-hl1)
-        uses: actions/checkout@v4
-        with:
-          repository: alliedmodders/metamod-hl1
-          path: metamod-am
+      # Metamod headers are vendored in KTPAMXX/third_party/metamod/ since
+      # 2026-04-29 (KTPAMXX 2.7.14); no longer needs an external checkout.
 
       - name: Checkout KTPReAPI
         uses: actions/checkout@v4
