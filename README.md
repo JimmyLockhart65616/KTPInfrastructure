@@ -136,6 +136,10 @@ KTPInfrastructure/
 │   ├── ktp-backup.sh            # MySQL/config backup
 │   └── ...
 │
+├── monitoring/                  # Per-host monitoring daemons
+│   ├── ktp-server-monitor.py    # RCON stats poll + Discord alerting (data-server cron)
+│   └── crashreporter/           # gdb-wrapped core-dump → #ktp-crashes embed (per game host)
+│
 ├── artifacts/                   # Build output (gitignored)
 │   └── {version}/
 │       ├── engine/              # hlds_linux, engine_i486.so
