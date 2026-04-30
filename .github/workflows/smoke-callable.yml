@@ -112,19 +112,19 @@ jobs:
       # ALWAYS: caller repo + KTPInfrastructure + Python
       # ============================================================
       - name: Checkout caller repo (under test)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ${{ inputs.caller_repo_path != '' && inputs.caller_repo_path || github.event.repository.name }}
 
       - name: Checkout KTPInfrastructure
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPInfrastructure
           path: KTPInfrastructure
           token: ${{ secrets.ktp_checkout_token || github.token }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -134,7 +134,7 @@ jobs:
       # ============================================================
       - name: Checkout KTPAMXX (fast path, cpp_module headers — with submodules)
         if: ${{ inputs.use_base_image && inputs.under_test_kind == 'cpp_module' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPAMXX
           path: KTPAMXX
@@ -143,7 +143,7 @@ jobs:
 
       - name: Checkout KTPhlsdk (fast path, cpp_module headers)
         if: ${{ inputs.use_base_image && inputs.under_test_kind == 'cpp_module' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPHLSDK
           path: KTPhlsdk
@@ -154,7 +154,7 @@ jobs:
       # ============================================================
       - name: Checkout KTPReHLDS (slow path)
         if: ${{ !inputs.use_base_image }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTP-ReHLDS
           path: KTPReHLDS
@@ -162,7 +162,7 @@ jobs:
 
       - name: Checkout KTPAMXX (slow path, with submodules — public/amtl)
         if: ${{ !inputs.use_base_image && inputs.under_test_kind != 'cpp_module' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPAMXX
           path: KTPAMXX
@@ -174,7 +174,7 @@ jobs:
 
       - name: Checkout KTPReAPI (slow path)
         if: ${{ !inputs.use_base_image }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTP-ReAPI
           path: KTPReAPI
@@ -182,7 +182,7 @@ jobs:
 
       - name: Checkout KTPhlsdk (slow path)
         if: ${{ !inputs.use_base_image && inputs.under_test_kind != 'cpp_module' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPHLSDK
           path: KTPhlsdk
@@ -190,7 +190,7 @@ jobs:
 
       - name: Checkout KTPAmxxCurl (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPAmxxCurl' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPAMXXCurl
           path: KTPAmxxCurl
@@ -198,7 +198,7 @@ jobs:
 
       - name: Checkout KTPMatchHandler (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPMatchHandler' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPMatchHandler
           path: KTPMatchHandler
@@ -206,7 +206,7 @@ jobs:
 
       - name: Checkout KTPHLTVRecorder (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPHLTVRecorder' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPHLTVRecorder
           path: KTPHLTVRecorder
@@ -214,7 +214,7 @@ jobs:
 
       - name: Checkout KTPCvarChecker (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPCvarChecker' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPCvarChecker
           path: KTPCvarChecker
@@ -222,7 +222,7 @@ jobs:
 
       - name: Checkout KTPFileChecker (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPFileChecker' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPFileChecker
           path: KTPFileChecker
@@ -230,7 +230,7 @@ jobs:
 
       - name: Checkout KTPAdminAudit (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPAdminAudit' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPAdminAudit
           path: KTPAdminAudit
@@ -238,7 +238,7 @@ jobs:
 
       - name: Checkout KTPGrenades (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPGrenades' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPGrenades
           path: KTPGrenades
@@ -246,7 +246,7 @@ jobs:
 
       - name: Checkout KTPPracticeMode (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPPracticeMode' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPPracticeMode
           path: KTPPracticeMode
@@ -254,7 +254,7 @@ jobs:
 
       - name: Checkout KTPScoreTracker (slow path)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPScoreTracker' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPScoreTracker
           path: KTPScoreTracker
@@ -270,7 +270,7 @@ jobs:
       # was set explicitly to align with the local convention).
       - name: Checkout KTPHudObserver (slow path; JimmyLockhart65616/DoD-hud-observer)
         if: ${{ !inputs.use_base_image && env.CALLER_REPO_DIR != 'KTPHudObserver' && env.CALLER_REPO_DIR != 'DoD-hud-observer' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: JimmyLockhart65616/DoD-hud-observer
           path: KTPHudObserver
@@ -280,7 +280,7 @@ jobs:
       # ============================================================
       - name: Log in to GHCR
         if: ${{ inputs.use_base_image }}
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
