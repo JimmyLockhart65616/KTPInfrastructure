@@ -47,19 +47,19 @@ jobs:
       # image needs every component built so it's a complete drop-in for
       # smoke runs.
       - name: Checkout KTPInfrastructure
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: KTPInfrastructure
 
       - name: Checkout KTPReHLDS
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTP-ReHLDS
           path: KTPReHLDS
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPAMXX (with submodules — public/amtl)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPAMXX
           path: KTPAMXX
@@ -70,77 +70,77 @@ jobs:
       # 2026-04-29 (KTPAMXX 2.7.14); no longer needs an external checkout.
 
       - name: Checkout KTPReAPI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTP-ReAPI
           path: KTPReAPI
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPhlsdk
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPHLSDK
           path: KTPhlsdk
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPAmxxCurl
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPAMXXCurl
           path: KTPAmxxCurl
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPMatchHandler
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPMatchHandler
           path: KTPMatchHandler
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPHLTVRecorder
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPHLTVRecorder
           path: KTPHLTVRecorder
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPCvarChecker
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPCvarChecker
           path: KTPCvarChecker
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPFileChecker
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPFileChecker
           path: KTPFileChecker
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPAdminAudit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPAdminAudit
           path: KTPAdminAudit
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPGrenades
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPGrenades
           path: KTPGrenades
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPPracticeMode
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPPracticeMode
           path: KTPPracticeMode
           token: ${{ secrets.KTP_CHECKOUT_TOKEN || github.token }}
 
       - name: Checkout KTPScoreTracker
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository_owner }}/KTPScoreTracker
           path: KTPScoreTracker
@@ -151,7 +151,7 @@ jobs:
       # base image alongside KTP plugins, listed in config/local/plugins.ini.
       # Public alliedmodders-style repo, no token needed.
       - name: Checkout KTPHudObserver (JimmyLockhart65616/DoD-hud-observer)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: JimmyLockhart65616/DoD-hud-observer
           path: KTPHudObserver
@@ -173,7 +173,7 @@ jobs:
       # --- Push to GHCR. Two tags: `latest` (smoke pulls this) + the short
       # commit SHA of KTPInfrastructure (so a regression can be pinned).
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

@@ -2,6 +2,25 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.10] - 2026-04-30
+
+### `ci`: bump GitHub Actions to Node 24 runtimes
+
+Closes the Node.js 20 deprecation warning emitted on every smoke run ahead of GitHub's 2026-06-02 forced cutoff (full removal 2026-09-16).
+
+#### Bumped
+- `actions/checkout` v4 → v6 (GA on Node 24 since 2025-11-20)
+- `actions/setup-python` v5 → v6 (GA on Node 24, current v6.2.0 from 2026-01-22)
+- `docker/login-action` v3 → v4 (GA on Node 24, current v4.1.0 from 2026-04-02)
+
+#### Files touched (this repo)
+- `.github/workflows/smoke-callable.yml` — 17× checkout, 1× setup-python, 1× login-action
+- `.github/workflows/publish-base-image.yml` — 15× checkout, 1× login-action
+- `.github/workflows/config-tests.yml` — checkout, setup-python
+
+#### Done in coordinated companion commits
+Same bump applied across the 9 caller / sibling KTP repos that pin these actions directly: KTPMatchHandler, KTPHLTVRecorder, KTPFileChecker, KTPGrenades (config-tests.yml each); KTPAMXX (ci.yml); KTPAntiCheat (dotnet-tests.yml + vac-safety-lint.yml); KTPReHLDS (rehlds/build.yml); KTPReAPI (build.yml). Caller smoke.yml files don't need the bump — they delegate to smoke-callable.yml.
+
 ## [1.5.9] - 2026-04-30
 
 ### `docs/CANARY_RUNBOOK.md` — production canary pre-flight + toggle pattern
