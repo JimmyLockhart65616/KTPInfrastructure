@@ -2,6 +2,21 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.9] - 2026-04-30
+
+### `docs/CANARY_RUNBOOK.md` — production canary pre-flight + toggle pattern
+
+New 178-line operational runbook codifying the single-instance canary pattern (cvar/cfg/feature toggle on one host with same-day fleet propagation gate). Sibling to `KERNEL_EXPERIMENT_RUNBOOK.md`.
+
+#### Background
+Two consecutive HPAK `sv_send_logos` canary attempts (2026-04-29, 2026-04-30) aborted on `*.new`-presence pre-flight rules. The first was a true positive (swap-glob bug had blocked the night's swap, leaving stale binaries running). The second was a false positive (operator legitimately staged the next day's deploy queue 44 min before the canary fired). The rule conflated "deploy state is broken" with "next deploy is staged" — same evidence, different meanings.
+
+#### Added
+- `docs/CANARY_RUNBOOK.md` — §1 use cases, §2 pre-flight rules (live-binary md5/size assertions replacing `.new`-absence), §3 toggle execution pattern (cfg sed-edit + LinuxGSM `send`), §4 rollback, §5 RemoteTrigger automation, §6 known false-positive patterns (both 2026-04-29 + 2026-04-30 cases documented), §7 cross-references.
+
+#### Why
+Locks in the live-binary md5/size assertion pattern as the canonical pre-flight rule. Future canary prompts (likely fleet-wide HPAK propagation post-2026-05-03 if matchday clean) will source pre-flight from this doc rather than reinventing it. Closes the "two-strikes" pattern before it becomes three.
+
 ## [1.5.8] - 2026-04-29
 
 ### `scripts/hltv-demo-renamer` — match-window-driven demo renamer (Phase 1c of HLTV F+A architecture)
