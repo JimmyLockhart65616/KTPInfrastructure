@@ -379,11 +379,19 @@ class Renamer:
     @staticmethod
     def _build_target_name(window: OpenWindow, friendly: str, hltv_ts: str,
                            map_name: str, segment: int) -> str:
-        """Produce: <matchtype>_<match_id>-<UPPER_FRIENDLY>_<half>-<hltv_ts>-<map>.dem
+        """Produce: <matchtype>_<match_id>(_h<n>)?-<hltv_ts>-<map>.dem
         with optional _partN suffix on additional segments (segment > 0).
 
         match_id is taken verbatim from the plugin's MATCH_WINDOW_OPEN line —
         whatever KTPMatchHandler emits is what the organizer + portal see.
+        KTPMatchHandler.sma:1966,1971 formats match_id with the short hostname
+        suffix already baked in (`<timestamp>-<shortHostname>` for standard
+        matches; `1.3-<queueId>-<shortHostname>` for 1.3 community 12mans),
+        because match_id is also a uniqueness primary key for HLStatsX,
+        Discord embeds, and scoring. We do NOT redundantly append <FRIENDLY>
+        if match_id already ends in `-<friendly>` — earlier renamer versions
+        produced names like `scrim_1777594479-ATL4-ATL4_h1-...` which the
+        organizer's regex (single-host) refused to recognize.
 
         Defensive lowercase on match_type: the existing organizer's regex is
         `[a-z0-9]+` and rejects mixed-case (e.g., `ktpOT`). Plugin v1.7.0 emits
@@ -394,9 +402,11 @@ class Renamer:
             window.match_type.lower(),
             "_",
             window.match_id,
-            "-",
-            friendly,
         ]
+        # Append <FRIENDLY> only if match_id doesn't already end with it. See
+        # docstring above for KTPMatchHandler's match_id format convention.
+        if friendly and not window.match_id.endswith("-" + friendly):
+            parts.extend(["-", friendly])
         # Organizer regex only matches `(_h[12])?` for the half marker. Any
         # other half value (ot1, ot2...) would BREAK the regex and the demo
         # would never auto-organize. Strip non-h1/h2 halves; OT rounds remain
