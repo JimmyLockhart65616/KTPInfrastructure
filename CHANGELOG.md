@@ -2,6 +2,34 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.11] - 2026-05-01
+
+### `fix`: hltv-demo-renamer no longer double-appends friendly hostname into canonical filename
+
+The renamer's `_build_target_name` was producing names like `scrim_1777594479-ATL4-ATL4_h1-2604302009-dod_harrington.dem` — the friendly appears twice. Root cause: KTPMatchHandler intentionally bakes the short hostname into `match_id` itself (`{timestamp}-{shortHostname}` for standard, `1.3-{queueId}-{shortHostname}` for 1.3 community 12mans, see `KTPMatchHandler.sma:1966,1971`) because match_id is also used as a uniqueness key for HLStatsX, Discord embeds, and scoring. The renamer then dutifully appended `<UPPER_FRIENDLY>` again per the canonical format spec, creating the doubled token. The downstream organizer (`ktp-organize-hltv-demos.sh`) regex expects single-friendly names and rejected every doubled-token demo as "unrecognized format" — last 24h `Moved: 0 | Skipped: 2127 | Errors: 0`. Soak verification step #1 (portal populated) would have failed Sunday matchday.
+
+`_build_target_name` now skips the redundant `<FRIENDLY>` append when `match_id` already ends with `-<friendly>`. Output collapses to single-friendly:
+
+- Before: `scrim_1777594479-ATL4-ATL4_h1-...`
+- After:  `scrim_1777594479-ATL4_h1-...`
+
+Both shapes match the existing organizer's regex (which already supports both standard `<matchtype>_<timestamp>-<hostname>` and 1.3 `<matchtype>_1.3-<queueid>-<hostname>` forms). Single-file fix; no plugin recompile or fleet redeploy required.
+
+### Operational steps applied 2026-05-01
+
+- Backup: `/usr/local/bin/hltv-demo-renamer.py.bak-pre-friendly-fix-2026-05-01` (21.8 KB).
+- Deploy: SCP'd to `/usr/local/bin/hltv-demo-renamer.py` (22.6 KB), `chmod +x`, `systemctl restart hltv-demo-renamer`. Service active 2s post-restart, all 5 SSH connections to game hosts re-established cleanly.
+- Backfill: 12 stuck double-friendly demos at HLTV root renamed in-place via paramiko regex sweep, then `/usr/local/bin/ktp-organize-hltv-demos.sh` sorted them into `/home/hltvserver/hlds/dod/demos/<friendly>/<matchtype>/`. Final tally: `Moved: 12 | Skipped: 2811 | Errors: 0` (the 2811 skipped are pre-renamer auto-*.dem files awaiting their 7d cleanup window).
+- Verified: `/demos/ATL4/scrim/` returns HTTP 200 with all 6 backfilled demos visible; `/demos/CHI1/12man/` shows the 2 12man halves; `/demos/ATL1/scrim/`, `/demos/ATL2/scrim/` also populated. New format matches the historical demos already in those directories byte-for-byte (organizer was working pre-1.7.0; only the renamer-introduced double-friendly broke it).
+
+### Sunday 2026-05-03 soak verification status (pre-matchday)
+
+- ✅ Renamer service active 1d 14h (now 2 min post-restart), `open_windows: []`.
+- ✅ Canonical format consistent with historical demos.
+- ✅ Portal `/demos/<friendly>/<matchtype>/` accessible + populated.
+- ⚠️ 5 "no matching auto-* files" h2 warnings since 2026-04-30 — possible real recording loss for ~5 half-windows, small absolute number, defer to post-Sunday `lookup_demo.py` analysis.
+- ⚠️ Cosmetic systemd unit warning: `Unknown key name 'StartLimitIntervalSec' in section 'Service'` — should be `StartLimitInterval` or move to `[Unit]`. Not impacting operation.
+
 ## [1.5.10] - 2026-04-30
 
 ### `ci`: bump GitHub Actions to Node 24 runtimes
