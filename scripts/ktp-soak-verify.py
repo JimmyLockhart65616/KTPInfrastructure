@@ -467,8 +467,152 @@ def suite_post_matchday() -> SuiteResult:
 # Suite registry — add new suites here
 # ──────────────────────────────────────────────────────────────────────────
 
+def suite_post_restart() -> SuiteResult:
+    """Tier 2 deploy verification — runs nightly after 03:00 ET fleet restart.
+
+    Diffs every game-server instance against ATL1:27015 (the canonical
+    baseline). Catches the 2026-04-21 `.new`-swap-didn't-happen regression
+    class plus its neighbors:
+      - .new files lingering after restart → swap script gap
+      - Plugin/.so hash drift across instances → manual deploy missed a host
+      - Plugin/.so missing on a host → deploy never reached this region
+      - Extra plugins/.so not in reference → stale leftover from old plugin
+
+    Wraps `/usr/local/bin/ktp-verify-deploy --out /tmp/verify_deploy_<ts>.json`
+    and rolls the per-instance status into the suite's check rows.
+    """
+    result = SuiteResult(suite="post-restart")
+    out_path = f"/tmp/verify_deploy_{int(datetime.now().timestamp())}.json"
+    rc, _, err = sh(
+        f"/usr/local/bin/ktp-verify-deploy --out {out_path} 2>&1", timeout=300
+    )
+
+    try:
+        with open(out_path) as f:
+            report = json.load(f)
+    except Exception as e:
+        result.checks.append(CheckResult(
+            name="ktp-verify-deploy invocation",
+            status=Status.RED,
+            summary=f"failed to read verify-deploy output: {e}",
+            detail=err[-500:] if err else None,
+        ))
+        return result
+
+    # Reference manifest sanity
+    ref = report.get("reference", {})
+    ref_size = ref.get("manifest_size", 0)
+    if ref_size == 0:
+        result.checks.append(CheckResult(
+            name="Reference manifest",
+            status=Status.RED,
+            summary=f"reference {ref.get('host')}:{ref.get('port')} returned empty manifest",
+        ))
+        return result
+    result.checks.append(CheckResult(
+        name="Reference manifest",
+        status=Status.GREEN,
+        summary=f"{ref_size} files at {ref.get('label')} ({ref.get('host')}:{ref.get('port')})",
+    ))
+
+    # Lingering .new files at the reference itself
+    ref_new = ref.get("lingering_new_files", [])
+    if ref_new:
+        result.checks.append(CheckResult(
+            name="Reference instance .new files",
+            status=Status.RED,
+            summary=f"{len(ref_new)} unswapped .new file(s) at the reference — swap-script gap",
+            detail="\n".join(ref_new[:20]),
+        ))
+    else:
+        result.checks.append(CheckResult(
+            name="Reference instance .new files",
+            status=Status.GREEN,
+            summary="0 unswapped .new files at reference",
+        ))
+
+    # Per-status rollup across all instances
+    counts = report.get("counts", {})
+    overall = report.get("overall", "?")
+
+    # Map verify-deploy status to suite status
+    suite_status = {
+        "green":  Status.GREEN,
+        "yellow": Status.YELLOW,
+        "red":    Status.RED,
+    }.get(overall, Status.YELLOW)
+
+    # Per-status detail
+    instances = report.get("instances", {})
+    red_instances = [(l, d) for l, d in instances.items() if d.get("status") == "red"]
+    yellow_instances = [(l, d) for l, d in instances.items() if d.get("status") == "yellow"]
+    unreachable = [(l, d) for l, d in instances.items() if d.get("status") in ("unreachable", "error")]
+
+    if red_instances:
+        # Group by drift fingerprint so we report shared issues compactly
+        from collections import Counter
+        missing_paths = Counter()
+        drift_paths = Counter()
+        new_file_count = 0
+        for label, d in red_instances:
+            for p in d.get("missing", []):
+                missing_paths[p] += 1
+            for x in d.get("drift", []):
+                drift_paths[x.get("path")] += 1
+            new_file_count += len(d.get("new_files", []))
+
+        detail_lines = [f"{len(red_instances)} instances RED:"]
+        if missing_paths:
+            detail_lines.append("\nMissing-on-target (path → instance count):")
+            for p, n in missing_paths.most_common(5):
+                detail_lines.append(f"  {p}: {n}")
+        if drift_paths:
+            detail_lines.append("\nDrift (path → instance count):")
+            for p, n in drift_paths.most_common(5):
+                detail_lines.append(f"  {p}: {n}")
+        if new_file_count:
+            detail_lines.append(f"\n.new files lingering across RED instances: {new_file_count}")
+
+        result.checks.append(CheckResult(
+            name="Hash/missing drift",
+            status=Status.RED,
+            summary=f"🔴 {len(red_instances)} instance(s) drifted from reference",
+            detail="\n".join(detail_lines)[:1800],
+        ))
+
+    if yellow_instances:
+        extra_paths = []
+        for label, d in yellow_instances:
+            for p in d.get("extra", []):
+                extra_paths.append(f"  {label}: {p}")
+        result.checks.append(CheckResult(
+            name="Extra files (yellow)",
+            status=Status.YELLOW,
+            summary=f"⚠ {len(yellow_instances)} instance(s) have files not on reference",
+            detail="\n".join(extra_paths[:20]) if extra_paths else None,
+        ))
+
+    if unreachable:
+        result.checks.append(CheckResult(
+            name="Unreachable instances",
+            status=Status.YELLOW,
+            summary=f"⚠ {len(unreachable)} instance(s) unreachable",
+            detail=", ".join(l for l, _ in unreachable),
+        ))
+
+    if not red_instances and not yellow_instances and not unreachable:
+        result.checks.append(CheckResult(
+            name="Fleet matches reference",
+            status=Status.GREEN,
+            summary=f"{counts.get('green', 0)} instance(s) match reference exactly",
+        ))
+
+    return result
+
+
 SUITES: dict[str, Callable[[], SuiteResult]] = {
     "post-matchday": suite_post_matchday,
+    "post-restart":  suite_post_restart,
 }
 
 
