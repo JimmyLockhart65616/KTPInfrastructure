@@ -107,6 +107,40 @@ cp ktp-scheduled-restart.sh.example ktp-scheduled-restart.sh
 0 3 * * * /home/dodserver/ktp-scheduled-restart.sh >> /home/dodserver/log/scheduled-restart.log 2>&1
 ```
 
+### deploy-to-fleet.py
+Local-to-fleet artifact push as `.new` files; nightly `ktp-scheduled-restart.sh` (above) auto-swaps them in. Closes the local-build → fleet-SCP gap discovered 2026-05-20. No `.example` template needed — credentials are read from CLAUDE.md fleet table; passwords are the standard `dodserver:ktp` SSH login (same as every other paramiko script in this repo).
+
+**Features:**
+- `-f <path>` repeatable for multi-artifact pushes
+- Auto-routing by filename pattern: `ktpamx_i386.so` → `dlls/`, `*_ktp_i386.so` → `modules/`, `*.amxx` → `plugins/`, `engine_i486.so` / `hlds_linux` / `libsteam_api.so` → `serverfiles/`
+- `--remote-path` override for non-standard targets
+- `--hosts atlanta,dallas,…` or `--hosts all` filter
+- `--ports 27015,27016,…` or `--ports all` filter
+- `--dry-run` mode (no SCP, just prints intent)
+- `--parallel N` (default 5 = one host worker per server; ports within a host serialized through one SSH session)
+- md5 verify post-upload; mismatch reported as failure
+- Per-instance failure isolation — one host down doesn't abort others
+- Summary table with OK/FAIL counts per artifact per host
+
+**Activation behavior:** NO automatic restart. `.new` files sit on disk until next nightly 03:00 ET restart auto-swaps them in via `ktp-scheduled-restart.sh`. Intentional safety — no production restart without explicit operator permission.
+
+**Usage:**
+```bash
+# Dry-run to inspect what would deploy
+python3 deploy-to-fleet.py -f path/to/KTPMatchHandler.amxx --dry-run
+
+# Single-instance smoke test before going --all
+python3 deploy-to-fleet.py -f path/to/KTPMatchHandler.amxx --hosts atlanta --ports 27015
+
+# Full fleet, multi-artifact (e.g., plugin + module rebuild)
+python3 deploy-to-fleet.py \
+    -f path/to/KTPMatchHandler.amxx \
+    -f path/to/dodx_ktp_i386.so \
+    --hosts all
+```
+
+**First live use:** always pair `--hosts <one> --ports <one>` as a smoke test before `--all`. The dry-run validates routing + arg parsing locally; the SCP + remote-md5-verify path is paramiko-shaped boilerplate but should still be confirmed on one instance before broadcasting.
+
 ### ktp-organize-hltv-demos.sh
 Organizes HLTV demo files into hostname/matchtype directories.
 
