@@ -148,19 +148,71 @@ class MatchDriver:
         out = self._handle.rcon("amx_ktp_test_fire_match_start_log")
         self._raise_on_error(out, "KTP_TEST_ROUNDLIVE_LOG")
 
-    def abandon_match(self) -> None:
-        """Emit the production-shape 2nd-half-abandon Discord embed update
-        ("MATCH ENDED (2nd half) - 1st half: T1 X - Y T2") using the
-        currently-set team names + half-1 scores. Doesn't drive the full
-        localinfo-driven abandon-detection logic — only the embed-update
-        side-effect that test 16 asserts on. See KTPMatchHandler.sma's
-        cmd_test_abandon_match docstring for what's covered vs deferred.
+    def abandon_match(
+        self,
+        mode: str = "h2",
+        regulation_scores: tuple[int, int] | None = None,
+    ) -> None:
+        """Emit a production-shape abandon Discord embed update. Two shapes
+        supported via the `mode` arg (KTPMatchHandler 0.10.136+):
 
-        Use AFTER `end_first_half(s1, s2)` so the half-1 scores are
-        populated; calling on a setup-only state would emit "0 - 0".
+          - `mode="h2"` (default): 2nd-half-abandon path
+            ("MATCH ENDED (2nd half) - 1st half: T1 X - Y T2"). Uses current
+            g_team1Name/g_team2Name/g_firstHalfScore. Use AFTER
+            `end_first_half(s1, s2)` so the half-1 scores are populated.
+          - `mode="ot1"` or `mode="ot2"`: OT-abandon path
+            ("MATCH ENDED (OT%d) - Regulation: T1 X - Y T2 (tied)"). Pass
+            `regulation_scores=(s1, s2)` to populate the regulation totals;
+            otherwise emits 0-0. Production reads these from
+            LOCALINFO_REG_SCORES; the test rcon accepts them directly.
+
+        Doesn't drive the full localinfo-driven abandon-detection logic —
+        only the embed-update side-effect that tests 16 + 16b assert on.
+        See KTPMatchHandler.sma's cmd_test_abandon_match docstring for what's
+        covered vs deferred.
         """
-        out = self._handle.rcon("amx_ktp_test_abandon_match")
+        if mode == "h2":
+            cmd = "amx_ktp_test_abandon_match"
+        elif mode in ("ot1", "ot2"):
+            if regulation_scores is None:
+                cmd = f"amx_ktp_test_abandon_match {mode}"
+            else:
+                s1, s2 = regulation_scores
+                cmd = f"amx_ktp_test_abandon_match {mode} {int(s1)} {int(s2)}"
+        else:
+            raise ValueError(
+                f"abandon_match mode must be 'h2', 'ot1', or 'ot2'; got {mode!r}"
+            )
+        out = self._handle.rcon(cmd)
         self._raise_on_error(out, "KTP_TEST_ABANDON")
+
+    def tech_pause(self) -> None:
+        """Drive the production tech-pause helper directly via
+        `amx_ktp_test_tech_pause` (KTPMatchHandler 0.10.136+). Calls
+        `execute_pause("KTP-TEST", "tech_pause")` skipping the 5s prepause
+        countdown UX. Sets `g_isPaused=true`, fires `rh_set_server_pause(true)`,
+        updates hostname.
+
+        Negative-path test contract: production pause is HUD-only (ReHLDS
+        RH_SV_UpdatePausedHUD) and does NOT emit Discord notifications. Use
+        with `discord_relay` fixture to assert no /create or /edit POSTs land
+        across the pause window.
+
+        Use AFTER `advance_live` so g_matchLive=true.
+        """
+        out = self._handle.rcon("amx_ktp_test_tech_pause")
+        self._raise_on_error(out, "KTP_TEST_TECH_PAUSE")
+
+    def tech_unpause(self) -> None:
+        """Sibling to `tech_pause()` — drives `ktp_unpause_now("test")` via
+        `amx_ktp_test_tech_unpause` (KTPMatchHandler 0.10.136+). Clears
+        `g_isPaused`, fires `rh_set_server_pause(false)`, updates hostname.
+
+        Same negative-path contract: unpause should NOT emit Discord
+        notifications.
+        """
+        out = self._handle.rcon("amx_ktp_test_tech_unpause")
+        self._raise_on_error(out, "KTP_TEST_TECH_UNPAUSE")
 
     def end_first_half(self, score_team1: int, score_team2: int) -> None:
         """Drive the production `handle_first_half_end()` path with the

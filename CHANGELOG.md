@@ -2,6 +2,28 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.26] - 2026-05-31
+
+### `scripts` + `tests`: AC alternate-hash allowlist, match-flow coverage, orphan-demo cleanup
+
+#### Changes
+
+**1. `build-game-files-manifest.py`: operator-curated `ALTERNATE_HASHES`.**
+
+The four KTP league score-event ambient sounds (`alliescap`/`alliesscore`/`axiscap`/`axisscore`.wav) ship a community-standard replacement set that predates the AC — present on the operator's own machine and every player bundle in the corpus. Without an allowlist they surfaced as 4 file-integrity false positives on every legitimate player. The manifest now records the accepted alternate hash per file; the AC client (0.5.2+) treats a mismatch that matches an alternate as clean. Hashes only — no canonical Valve hash removed.
+
+**2. `tests/integration`: match-flow Discord + log-event coverage.**
+
+New `test_match_flow_discord.py` + expanded `test_match_flow_logs.py` / `match_flow.py` assertions exercise the Discord-relay fan-out and the KTP_MATCH_* log emissions end-to-end against the test-mode binary.
+
+**3. `scripts/ktp-orphan-cleanup`: daily orphan-demo prune.**
+
+`/etc/cron.daily/` script deleting `auto_*.dem` HLTV captures >7d old that fell outside any match window (no `ktp_match_start`, so the renamer left them unattributed). Past the renamer's 4h abandon-window; unattributed captures carry no `match_id` to retrieve by.
+
+#### Verification
+
+- AST/`pytest --collect-only` clean; no secrets in committed files (fleet-credential helper scripts kept local via `.gitignore`).
+
 ## [1.5.25] - 2026-05-06
 
 ### `tests`: Tier 2 first-fire follow-ups — bot-AI test skips + version-pin sync

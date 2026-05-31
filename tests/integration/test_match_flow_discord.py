@@ -609,3 +609,90 @@ def test_16_abandon_match_emits_match_ended_embed_update(hlds, discord_relay):
     assert "7" in embed_text and "4" in embed_text, (
         f"abandon /edit didn't reference half-1 scores 7-4: text={embed_text!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Test 16b — OT-abandon emits "MATCH ENDED (OT%d)" embed update
+# ---------------------------------------------------------------------------
+
+def test_16b_ot_abandon_match_emits_match_ended_ot_embed_update(hlds, discord_relay):
+    """The OT-abandon path emits a Discord embed update with
+    "MATCH ENDED (OT%d) - Regulation: %s %d - %d %s (tied)" status
+    (KTPMatchHandler.sma:4599-4603). KTPMatchHandler 0.10.136's extended
+    `amx_ktp_test_abandon_match ot1 <reg_s1> <reg_s2>` rcon shape drives
+    this production code path.
+
+    Test sequence:
+      1. setup_match → advance_pending → advance_live(half=1) → wait msgID
+      2. abandon_match(mode="ot1", regulation_scores=(12, 12)) — emits
+         the OT-abandon shape with the supplied regulation totals
+      3. Assert /edit POST has "MATCH ENDED (OT1)" + regulation scores
+
+    Companion to test 16 (which covers the 2nd-half-abandon shape). Together
+    they pin both branches of the abandon-detection path's embed-emit logic.
+
+    What this test does NOT cover (same scope-limits as test 16):
+      - The localinfo-driven abandon-detection path itself (production
+        runs this from plugin_cfg on map load with LOCALINFO_REG_SCORES
+        already set; the rcon accepts regulation scores as args instead)
+      - HLStatsX KTP_MATCH_END "abandoned_ot%d" log emission
+      - dodx_flush_all_stats() type=abandoned_ot flushing
+
+    Those gaps are operator-checked manually during real matchday recovery
+    drills.
+    """
+    discord_relay.reset()
+    driver = MatchDriver(hlds)
+
+    _drive_to_live_with_msgid(driver, discord_relay)
+
+    create_count = len(discord_relay.received)
+    edits_baseline = len(discord_relay.received_edits)
+
+    # Drive OT-abandon with regulation tied at 12-12 (canonical OT-trigger
+    # scenario — regulation ended tied, OT1 starts, then OT was abandoned)
+    driver.abandon_match(mode="ot1", regulation_scores=(12, 12))
+
+    deadline = time.monotonic() + DISCORD_POST_TIMEOUT
+    while time.monotonic() < deadline:
+        if len(discord_relay.received_edits) > edits_baseline:
+            break
+        time.sleep(DISCORD_POLL_INTERVAL)
+
+    assert len(discord_relay.received_edits) > edits_baseline, (
+        f"expected ≥1 additional /edit POST after abandon_match(ot1); got "
+        f"{len(discord_relay.received_edits)} (baseline was {edits_baseline})"
+    )
+    # Verify no extra /reply (create) POSTs landed — OT-abandon should only
+    # /edit the existing embed, never create a new one.
+    assert len(discord_relay.received) == create_count, (
+        f"abandon_match(ot1) caused unexpected /reply POST: baseline="
+        f"{create_count}, now={len(discord_relay.received)}"
+    )
+
+    abandon_edit = discord_relay.received_edits[edits_baseline]
+    assert abandon_edit.auth_ok is True
+    embed = abandon_edit.embeds[0] if abandon_edit.embeds else {}
+    embed_text = (
+        str(embed.get("title", "")) + " "
+        + str(embed.get("description", "")) + " "
+        + " ".join(str(f.get("value", "")) for f in embed.get("fields", []))
+    )
+    # Production format: "MATCH ENDED (OT1) - Regulation: <team1> 12 - 12 <team2> (tied)"
+    assert "MATCH ENDED" in embed_text, (
+        f"OT-abandon /edit missing 'MATCH ENDED' phrasing: text={embed_text!r}"
+    )
+    assert "OT1" in embed_text, (
+        f"OT-abandon /edit missing 'OT1' qualifier: text={embed_text!r}"
+    )
+    assert "Regulation" in embed_text, (
+        f"OT-abandon /edit missing 'Regulation' label: text={embed_text!r}"
+    )
+    # Regulation scores round-trip
+    assert "12" in embed_text, (
+        f"OT-abandon /edit didn't reference regulation score 12: text={embed_text!r}"
+    )
+    assert "tied" in embed_text, (
+        f"OT-abandon /edit missing '(tied)' qualifier (production shape): "
+        f"text={embed_text!r}"
+    )

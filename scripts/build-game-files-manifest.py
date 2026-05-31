@@ -54,6 +54,31 @@ EXCLUDED_FILELIST_PATTERNS = [
     re.compile(r"^sound/player/pl_snow\d+\.wav$"),  # snow footsteps removed by user 2026-05-02
 ]
 
+# Operator-curated alternate hashes — files where a community-distributed
+# replacement is present on most player installs and should be accepted
+# alongside the canonical Valve hash. AC client (0.5.2+) consults this list
+# when comparing; mismatches that match an alternate are treated as clean.
+#
+# 2026-05-25: KTP league score-event ambient sound pack. Same `actual` hashes
+# observed across operator's own machine + every player bundle in the corpus
+# (Las1K64, arachnid, nein test bundles), confirming a community-standard
+# replacement set predating AC. Without alternates these surface as 4
+# false-positive violations on every legitimate player.
+ALTERNATE_HASHES = {
+    "sound/ambience/alliescap.wav": [
+        "6a97244af9824daa97333986f2ed8db91f52c7203dd2b2db5aedef2943b79786",
+    ],
+    "sound/ambience/alliesscore.wav": [
+        "1e465577efd267041e6db5a302e43b5fdb506e4d0d67b569bbfc28547c96a41e",
+    ],
+    "sound/ambience/axiscap.wav": [
+        "071a41cc5f3886669ca05962f91bf127acd09d88300ce083ea9c86913a6d78a9",
+    ],
+    "sound/ambience/axisscore.wav": [
+        "e775a4d4623b018da969d29148764b0c82be2c27d0a57e8640c86a85ee20cbe3",
+    ],
+}
+
 # Standard US-vs-Wehrmacht weapon kit. Each tuple: (family, p_base, w_base).
 # Builder finds <base>.mdl, <base>_l.mdl, <base>l.mdl variants.
 # `.mdl` extension implicit; suffixes for left/lowered variants are
@@ -322,13 +347,41 @@ def build_manifest(ssh, dod_path, filelist_path):
 def assemble_manifest(entries, source_server_label, dod_path):
     entries.sort(key=lambda e: (e["category"], e.get("severity", "violation"), e["path"]))
 
+    # Apply operator-curated alternate hashes. Logged so re-runs surface any
+    # ALTERNATE_HASHES keys that no longer match a manifest path (typo / file
+    # removed from scope) — silent application would let the alternate quietly
+    # stop having effect.
+    alt_applied = 0
+    alt_unmatched = []
+    paths_in_manifest = {e["path"] for e in entries}
+    for path, alts in ALTERNATE_HASHES.items():
+        if path not in paths_in_manifest:
+            alt_unmatched.append(path)
+            continue
+    for e in entries:
+        alts = ALTERNATE_HASHES.get(e["path"])
+        if alts:
+            e["allowed_alternate_hashes"] = list(alts)
+            alt_applied += 1
+    if alt_applied:
+        print(f"[build]   alternate hashes applied to {alt_applied} entries", file=sys.stderr)
+    if alt_unmatched:
+        print(f"[build]   WARNING: ALTERNATE_HASHES keys with no matching manifest entry: {alt_unmatched}", file=sys.stderr)
+
     cat_counts = Counter(e["category"] for e in entries)
     sev_counts = Counter(e["severity"] for e in entries)
     src_counts = Counter(e.get("origin", "?") for e in entries)
     total_size = sum(e["size"] for e in entries)
 
+    # Include alternates in the version hash so adding/removing them invalidates
+    # ETag caches and clients re-fetch. Without this, the version stays the same
+    # when an alternate is added and clients on the old cached copy keep
+    # false-positive-flagging the file.
     version = hashlib.sha256(
-        json.dumps([(e["path"], e["sha256"]) for e in entries], sort_keys=True).encode()
+        json.dumps(
+            [(e["path"], e["sha256"], tuple(e.get("allowed_alternate_hashes") or [])) for e in entries],
+            sort_keys=True,
+        ).encode()
     ).hexdigest()[:16]
 
     return {

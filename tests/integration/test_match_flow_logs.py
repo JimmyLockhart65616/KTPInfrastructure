@@ -1,4 +1,5 @@
-"""Match-flow Session 3 Phase 2b — log-line assertions for DODX + HLStatsX.
+"""Match-flow Session 3 Phase 2b — log-line assertions for DODX + HLStatsX,
+plus tech-pause negative-path Discord assertions.
 
 This file covers tests 7 + 8 from the Tier 2 match-flow spec — the AMXX log
 line (`event=FWD_MATCH_START`) and the HLStatsX log line
@@ -6,10 +7,12 @@ line (`event=FWD_MATCH_START`) and the HLStatsX log line
 state machine transitions to LIVE. Both are observable via the L*.log file
 the engine writes; the `log_tail` helper polls that file.
 
-Tests 10 + 11 from the original spec (tech pause Discord embed updates) are
-in this file too but skip-marked with the production-design rationale: tech
-pause has no Discord notification (audit gap was actually the feature
-not existing). HUD-only feature; Discord tests don't apply.
+Tests 10 + 11 are negative-path Discord assertions: the production pause
+path is HUD-only (ReHLDS RH_SV_UpdatePausedHUD) and does NOT emit Discord
+notifications by design. These tests fire the pause/unpause path and assert
+no /create or /edit POSTs land in the relay across the pause window — a
+regression catcher in case someone wires an unwanted Discord notification
+into the pause helpers.
 
 ## Cross-references
 
@@ -22,6 +25,9 @@ not existing). HUD-only feature; Discord tests don't apply.
     emission (in `task_roundlive_match_context`, which the test fires
     directly via the new rcon since the engine round-live event isn't
     available in the test environment)
+  - `KTPMatchHandler.sma:2814` (ktp_unpause_now) + `:2891` (execute_pause) —
+    production pause/unpause helpers. Neither calls `send_match_embed_update`
+    nor any other Discord helper. Tests 10/11 pin that contract.
 """
 from __future__ import annotations
 
@@ -31,7 +37,11 @@ from pathlib import Path
 
 import pytest
 
-from ._timing import LOG_POLL_TIMEOUT
+from ._timing import (
+    DISCORD_POLL_INTERVAL,
+    DISCORD_POST_TIMEOUT,
+    LOG_POLL_TIMEOUT,
+)
 from .log_tail import current_log_size, wait_for_log_event, wait_for_log_substring
 from .match_flow import MatchDriver, MatchType
 
@@ -136,37 +146,149 @@ def test_8_ktp_match_start_log_message_line(hlds):
 
 
 # ---------------------------------------------------------------------------
-# Tests 10 + 11 — Tech pause Discord embed updates (NOT IMPLEMENTED — design)
+# Tests 10 + 11 — Tech pause negative-path Discord assertions
 # ---------------------------------------------------------------------------
-
-PAUSE_NO_DISCORD_REASON = (
-    "Discovered 2026-05-05 during Phase 2b implementation: tech pause has "
-    "no Discord embed update in production. The audit doc's 'audit gap' "
-    "(SESSION_3_DISCORD_EMISSION_AUDIT.md § Tech pause / unpause) was "
-    "actually the feature not existing — `cmd_tech_pause` and the unpause "
-    "path do not call `send_match_embed_update` or any other Discord-side "
-    "primitive. Pause status is a HUD-only feature in production design "
-    "(ReHLDS `RH_SV_UpdatePausedHUD` real-time HUD updates per CLAUDE.md "
-    "§ Pause System). Tests 10/11 as originally specified would assert on "
-    "an embed update that never fires. They could be repurposed to assert "
-    "the negative path (\"pause does NOT produce a /edit POST\") if a "
-    "future regression added an unwanted Discord notification, but that's "
-    "a different test contract and scope. Filing this as design intent "
-    "rather than test gap."
-)
-
-
-@pytest.mark.skip(reason=PAUSE_NO_DISCORD_REASON)
-def test_10_tech_pause_emits_paused_embed_update(hlds, discord_relay):
-    """Original spec: tech pause emits a Discord embed update with "Paused"
-    in the status. Reality: production has no such emission path. See
-    PAUSE_NO_DISCORD_REASON."""
-    pass
+#
+# Production pause/unpause is HUD-only by design (ReHLDS RH_SV_UpdatePausedHUD
+# real-time HUD updates; see CLAUDE.md § Pause System). Neither execute_pause
+# (KTPMatchHandler.sma:2891) nor ktp_unpause_now (KTPMatchHandler.sma:2814)
+# calls send_match_embed_update or any other Discord helper.
+#
+# Tests 10/11 pin that contract — a regression that wires Discord emission
+# into the pause path (e.g., someone adding "Match Paused" notifications
+# without realizing they're load-bearing for the HUD-only design) would
+# surface as additional POSTs to discord_relay during the pause window.
+#
+# Original test 10/11 spec (pause EMITS a "Paused" embed update) was design-
+# skipped 2026-05-05 — the feature didn't exist. Repurposed to negative-path
+# tests 2026-05-24 (KTPMatchHandler 0.10.136 + new amx_ktp_test_tech_pause /
+# amx_ktp_test_tech_unpause rcons).
 
 
-@pytest.mark.skip(reason=PAUSE_NO_DISCORD_REASON)
-def test_11_tech_unpause_emits_match_live_embed_update(hlds, discord_relay):
-    """Original spec: tech unpause/resume emits a "Match Live" embed update.
-    Reality: production has no such emission path. See
-    PAUSE_NO_DISCORD_REASON."""
-    pass
+def _await_initial_create_post(relay, *, timeout: float) -> None:
+    """Wait for the CREATE POST that fires from task_deferred_discord_fwd
+    ~200ms after advance_live (KTPMatchHandler.sma:7414). Tests 10/11 take
+    a baseline of relay.received + relay.received_edits AFTER this lands,
+    so the negative-path assertion isn't fighting the initial create's
+    arrival latency."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if len(relay.received) >= 1:
+            return
+        time.sleep(DISCORD_POLL_INTERVAL)
+    raise AssertionError(
+        f"setup: expected ≥1 CREATE POST within {timeout}s of advance_live; "
+        f"got received={len(relay.received)}, received_edits="
+        f"{len(relay.received_edits)}, auth_failures={len(relay.auth_failures)}"
+    )
+
+
+def test_10_tech_pause_emits_no_discord_traffic(hlds, discord_relay):
+    """Negative-path: firing tech pause must NOT cause any Discord POST.
+
+    Production pause is HUD-only (KTPMatchHandler.sma:2891 execute_pause
+    contains zero Discord-side calls; ReHLDS RH_SV_UpdatePausedHUD drives
+    a real-time HUD overlay instead). A regression that wires
+    send_match_embed_update (or send_discord_simple_embed) into the pause
+    path would land here as an unexpected POST on either /reply or /edit.
+
+    Wire-shape:
+      - advance_live(1)            → POST /reply (CREATE) → received[0]
+      - tech_pause()               → NO additional POSTs (assertion target)
+
+    Asserts both received and received_edits counts stay flat across a
+    full DISCORD_POST_TIMEOUT window — long enough to surface any deferred
+    POST that the production pause path might add as a regression.
+    """
+    discord_relay.reset()
+    driver = MatchDriver(hlds)
+    driver.setup_match(MatchType.COMPETITIVE)
+    driver.advance_pending()
+    driver.advance_live(half=1)
+
+    _await_initial_create_post(discord_relay, timeout=DISCORD_POST_TIMEOUT)
+
+    baseline_creates = len(discord_relay.received)
+    baseline_edits = len(discord_relay.received_edits)
+
+    driver.tech_pause()
+
+    # Wait the full DISCORD_POST_TIMEOUT so any deferred-task POST (e.g.,
+    # task_deferred_discord_fwd-style +200ms callback) would have landed.
+    time.sleep(DISCORD_POST_TIMEOUT)
+
+    assert len(discord_relay.received) == baseline_creates, (
+        f"tech_pause caused unexpected /reply POST: baseline="
+        f"{baseline_creates}, now={len(discord_relay.received)}. Production "
+        f"pause is HUD-only — a new CREATE POST means someone wired a Discord "
+        f"helper into execute_pause or its callees."
+    )
+    assert len(discord_relay.received_edits) == baseline_edits, (
+        f"tech_pause caused unexpected /edit POST: baseline={baseline_edits}, "
+        f"now={len(discord_relay.received_edits)}. Production pause is HUD-"
+        f"only — a new UPDATE POST means someone wired send_match_embed_update "
+        f"into execute_pause or its callees."
+    )
+
+    # Verify state-side: pause did actually take effect (otherwise the
+    # negative result is vacuous — we'd be asserting "the helper that didn't
+    # run also didn't emit").
+    state = driver.get_state()
+    assert state.is_paused is True, (
+        f"tech_pause didn't actually pause the server; state.is_paused="
+        f"{state.is_paused}. The negative-path assertion above is meaningless "
+        f"if the helper never ran."
+    )
+
+
+def test_11_tech_unpause_emits_no_discord_traffic(hlds, discord_relay):
+    """Sibling to test 10 — unpause must also NOT cause any Discord POST.
+
+    Production unpause is HUD-only (KTPMatchHandler.sma:2814 ktp_unpause_now
+    contains zero Discord-side calls). Same regression-catcher contract as
+    test 10 but for the unpause path.
+
+    Wire-shape:
+      - advance_live(1)            → POST /reply (CREATE) → received[0]
+      - tech_pause()               → no POST (test 10 assertion)
+      - tech_unpause()             → NO additional POSTs (this assertion)
+
+    Asserts both received and received_edits counts stay flat across the
+    pause + unpause window.
+    """
+    discord_relay.reset()
+    driver = MatchDriver(hlds)
+    driver.setup_match(MatchType.COMPETITIVE)
+    driver.advance_pending()
+    driver.advance_live(half=1)
+
+    _await_initial_create_post(discord_relay, timeout=DISCORD_POST_TIMEOUT)
+
+    baseline_creates = len(discord_relay.received)
+    baseline_edits = len(discord_relay.received_edits)
+
+    driver.tech_pause()
+    driver.tech_unpause()
+
+    # Wait the full DISCORD_POST_TIMEOUT after the unpause so any deferred
+    # POST from EITHER pause or unpause would have landed by now.
+    time.sleep(DISCORD_POST_TIMEOUT)
+
+    assert len(discord_relay.received) == baseline_creates, (
+        f"pause+unpause caused unexpected /reply POST: baseline="
+        f"{baseline_creates}, now={len(discord_relay.received)}. Production "
+        f"pause/unpause is HUD-only."
+    )
+    assert len(discord_relay.received_edits) == baseline_edits, (
+        f"pause+unpause caused unexpected /edit POST: baseline={baseline_edits}, "
+        f"now={len(discord_relay.received_edits)}. Production pause/unpause "
+        f"is HUD-only."
+    )
+
+    # Verify state-side: unpause did actually clear the pause flag.
+    state = driver.get_state()
+    assert state.is_paused is False, (
+        f"tech_unpause didn't actually unpause; state.is_paused={state.is_paused}. "
+        f"The negative-path assertion above is meaningless if the helper "
+        f"never ran."
+    )

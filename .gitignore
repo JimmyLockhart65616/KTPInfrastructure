@@ -22,11 +22,18 @@ scripts/ktp-organize-hltv-demos.sh
 scripts/hltv-api.py
 scripts/ktp-backup.sh
 scripts/audit-fleet.json
+scripts/audit_fleet_versions.py
+scripts/verify_new_staged.py
 
 # Private documentation (contains IPs/credentials)
 ktp_gameserver_setup.md
 ktp_dataserver_setup.md
 infrastructure.md
+# Owner-facing LAN PC provisioning guide — embeds a suggested account
+# password + remote-access setup; share privately, never publish.
+provision/LAN-PC-OWNER-SETUP.md
+provision/LAN-PC-OWNER-SETUP.html
+provision/LAN-PC-OWNER-SETUP.pdf
 
 # Editor files
 *.swp
