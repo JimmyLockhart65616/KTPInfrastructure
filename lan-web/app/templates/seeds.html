@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}WSDoD / LAN 2026 / Seeding{% endblock %}
+{% block content %}
+  <section class="chapter">
+    <header class="chapter-head">
+      <div class="chapter-num">&#9733;</div>
+      <h2 class="chapter-title">Seeding</h2>
+      <span class="chapter-stamp">CAPTAINS' WEIGHTED BALLOT</span>
+    </header>
+    <div class="chapter-body">
+
+      <div class="units-meta">
+        <span>Poll: <strong>{{ 'OPEN' if poll_open else 'CLOSED' }}</strong></span>
+        <span>Ballots in: <strong>{{ submitted|length }}/{{ teams|length }}</strong></span>
+        <span>Pulled: {{ last_updated }}</span>
+      </div>
+
+      {% if ident and ident.is_captain and poll_open %}
+        <p><a href="{{ url_for('poll') }}">→ Submit or revise your team's ballot</a></p>
+      {% endif %}
+
+      {% if is_admin %}
+      <div class="pending-note" style="border-style:solid;border-color:var(--wsdod-blue);">
+        <strong style="font-family:var(--stencil);letter-spacing:.14em;color:var(--wsdod-blue);display:block;margin-bottom:6px;">STAFF CONTROLS</strong>
+        <form method="post" action="/admin/poll/open"    style="display:inline;"><button type="submit">Open poll</button></form>
+        <form method="post" action="/admin/poll/close"   style="display:inline;"><button type="submit">Close poll</button></form>
+        <form method="post" action="/admin/poll/compute" style="display:inline;"><button type="submit">Compute &amp; lock seeds</button></form>
+      </div>
+      {% endif %}
+
+      {% if standing %}
+        <h3>Consensus seeds</h3>
+        <table>
+          <thead><tr><td>Seed</td><td>Company</td><td>Score</td></tr></thead>
+          <tbody>
+          {% for tid in standing %}
+            <tr>
+              <td style="color:var(--ink);">{{ loop.index }}</td>
+              <td style="width:auto;color:var(--ink);">{{ teams[tid].name }}{% if teams[tid].tag %} [{{ teams[tid].tag }}]{% endif %}</td>
+              <td>{{ '%.2f'|format(score[tid]) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <p style="font-size:13px;color:var(--ink-faint);">Lower score = stronger. Seeds shown are the live consensus; staff lock them onto the bracket with “Compute &amp; lock”.</p>
+      {% else %}
+        <div class="pending-note">No ballots yet — standings appear once captains submit.</div>
+      {% endif %}
+
+      {% if submitted %}
+        <h3 style="margin-top:28px;">Ballot grid</h3>
+        <div style="overflow-x:auto;">
+        <table style="font-size:13px;">
+          <thead>
+            <tr><td>voter \ team</td>{% for tid, t in teams.items() %}<td>{{ t.tag or t.name[:4] }}</td>{% endfor %}</tr>
+          </thead>
+          <tbody>
+          {% for v in submitted %}
+            <tr>
+              <td style="color:var(--ink);">{{ teams[v].tag or teams[v].name[:6] }}</td>
+              {% for tid, t in teams.items() %}
+                <td style="text-align:center;">{% if tid == v %}—{% else %}{{ ballots[v].get(tid, '·') }}{% endif %}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        <p style="font-size:13px;color:var(--ink-faint);">Each row is one captain's ballot (1 = strongest). Ballots are weighted by the submitting team's own standing.</p>
+      {% endif %}
+
+    </div>
+  </section>
+{% endblock %}

@@ -70,3 +70,14 @@ def require_captain(request: Request) -> dict:
     if not ident["is_captain"]:
         raise HTTPException(status_code=403, detail="Team captain only")
     return ident
+
+
+def is_admin(request: Request) -> bool:
+    did = request.session.get(SESSION_ID)
+    return did is not None and did in settings.admin_discord_ids
+
+
+def require_admin(request: Request) -> int:
+    if not is_admin(request):
+        raise HTTPException(status_code=403, detail="LAN staff only")
+    return request.session.get(SESSION_ID)

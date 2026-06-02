@@ -16,6 +16,7 @@ class Settings:
     discord_client_id: str
     discord_client_secret: str
     discord_redirect_uri: str
+    admin_discord_ids: frozenset
     db_host: str
     db_port: int
     db_user: str
@@ -25,6 +26,10 @@ class Settings:
     @property
     def is_prod(self) -> bool:
         return self.env.lower() == "prod"
+
+
+def _parse_ids(raw: str) -> frozenset:
+    return frozenset(int(x) for x in raw.replace(",", " ").split() if x.strip().isdigit())
 
 
 def load() -> Settings:
@@ -38,6 +43,7 @@ def load() -> Settings:
         discord_client_id=os.getenv("DISCORD_CLIENT_ID", ""),
         discord_client_secret=os.getenv("DISCORD_CLIENT_SECRET", ""),
         discord_redirect_uri=os.getenv("DISCORD_REDIRECT_URI", ""),
+        admin_discord_ids=_parse_ids(os.getenv("LAN_ADMIN_DISCORD_IDS", "")),
         db_host=os.getenv("LAN_DB_HOST", "127.0.0.1"),
         db_port=int(os.getenv("LAN_DB_PORT", "3306")),
         db_user=os.getenv("LAN_DB_USER", "ktp_lan"),
