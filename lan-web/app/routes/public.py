@@ -44,11 +44,6 @@ def teams(request: Request):
     return templates.TemplateResponse(request, "teams.html", ctx)
 
 
-@router.get("/bracket", name="bracket")
-def bracket(request: Request):
-    return templates.TemplateResponse(request, "bracket.html", common.base_ctx(request, "bracket"))
-
-
 @router.get("/rules", name="rules")
 def rules(request: Request):
     return templates.TemplateResponse(request, "rules.html", common.base_ctx(request, "rules"))

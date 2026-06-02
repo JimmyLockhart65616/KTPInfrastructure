@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from .config import settings
-from .routes import auth_routes, poll_routes, public, schedule_routes
+from .routes import auth_routes, bracket_routes, poll_routes, public, schedule_routes
 
 app = FastAPI(title="WSDoD LAN 2026", root_path=settings.root_path)
 
@@ -32,3 +32,4 @@ app.include_router(public.router)
 app.include_router(auth_routes.router)
 app.include_router(poll_routes.router)
 app.include_router(schedule_routes.router)
+app.include_router(bracket_routes.router)
