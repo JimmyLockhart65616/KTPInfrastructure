@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}WSDoD / LAN 2026 / Seeding Ballot{% endblock %}
+{% block content %}
+  <section class="chapter">
+    <header class="chapter-head">
+      <div class="chapter-num">&#9733;</div>
+      <h2 class="chapter-title">Seeding Ballot</h2>
+      <span class="chapter-stamp">CAPTAIN'S EYES ONLY</span>
+    </header>
+    <div class="chapter-body">
+      {% if not poll_open %}
+        <div class="pending-note">
+          The seeding poll is currently <strong>closed</strong>. Standings post on the
+          <a href="{{ url_for('seeds') }}">seeding page</a>.
+        </div>
+      {% else %}
+        <p>As captain of <strong>{{ my_team.name }}</strong>, rank the other {{ n }} companies —
+           <strong>1 = strongest</strong>. Use each rank 1–{{ n }} exactly once.</p>
+        <form method="post" action="{{ url_for('poll') }}">
+          <table>
+            <tbody>
+            {% for t in others %}
+              <tr>
+                <td style="width:auto;color:var(--ink);">{{ t.name }}{% if t.tag %} [{{ t.tag }}]{% endif %}</td>
+                <td style="width:6rem;">
+                  <select name="rank_{{ t.id }}" required>
+                    <option value="">—</option>
+                    {% for i in range(1, n + 1) %}
+                      <option value="{{ i }}" {{ 'selected' if current.get(t.id) == i }}>{{ i }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <p style="margin-top:18px;">
+            <button type="submit" style="font-family:var(--stencil);letter-spacing:.14em;padding:.6rem 1.4rem;
+                    background:var(--wsdod-blue);color:var(--paper);border:none;cursor:pointer;text-transform:uppercase;">
+              Submit Ballot
+            </button>
+          </p>
+          <p style="font-size:13px;color:var(--ink-faint);">Each rank must be used once. Resubmitting overwrites your previous ballot.</p>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

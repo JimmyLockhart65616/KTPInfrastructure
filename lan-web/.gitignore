@@ -1,0 +1,5 @@
+.env
+venv/
+.smoke_venv/
+__pycache__/
+*.pyc

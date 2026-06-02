@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="WSDoD LAN 2026 — Operations Dossier.">
+<meta name="theme-color" content="#f0e9d6">
+<title>{% block title %}WSDoD / LAN 2026{% endblock %}</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Stencil+Text:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', path='dossier.css') }}">
+<style>
+  /* multi-page supplements on top of the extracted single-page stylesheet */
+  .toc-list a.active .toc-title { color: var(--alert); text-decoration: underline; }
+  .toc-list a.active .toc-num { color: var(--alert); }
+  .op-line a { color: var(--wsdod-blue); }
+  .pending-note { border: 2px dashed var(--ink-margin); padding: 18px 22px; font-family: var(--typed);
+                  color: var(--ink-soft); background: rgba(90,94,58,0.05); }
+</style>
+</head>
+<body>
+
+<svg class="bleed-defs" aria-hidden="true">
+  <defs>
+    <filter id="stamp-bleed" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3"/>
+      <feDisplacementMap in="SourceGraphic" scale="2.4"/>
+    </filter>
+  </defs>
+</svg>
+
+<article class="dossier" role="document">
+
+  <div class="binding-holes" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="fold-line fold-1" aria-hidden="true"></div>
+  <div class="fold-line fold-2" aria-hidden="true"></div>
+
+  <header class="masthead">
+    <span class="classification-strip">FOR DISTRIBUTION TO ALL UNITS</span>
+    <div class="patch-block">
+      <svg class="patch" viewBox="0 0 200 200" role="img" aria-label="WSDoD divisional patch">
+        <circle cx="100" cy="100" r="96" fill="#1e3a5f" stroke="#122742" stroke-width="2"/>
+        <circle cx="100" cy="100" r="88" fill="none" stroke="#f0e9d6" stroke-width="1.5" stroke-dasharray="2 3"/>
+        <circle cx="100" cy="100" r="74" fill="#f0e9d6" stroke="#122742" stroke-width="2"/>
+        <defs>
+          <path id="rim-top" d="M 24 100 A 76 76 0 0 1 176 100" fill="none"/>
+          <path id="rim-bot" d="M 24 100 A 76 76 0 0 0 176 100" fill="none"/>
+        </defs>
+        <text font-family="Big Shoulders Stencil Text, Impact, sans-serif" font-size="18" font-weight="900" fill="#f0e9d6" letter-spacing="3">
+          <textPath href="#rim-top" startOffset="50%" text-anchor="middle">WORLD SERIES OF</textPath>
+        </text>
+        <text font-family="Big Shoulders Stencil Text, Impact, sans-serif" font-size="18" font-weight="900" fill="#f0e9d6" letter-spacing="3">
+          <textPath href="#rim-bot" startOffset="50%" text-anchor="middle">DAY OF DEFEAT</textPath>
+        </text>
+        <g transform="translate(100 100)" stroke="#1e3a5f" stroke-width="2.4" stroke-linecap="round" fill="none">
+          <line x1="-32" y1="-30" x2="30" y2="32"/>
+          <line x1="-32" y1="-30" x2="-36" y2="-26"/>
+          <line x1="-32" y1="-30" x2="-26" y2="-36"/>
+          <line x1="-12" y1="-10" x2="-8" y2="-14"/>
+          <line x1="-30" y1="32" x2="32" y2="-30" stroke-width="3.6"/>
+          <circle cx="32" cy="-30" r="3" fill="#1e3a5f"/>
+        </g>
+        <text x="100" y="78" font-family="Big Shoulders Stencil Text, sans-serif" font-size="16" fill="#8b1c1c" text-anchor="middle" letter-spacing="4" font-weight="900">&#9733; LAN &#9733;</text>
+        <text x="100" y="146" font-family="Special Elite, Courier New, monospace" font-size="22" fill="#1a140e" text-anchor="middle" letter-spacing="3" font-weight="700">MMXXVI</text>
+      </svg>
+    </div>
+    <div class="masthead-meta">
+      <span class="title-stamp">WSDoD <span class="lan">LAN</span> <span class="year">26</span></span>
+      <span class="subtitle">Operations Dossier — Field Exercise, Philadelphia Theater</span>
+      <dl>
+        <dt>From</dt><dd>WSDoD COMMAND</dd>
+        <dt>To</dt><dd>ALL ENLISTED OPERATORS</dd>
+        <dt>Re</dt><dd>LAN 2026 / 31 JUL – 2 AUG / TAP ESPORT CENTER</dd>
+        <dt>Operator</dt>
+        <dd class="op-line">
+          {% if session_user %}{{ session_user.discord_name }} — <a href="{{ url_for('logout') }}">stand down</a>
+          {% else %}<a href="{{ url_for('login') }}">report for duty (Discord)</a>{% endif %}
+        </dd>
+        <dt>Rev</dt><dd>{{ last_updated }}</dd>
+      </dl>
+    </div>
+    <div class="stamp-decl" data-doc="DOC №WSDoD-26/I">DECLASSIFIED</div>
+  </header>
+
+  <nav class="toc" aria-label="Document Index">
+    <div class="toc-head">
+      <h2>Index of Sections</h2>
+      <span class="toc-classif">Select a section</span>
+    </div>
+    <ol class="toc-list">
+      <li><a href="{{ url_for('index') }}"    class="{{ 'active' if active_page == 'briefing' }}"><span class="toc-num">§ I</span>  <span class="toc-title">Mission Briefing &amp; Theater</span> <span class="toc-page">p. 01</span></a></li>
+      <li><a href="{{ url_for('teams') }}"    class="{{ 'active' if active_page == 'teams' }}"><span class="toc-num">§ II</span> <span class="toc-title">Order of Battle</span>            <span class="toc-page">p. 02</span></a></li>
+      <li><a href="{{ url_for('seeds') }}"    class="{{ 'active' if active_page == 'seeds' }}"><span class="toc-num">§ III</span><span class="toc-title">Seeding — Captains' Ballot</span> <span class="toc-page">p. 03</span></a></li>
+      <li><a href="{{ url_for('schedule') }}" class="{{ 'active' if active_page == 'schedule' }}"><span class="toc-num">§ IV</span> <span class="toc-title">Communiqué — Schedule</span>      <span class="toc-page">p. 04</span></a></li>
+      <li><a href="{{ url_for('bracket') }}"  class="{{ 'active' if active_page == 'bracket' }}"><span class="toc-num">§ V</span>  <span class="toc-title">Bracket — Playoffs</span>          <span class="toc-page">p. 05</span></a></li>
+      <li><a href="{{ url_for('rules') }}"    class="{{ 'active' if active_page == 'rules' }}"><span class="toc-num">§ VI</span> <span class="toc-title">Rules of Engagement</span>        <span class="toc-page">p. 06</span></a></li>
+    </ol>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <footer style="margin-top:48px;border-top:var(--rule-thick);padding-top:18px;font-family:var(--typed);font-size:12px;color:var(--ink-faint);text-align:center;">
+    WSDoD — World Series of Day of Defeat · LAN 2026 · transmitted via KTP infrastructure
+  </footer>
+
+</article>
+</body>
+</html>
