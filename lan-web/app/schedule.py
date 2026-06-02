@@ -58,3 +58,59 @@ def rounds_with_teams():
 
 def seeds_locked() -> bool:
     return len(seed_map()) >= 10
+
+
+# ── materialized matches (after seeds lock) ──────────────────────────────
+def get_matches() -> list[dict]:
+    """lan_schedule rows joined with team names, ordered by round. [] if none/down."""
+    from . import db
+    try:
+        return db.query_all(
+            """
+            SELECT m.id, m.round, m.station, m.status,
+                   m.team_a_id, m.team_b_id, m.score_a, m.score_b, m.winner_team_id,
+                   ta.name AS a_name, ta.tag AS a_tag, ta.seed AS a_seed,
+                   tb.name AS b_name, tb.tag AS b_tag, tb.seed AS b_seed
+            FROM lan_schedule m
+            JOIN lan_teams ta ON ta.id = m.team_a_id
+            JOIN lan_teams tb ON tb.id = m.team_b_id
+            ORDER BY m.round, m.id
+            """
+        )
+    except Exception:
+        return []
+
+
+def matches_exist() -> bool:
+    return len(get_matches()) > 0
+
+
+def materialize_matches():
+    """Insert lan_schedule rows from SCHEDULE_10, mapping seed->team. Requires all 10 seeds."""
+    from . import db
+    smap = seed_map()
+    if len(smap) < 10:
+        raise ValueError("Seeds are not locked — cannot generate matches.")
+    with db.get_conn() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM lan_schedule")
+        for rnd_i, rnd in enumerate(SCHEDULE_10, 1):
+            for a, b in rnd:
+                cur.execute(
+                    "INSERT INTO lan_schedule (round, team_a_id, team_b_id, status) "
+                    "VALUES (%s, %s, %s, 'pending')",
+                    (rnd_i, smap[a]["id"], smap[b]["id"]),
+                )
+
+
+def report_result(match_id: int, score_a: int, score_b: int, reporter_discord_id: int | None):
+    from . import db
+    m = db.query_one("SELECT team_a_id, team_b_id FROM lan_schedule WHERE id=%s", (match_id,))
+    if not m:
+        raise ValueError("No such match.")
+    winner = m["team_a_id"] if score_a > score_b else m["team_b_id"] if score_b > score_a else None
+    db.execute(
+        "UPDATE lan_schedule SET score_a=%s, score_b=%s, winner_team_id=%s, status='final', "
+        "reported_by=%s, reported_at=NOW() WHERE id=%s",
+        (score_a, score_b, winner, reporter_discord_id, match_id),
+    )
+

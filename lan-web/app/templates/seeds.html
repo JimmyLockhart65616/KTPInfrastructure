@@ -22,9 +22,9 @@
       {% if is_admin %}
       <div class="pending-note" style="border-style:solid;border-color:var(--wsdod-blue);">
         <strong style="font-family:var(--stencil);letter-spacing:.14em;color:var(--wsdod-blue);display:block;margin-bottom:6px;">STAFF CONTROLS</strong>
-        <form method="post" action="/admin/poll/open"    style="display:inline;"><button type="submit">Open poll</button></form>
-        <form method="post" action="/admin/poll/close"   style="display:inline;"><button type="submit">Close poll</button></form>
-        <form method="post" action="/admin/poll/compute" style="display:inline;"><button type="submit">Compute &amp; lock seeds</button></form>
+        <form method="post" action="{{ url_for('poll_open') }}"    style="display:inline;"><button type="submit">Open poll</button></form>
+        <form method="post" action="{{ url_for('poll_close') }}"   style="display:inline;"><button type="submit">Close poll</button></form>
+        <form method="post" action="{{ url_for('poll_compute') }}" style="display:inline;"><button type="submit">Compute &amp; lock seeds</button></form>
       </div>
       {% endif %}
 
