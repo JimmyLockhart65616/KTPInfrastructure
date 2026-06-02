@@ -1,13 +1,103 @@
 {% extends "base.html" %}
+{% block title %}WSDoD / LAN 2026 / Mission Briefing{% endblock %}
 {% block content %}
-  <p class="stamp">Operation Order</p>
-  <h1>WSDoD LAN 2026</h1>
-  <p>Group stage Saturday &middot; playoffs Sunday. Captains submit seeding ballots; results report live as the rounds run.</p>
-  {% if ident %}
-    <p>Signed in as <strong>{{ ident.discord_name }}</strong> &mdash; {{ ident.team_name }}{% if ident.is_captain %} (captain){% endif %}.</p>
-  {% elif session_user %}
-    <p>Signed in via Discord as <strong>{{ session_user.discord_name }}</strong>, but your account isn't tied to a LAN roster yet.</p>
-  {% else %}
-    <p><a class="btn" href="{{ url_for('login') }}">Sign in with Discord</a></p>
-  {% endif %}
+
+  <section id="briefing" class="chapter">
+    <header class="chapter-head">
+      <div class="chapter-num">I</div>
+      <h2 class="chapter-title">Mission Briefing</h2>
+      <span class="chapter-stamp">PHILADELPHIA THEATER / EDT</span>
+    </header>
+
+    <div class="chapter-body">
+      <dl class="briefing-orders">
+        <dt>Operation</dt> <dd>WORLD SERIES OF DAY OF DEFEAT — LAN 2026 <span class="stamp-inline">field exercise</span></dd>
+        <dt>D-Day</dt>     <dd>31 JULY 2026 / FRIDAY · DRAFT EVENT</dd>
+        <dt>D+1</dt>       <dd>01 AUGUST 2026 / SATURDAY · GROUP STAGE</dd>
+        <dt>D+2</dt>       <dd>02 AUGUST 2026 / SUNDAY · PLAYOFFS &amp; FINALS</dd>
+        <dt>Theater</dt>   <dd>Philadelphia, Pennsylvania — TAP Esport Center (Chinatown), basement floor, 924 Cherry St.</dd>
+        <dt>Forces</dt>    <dd>Twelve (12) companies cap, 5–7 enlisted apiece. <strong>{{ team_count }}/12</strong> companies confirmed.</dd>
+        <dt>Fee</dt>       <dd><strong>$160</strong> full weekend &nbsp;·&nbsp; <strong>$50</strong> Friday draft only</dd>
+        <dt>Payment</dt>   <dd>Through your captain. Initial deposit fronted by <strong>las1k64</strong> — much obliged.</dd>
+        <dt>Comms</dt>     <dd>Official Discord: <a href="https://discord.gg/bDw2NmEFj2">discord.gg/bDw2NmEFj2</a></dd>
+      </dl>
+
+      <div class="briefing-body">
+        <p>We're convening companies of Day of Defeat operators on the basement floor of the TAP Esport Center, Philadelphia — the same Chinatown room that hosted the 2025 LAN. The last day of July through the first weekend of August, 2026. Whether you're old guard, new blood, or somewhere bewildered in between, this is your dossier. Read it. Sign it. Bring it with you.</p>
+
+        <p>Friday opens with the <strong>draft event</strong> — a pickup tournament open to anyone in attendance who wants in, where the weekend's companies are drafted. Saturday is the <strong>group stage</strong>: every company plays a fixed slate to settle seeding. Sunday is the <strong>playoffs</strong> — bracket to a verdict, finals Sunday evening.</p>
+
+        <p>Inside this dossier you'll find your <strong>order of battle</strong> (who's drafted and with whom), your <strong>communiqué</strong> (the Saturday schedule), the <strong>bracket</strong> (Sunday's road to the title), and your <strong>rules of engagement</strong> (what's a fair shot and what's a forfeit). Captains submit seeding ballots once the draft is complete.</p>
+
+        <p class="typed-line">— Get ready for a weekend of fun, sweat, and <em>dod innit</em>.</p>
+
+        <div class="briefing-signoff">
+          Filed in good order at headquarters,
+          <strong>WSDoD Tournament Staff</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="theater" class="chapter">
+    <header class="chapter-head">
+      <div class="chapter-num">II</div>
+      <h2 class="chapter-title">Theater of Operations</h2>
+      <span class="chapter-stamp">GRID REFERENCE — PHL/CHERRY</span>
+    </header>
+
+    <div class="chapter-body theater-grid">
+      <div class="venue-card">
+        <h3>TAP Esport Center</h3>
+        <div class="venue-addr">
+          924 Cherry Street — <strong>basement floor</strong><br>
+          Philadelphia, PA 19107<br>
+          <em>2025's Chinatown location — same room, second year.</em>
+        </div>
+        <dl>
+          <dt>Air</dt>      <dd>PHL Intl. → SEPTA Regional Rail (~25 min)</dd>
+          <dt>Rail</dt>     <dd>30th Street Station → 10 min E on foot</dd>
+          <dt>Motor</dt>    <dd>I-95 / I-76 — street parking limited; commercial garages nearby</dd>
+          <dt>Subway</dt>   <dd>SEPTA Race-Vine (BSL) — 4 blocks south</dd>
+          <dt>Local</dt>    <dd>Chinatown gate, two blocks east. Dinner solves itself.</dd>
+        </dl>
+        <div class="venue-quarters">
+          <strong>Book your accommodations now.</strong> Billeting is your own affair — command does not coordinate lodging. Consult your captain or staff for venue-adjacent hotel suggestions.
+        </div>
+      </div>
+
+      <div class="venue-map">
+        <svg viewBox="0 0 360 240" role="img" aria-label="Schematic map of TAP Esport Center, Philadelphia">
+          <path d="M 0 70 L 360 70" stroke="#5a5e3a" stroke-width="6" stroke-opacity="0.55"/>
+          <path d="M 0 170 L 360 170" stroke="#5a5e3a" stroke-width="6" stroke-opacity="0.55"/>
+          <path d="M 90 0 L 90 240" stroke="#5a5e3a" stroke-width="6" stroke-opacity="0.55"/>
+          <path d="M 250 0 L 250 240" stroke="#5a5e3a" stroke-width="6" stroke-opacity="0.55"/>
+          <path d="M 0 200 L 360 60" stroke="#1e3a5f" stroke-width="3" stroke-dasharray="6 4" fill="none"/>
+          <g transform="translate(40 195)">
+            <rect x="-12" y="-8" width="24" height="16" fill="#f0e9d6" stroke="#1e3a5f" stroke-width="1.5"/>
+            <text x="0" y="-14" font-family="Special Elite, monospace" font-size="9" fill="#1e3a5f" text-anchor="middle">30TH ST</text>
+          </g>
+          <g transform="translate(220 120)">
+            <circle r="14" fill="#8b1c1c" stroke="#1a140e" stroke-width="2"/>
+            <text x="0" y="4" font-family="Big Shoulders Stencil Text, sans-serif" font-size="14" fill="#f0e9d6" text-anchor="middle" font-weight="900">X</text>
+            <text x="0" y="-22" font-family="Big Shoulders Stencil Text, sans-serif" font-size="11" fill="#1a140e" text-anchor="middle" letter-spacing="1.5">TAP ESPORT</text>
+            <text x="0" y="32" font-family="Special Elite, monospace" font-size="9" fill="#4a3e30" text-anchor="middle">924 CHERRY</text>
+          </g>
+          <g transform="translate(330 30)">
+            <circle r="14" fill="#f0e9d6" stroke="#1a140e" stroke-width="1"/>
+            <line x1="0" y1="-12" x2="0" y2="12" stroke="#1a140e" stroke-width="1"/>
+            <line x1="-12" y1="0" x2="12" y2="0" stroke="#1a140e" stroke-width="1"/>
+            <polygon points="0,-12 -3,-2 3,-2" fill="#8b1c1c"/>
+            <text x="0" y="-16" font-family="Big Shoulders Stencil Text, sans-serif" font-size="9" fill="#1a140e" text-anchor="middle" font-weight="900">N</text>
+          </g>
+        </svg>
+        <div class="map-legend">
+          <span><i class="legend-venue"></i> Venue (TAP)</span>
+          <span><i class="legend-rail"></i> SEPTA rail</span>
+          <span><i class="legend-arterial"></i> Arterial</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
 {% endblock %}

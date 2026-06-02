@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}WSDoD / LAN 2026 / Order of Battle{% endblock %}
+{% block content %}
+
+  <section id="order-of-battle" class="chapter">
+    <header class="chapter-head">
+      <div class="chapter-num">II</div>
+      <h2 class="chapter-title">Order of Battle</h2>
+      <span class="chapter-stamp">DRAFTED COMPANIES</span>
+    </header>
+
+    <div class="chapter-body">
+      <div class="units-meta">
+        <span>Companies in muster: <strong>{{ team_count }}/12</strong></span>
+        <span>Operators sworn in: <strong>{{ total_players }}</strong></span>
+        <span>Last muster pulled: {{ last_updated }}</span>
+      </div>
+
+      {% if team_count == 0 %}
+      <div class="pending-note">
+        <strong style="font-family: var(--stencil); letter-spacing: 0.16em; color: var(--alert); display:block; margin-bottom:4px;">MUSTER PENDING</strong>
+        Companies are drafted at the Friday draft event. The order of battle posts here once rosters are set.
+      </div>
+      {% endif %}
+
+      <div class="units-grid">
+        {% for team in teams %}
+        <article class="unit-card">
+          <div class="unit-tag-strip">
+            <h3 class="unit-name">{{ team.name }}</h3>
+            <span class="unit-tag" title="Team tag: {{ team.tag }}">{{ team.tag or '—' }}</span>
+          </div>
+          <ol class="unit-roster">
+            {% for player in team.players %}
+            <li>
+              <span class="num">{{ loop.index }}.</span>
+              {% if player.is_captain %}<span class="role">CPT</span>{% endif %}
+              <span class="player">{{ player.display_name }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          <div class="registered">{% if team.seed %}SEED {{ team.seed }}{% else %}SEED PENDING{% endif %}</div>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+{% endblock %}

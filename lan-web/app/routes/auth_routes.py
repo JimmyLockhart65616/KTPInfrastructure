@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .. import auth
+from .. import auth, common
 from ..config import settings
 from ..templating import templates
 
@@ -35,11 +35,4 @@ async def logout(request: Request):
 
 @router.get("/me", name="me_page")
 def me(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "me.html",
-        {
-            "session_user": auth.session_user(request),
-            "ident": auth.current_identity(request),
-        },
-    )
+    return templates.TemplateResponse(request, "me.html", common.base_ctx(request, ""))
