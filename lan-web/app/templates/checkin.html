@@ -40,6 +40,20 @@
         </tbody>
       </table>
       <p style="font-size:13px;color:var(--ink-faint);">Each operator checks themselves in from their own Discord login; captains confirm the team once the roster is present.</p>
+
+      {% if is_admin %}
+      {% set present_total = teams|sum(attribute='present') %}
+      {% set teams_in = teams|selectattr('checked_in_at')|list|length %}
+      <div class="pending-note" style="margin-top:24px;border-style:solid;border-color:var(--alert);">
+        <strong style="font-family:var(--stencil);letter-spacing:.14em;color:var(--alert);display:block;margin-bottom:4px;">STAFF — RESET CHECK-IN</strong>
+        Clears every check-in so the next pass starts fresh — run this between Friday's draft headcount and Saturday group play.
+        Currently <strong>{{ present_total }}</strong> operator{{ '' if present_total == 1 else 's' }} and <strong>{{ teams_in }}</strong> team{{ '' if teams_in == 1 else 's' }} checked in.
+        <form method="post" action="{{ url_for('checkin_reset') }}" style="margin-top:8px;"
+              onsubmit="return confirm('Clear ALL check-ins ({{ present_total }} operators, {{ teams_in }} teams)? This cannot be undone.');">
+          <button type="submit">Clear all check-ins</button>
+        </form>
+      </div>
+      {% endif %}
     </div>
   </section>
 {% endblock %}

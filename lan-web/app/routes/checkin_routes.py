@@ -1,11 +1,9 @@
 """LAN-day check-in. Players self-check-in via Discord login; captains confirm
 the team. Public board shows who's present.
 
-TODO (pre-LAN): staff need a daily check-in RESET. The flow is two-pass —
-Friday's check-in is the draft-team headcount, then it must be purged and run
-fresh for Saturday group play. Add a staff "clear all check-ins" action
-(NULL checked_in_at on players + teams) and ideally scope check-in to a day so
-Friday vs Saturday don't bleed together."""
+Check-in runs in two passes — Friday's draft headcount, then a fresh Saturday
+run for group play. Staff clear the board between them via checkin_reset
+(NULLs checked_in_at on players + teams)."""
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
@@ -47,4 +45,13 @@ def checkin_team(request: Request):
         "UPDATE lan_players SET checked_in_at=NOW() WHERE id=%s AND checked_in_at IS NULL",
         (ident["player_id"],),
     )
+    return RedirectResponse(request.url_for("checkin"), status_code=303)
+
+
+@router.post("/admin/checkin/reset", name="checkin_reset")
+def checkin_reset(request: Request):
+    """Staff: clear the whole board so the next pass (Friday -> Saturday) starts fresh."""
+    auth.require_admin(request)
+    db.execute("UPDATE lan_players SET checked_in_at=NULL WHERE checked_in_at IS NOT NULL")
+    db.execute("UPDATE lan_teams SET checked_in_at=NULL WHERE checked_in_at IS NOT NULL")
     return RedirectResponse(request.url_for("checkin"), status_code=303)
