@@ -78,7 +78,7 @@ def bracket_page(request: Request):
     consolation_rounds = [
         {"title": "9th / 10th · play-in losers", "time": _t("P910"), "bo": 3, "matches": [_match("P910")]},
         {"title": "Lower semifinals · QF losers", "time": _t("LS1"), "bo": 3, "matches": [_match("LS1"), _match("LS2")]},
-        {"title": "Placement finals · 3/4 · 5/6 · 7/8", "time": _t("P34"), "bo": 3,
+        {"title": "Placement finals · 3/4 · 5/6 · 7/8", "time": _t("P34"), "bo": 1,
          "matches": [_match("P34"), _match("P56"), _match("P78")]},
     ]
 

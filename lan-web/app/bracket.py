@@ -40,11 +40,11 @@ BRACKET = [
     {"key": "SF2", "bracket": "upper", "stage": "SF", "slot": 2, "a": "W:QF3", "b": "W:QF4",     "best_of": 3, "label": "Semifinal 2"},
     {"key": "F",   "bracket": "upper", "stage": "F",  "slot": 1, "a": "W:SF1", "b": "W:SF2",     "best_of": 3, "label": "Final"},
     # Consolation / lower bracket — BO3, parallel, never feeds the championship.
-    {"key": "P34",  "bracket": "placement", "stage": "P34",  "slot": 1, "a": "L:SF1", "b": "L:SF2", "best_of": 3, "label": "3rd / 4th place"},
+    {"key": "P34",  "bracket": "placement", "stage": "P34",  "slot": 1, "a": "L:SF1", "b": "L:SF2", "best_of": 1, "label": "3rd / 4th place"},
     {"key": "LS1",  "bracket": "placement", "stage": "LS",   "slot": 1, "a": "L:QF1", "b": "L:QF4", "best_of": 3, "label": "Lower Semifinal 1"},
     {"key": "LS2",  "bracket": "placement", "stage": "LS",   "slot": 2, "a": "L:QF2", "b": "L:QF3", "best_of": 3, "label": "Lower Semifinal 2"},
-    {"key": "P56",  "bracket": "placement", "stage": "P56",  "slot": 1, "a": "W:LS1", "b": "W:LS2", "best_of": 3, "label": "5th / 6th place"},
-    {"key": "P78",  "bracket": "placement", "stage": "P78",  "slot": 1, "a": "L:LS1", "b": "L:LS2", "best_of": 3, "label": "7th / 8th place"},
+    {"key": "P56",  "bracket": "placement", "stage": "P56",  "slot": 1, "a": "W:LS1", "b": "W:LS2", "best_of": 1, "label": "5th / 6th place"},
+    {"key": "P78",  "bracket": "placement", "stage": "P78",  "slot": 1, "a": "L:LS1", "b": "L:LS2", "best_of": 1, "label": "7th / 8th place"},
     {"key": "P910", "bracket": "placement", "stage": "P910", "slot": 1, "a": "L:PI1", "b": "L:PI2", "best_of": 3, "label": "9th / 10th place"},
 ]
 BY_KEY = {m["key"]: m for m in BRACKET}
