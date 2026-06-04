@@ -59,7 +59,8 @@ def bracket_page(request: Request):
         s = by[mkey]
         return {"top": _comp(s, "a"), "bottom": _comp(s, "b"), "slot": s,
                 "best_of": bracket.BY_KEY[mkey]["best_of"],
-                "label": bracket.BY_KEY[mkey]["label"]}
+                "label": bracket.BY_KEY[mkey]["label"],
+                "time": bracket.match_time(mkey)}
 
     def _adv(team_id, label, bottom):
         if team_id and team_id in teamrows:
@@ -74,17 +75,18 @@ def bracket_page(request: Request):
             return q["team_a_id"] if q["winner_team_id"] == q["team_b_id"] else q["team_b_id"]
         return None
 
+    T = bracket.PLAYOFF_TIMES
     upper_rounds = [
-        {"title": "Quarterfinals", "matches": [_adv(rank_map.get(1), "Seed 1", "BYE"), _match("QF2"),
+        {"title": "Quarterfinals", "time": T[1], "matches": [_adv(rank_map.get(1), "Seed 1", "BYE"), _match("QF2"),
                                                _match("QF1"), _adv(rank_map.get(2), "Seed 2", "BYE")]},
-        {"title": "Semifinals", "matches": [_match("SF1"), _match("SF2")]},
-        {"title": "Final", "matches": [_match("F")]},
+        {"title": "Semifinals", "time": T[2], "matches": [_match("SF1"), _match("SF2")]},
+        {"title": "Final", "time": T[3], "matches": [_match("F")]},
     ]
     lower_rounds = [
-        {"title": "Play-ins", "matches": [_adv(_loser("QF2"), "Loser QF2", "↓ dropped"), _match("PA"),
+        {"title": "Play-ins", "time": T[1], "matches": [_adv(_loser("QF2"), "Loser QF2", "↓ dropped"), _match("PA"),
                                           _match("PB"), _adv(_loser("QF1"), "Loser QF1", "↓ dropped")]},
-        {"title": "Lower Semifinals", "matches": [_match("LSF1"), _match("LSF2")]},
-        {"title": "Lower Final", "matches": [_match("LF")]},
+        {"title": "Lower Semifinals", "time": T[2], "matches": [_match("LSF1"), _match("LSF2")]},
+        {"title": "Lower Final", "time": T[3], "matches": [_match("LF")]},
     ]
     # Grand Final reunites the two bracket champions (BO5). Placement matches
     # settle each tied tier off to the side.

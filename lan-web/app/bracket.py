@@ -41,6 +41,23 @@ BRACKET = [
 ]
 BY_KEY = {m["key"]: m for m in BRACKET}
 
+# Sunday plays out in 4 sequential rounds across the 6 stations — every upper,
+# lower and placement match of a round runs concurrently. Start times follow the
+# 2.5h-per-round + 1h-buffer cadence (the 8:30 Grand Final is BO5, so it may run
+# past the slot, but nothing follows it).
+PLAYOFF_ROUND = {
+    "QF1": 1, "QF2": 1, "PA": 1, "PB": 1,
+    "SF1": 2, "SF2": 2, "LSF1": 2, "LSF2": 2, "P910": 2,
+    "F": 3, "LF": 3, "P56": 3, "P78": 3,
+    "GF": 4, "P34": 4,
+}
+PLAYOFF_TIMES = {1: "10:00 AM", 2: "1:30 PM", 3: "5:00 PM", 4: "8:30 PM"}
+
+
+def match_time(mkey: str):
+    """Scheduled start time for a bracket match, or None if unknown."""
+    return PLAYOFF_TIMES.get(PLAYOFF_ROUND.get(mkey))
+
 
 # ── pure resolution (no DB; unit-tested) ─────────────────────────────────
 def resolve_slots(rank_map: dict[int, int], outcomes: dict[str, tuple]) -> dict[str, tuple]:

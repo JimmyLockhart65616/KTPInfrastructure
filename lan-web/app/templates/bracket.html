@@ -46,7 +46,7 @@
   <div class="bkt-tree">
     {% for rnd in rounds %}
     <div class="bkt-round">
-      <div class="bkt-round-head">{{ rnd.title }}<span>Best of 3</span></div>
+      <div class="bkt-round-head">{{ rnd.title }}<span>{% if rnd.time %}{{ rnd.time }} · {% endif %}Best of 3</span></div>
       <div class="bkt-body">
         {% for m in rnd.matches %}{{ matchbox(m, is_admin, am_captain, my_team_id) }}{% endfor %}
       </div>
@@ -119,7 +119,7 @@
       </div>
       {% endif %}
 
-      <h3>Grand Final &mdash; Best of 5</h3>
+      <h3>Grand Final &mdash; Best of 5{% if grand_final.time %} &middot; {{ grand_final.time }}{% endif %}</h3>
       <p style="font-size:13px;color:var(--ink-faint);">The upper-bracket champion meets the lower-bracket champion. One best-of-five &mdash; no bracket reset.</p>
       <div class="bkt-grand">{{ matchbox(grand_final, is_admin, am_captain, my_team_id) }}</div>
       {% if upper_champion or lower_champion %}
@@ -135,11 +135,11 @@
       {{ tree(lower_rounds, is_admin, am_captain, my_team_id) }}
 
       <h3 style="margin-top:32px;">Placement matches &mdash; final standings</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Played off to the side on spare stations to settle each tied tier. Best of 3.</p>
+      <p style="font-size:13px;color:var(--ink-faint);">Played off to the side on spare stations. Each starts at the next round time after those teams are eliminated. Best of 3.</p>
       <div class="bkt-placements">
         {% for m in placements %}
         <div class="bkt-place">
-          <div class="bkt-place-head">{{ m.label }}</div>
+          <div class="bkt-place-head">{{ m.label }}{% if m.time %} <span style="color:var(--wsdod-blue);font-family:var(--typed);letter-spacing:.04em;">{{ m.time }}</span>{% endif %}</div>
           {{ matchbox(m, is_admin, am_captain, my_team_id) }}
         </div>
         {% endfor %}
