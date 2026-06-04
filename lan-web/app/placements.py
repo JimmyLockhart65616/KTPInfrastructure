@@ -60,18 +60,16 @@ def suggested_placements() -> list[int]:
     def by_seed(ids):
         return sorted([i for i in ids if i], key=lambda i: seed_of.get(i, 999))
 
-    # 1-2 from the Final; each placement match settles its tier. 7th and 10th
-    # fall to the lower-semifinal losers. Before a match is played, fall back to
-    # bracket position ordered by seed, then group standings.
+    # 1-2 from the Final; each placement match settles its tier. Before a match
+    # is played, fall back to bracket position ordered by seed, then standings.
     if winner("F"):
         order = [winner("F"), loser("F")]
     else:
         order = by_seed([winner("SF1"), winner("SF2")])   # finalists TBD
-    order += [winner("P34"), loser("P34")] if winner("P34") else by_seed([loser("SF1"), loser("SF2")])
-    order += [winner("P56"), loser("P56")] if winner("P56") else by_seed([loser("QF3"), winner("LS1")])
-    order += [loser("LS1")]                                # 7th — QF-loser semi loser
-    order += [winner("P89"), loser("P89")] if winner("P89") else by_seed([loser("PI3"), winner("PLS")])
-    order += [loser("PLS")]                                # 10th — play-in-loser semi loser
+    order += [winner("P34"),  loser("P34")]  if winner("P34")  else by_seed([loser("SF1"), loser("SF2")])
+    order += [winner("P56"),  loser("P56")]  if winner("P56")  else by_seed([winner("LS1"), winner("LS2")])
+    order += [winner("P78"),  loser("P78")]  if winner("P78")  else by_seed([loser("LS1"), loser("LS2")])
+    order += [winner("P910"), loser("P910")] if winner("P910") else by_seed([loser("PI1"), loser("PI2")])
     order += standings_order + [t["id"] for t in teams]
 
     seen, out = set(), []

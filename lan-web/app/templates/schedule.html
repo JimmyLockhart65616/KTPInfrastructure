@@ -64,7 +64,7 @@
             <td>{{ '%+d'|format(s.diff) }}</td>
             <td>{{ s.buchholz }}</td>
           </tr>
-          {% if s.rank == 4 %}<tr><td></td><td colspan="4" style="color:var(--wsdod-blue);font-size:12px;letter-spacing:.12em;">— BYE LINE (seeds 1–4 bye to the Quarterfinals · 5–10 play in) —</td></tr>{% endif %}
+          {% if s.rank == 6 %}<tr><td></td><td colspan="4" style="color:var(--wsdod-blue);font-size:12px;letter-spacing:.12em;">— BYE LINE (seeds 1–6 bye to the Quarterfinals · 7–10 play in) —</td></tr>{% endif %}
         {% endfor %}
         </tbody>
       </table>
@@ -166,8 +166,8 @@
         <li><strong>Round / flag differential</strong> — capped, so a blowout doesn't snowball.</li>
         <li><strong>Group seed</strong> — the pre-event captains'-ballot seed, as the final fallback.</li>
       </ol>
-      <p style="font-size:13px;color:var(--ink-faint);">Seeds 1–4 bye straight to Sunday's Quarterfinals (seed 1 byes to the Semifinals);
-         seeds 5–10 open in the play-in. Final standing for everyone is played out in the consolation bracket.</p>
+      <p style="font-size:13px;color:var(--ink-faint);">Seeds 1–6 bye straight to Sunday's Quarterfinals; seeds
+         7–10 open in the play-in. Final standing for everyone is played out in the consolation bracket.</p>
 
       <h3 style="margin-top:30px;">Saturday timetable
         <a href="{{ url_for('schedule_ics') }}" style="font-size:12px;font-family:var(--typed);color:var(--wsdod-blue);margin-left:10px;">&#43; calendar (.ics)</a></h3>

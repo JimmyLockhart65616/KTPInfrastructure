@@ -71,9 +71,11 @@ def _sun_dur(best_of: int) -> float:
 # Sunday playoff milestones for the overview feed: (start, hours, label).
 SUN_BLOCKS = [
     ("10:00 AM", 2.5, "Play-in"),
+    ("12:30 PM", 1.0, "Lunch break"),
     ("1:30 PM", 2.5, "Quarterfinals"),
-    ("5:00 PM", 2.5, "Semifinals"),
-    ("8:30 PM", 2.5, "Final"),
+    ("4:00 PM", 2.5, "Semifinals"),
+    ("6:30 PM", 1.0, "Dinner break"),
+    ("7:30 PM", 2.5, "Final"),
 ]
 
 

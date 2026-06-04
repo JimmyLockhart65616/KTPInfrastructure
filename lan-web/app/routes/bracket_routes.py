@@ -65,27 +65,22 @@ def bracket_page(request: Request):
     def _t(mkey):
         return bracket.match_time(mkey)
 
-    def _bye(rank):
-        tid = rank_map.get(rank)
-        if tid and tid in teamrows:
-            top = {"name": teamrows[tid]["name"], "seed": rank, "score": None, "win": True, "tbd": False}
-        else:
-            top = {"name": "Seed %d" % rank, "seed": None, "score": None, "win": False, "tbd": True}
-        return {"top": top, "bottom": {"name": "BYE", "seed": None, "score": None, "win": False, "tbd": True}, "slot": None}
-
-    # Championship — single elim. Play-in (3 matches) feeds the QF; seed 1 byes
-    # the QF too, so a Seed-1 bye box sits in the QF column to keep the tree a
-    # clean 4->2->1 the connectors line up against.
-    playin = [_match("PI1"), _match("PI2"), _match("PI3")]
+    # Championship — single elim. The Play-in feeds two of the eight QF slots;
+    # QF -> SF -> Final is a clean 4->2->1 tree the connectors line up against.
+    playin = [_match("PI1"), _match("PI2")]
     champ_rounds = [
         {"title": "Quarterfinals", "time": _t("QF1"), "bo": 3,
-         "matches": [_bye(1), _match("QF1"), _match("QF2"), _match("QF3")]},
+         "matches": [_match("QF1"), _match("QF2"), _match("QF3"), _match("QF4")]},
         {"title": "Semifinals", "time": _t("SF1"), "bo": 3, "matches": [_match("SF1"), _match("SF2")]},
         {"title": "Final", "time": _t("F"), "bo": 3, "matches": [_match("F")]},
     ]
-    # Consolation — parallel, never feeds the championship. Labeled boxes (the
-    # shape is irregular: 3 play-in losers + 3 QF losers, ranked in tiers).
-    consolation = [_match("PLS"), _match("P89"), _match("LS1"), _match("P56"), _match("P34")]
+    # Consolation / lower bracket — parallel, never feeds the championship.
+    consolation_rounds = [
+        {"title": "9th / 10th · play-in losers", "time": _t("P910"), "bo": 3, "matches": [_match("P910")]},
+        {"title": "Lower semifinals · QF losers", "time": _t("LS1"), "bo": 3, "matches": [_match("LS1"), _match("LS2")]},
+        {"title": "Placement finals · 3/4 · 5/6 · 7/8", "time": _t("P34"), "bo": 3,
+         "matches": [_match("P34"), _match("P56"), _match("P78")]},
+    ]
 
     def _runner(row):
         if not row or row["status"] != "final" or not row["winner_team_id"]:
@@ -98,7 +93,7 @@ def bracket_page(request: Request):
         generated=bool(db_rows),
         playin=playin,
         champ_rounds=champ_rounds,
-        consolation=consolation,
+        consolation_rounds=consolation_rounds,
         champion=_champ(by.get("F")),
         runner_up=_runner(by.get("F")),
         group_complete=bool(matches) and all(m["status"] == "final" for m in matches),
