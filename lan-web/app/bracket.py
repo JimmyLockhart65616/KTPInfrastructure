@@ -10,10 +10,10 @@ the championship), to give eliminated teams more games and a played-out rank:
 - Play-in losers play for 9th/10th.
 - The four QF losers drop into a lower semifinal, then play off for 5/6 and 7/8.
 - The two SF losers play each other for 3rd/4th.
-Every match is BO3. Four championship rounds with two solid one-hour breaks
-(lunch after the Play-in, dinner before the Final) — 10:00 AM to 10:00 PM — and
-the last placement matches run alongside the Final, so nothing trails it.
-'seed:N' = group rank N, 'W:KEY' = winner, 'L:KEY' = loser."""
+The Play-in is BO1; everything else is BO3. The QF runs straight after the
+Play-in, then a one-hour break after the QF and after the SF — 11:00 AM to
+~9:30 PM — and the last placement matches run alongside the Final, so nothing
+trails it. 'seed:N' = group rank N, 'W:KEY' = winner, 'L:KEY' = loser."""
 from __future__ import annotations
 
 import json
@@ -30,8 +30,8 @@ def wins_for(best_of: int) -> int:
 # Championship uses bracket 'upper'; the consolation uses 'placement'.
 BRACKET = [
     # Championship — single elim, BO3. Seeds 1-6 bye to the QF; 7-10 play in.
-    {"key": "PI1", "bracket": "upper", "stage": "PI", "slot": 1, "a": "seed:7", "b": "seed:10", "best_of": 3, "label": "Play-in 1"},
-    {"key": "PI2", "bracket": "upper", "stage": "PI", "slot": 2, "a": "seed:8", "b": "seed:9",  "best_of": 3, "label": "Play-in 2"},
+    {"key": "PI1", "bracket": "upper", "stage": "PI", "slot": 1, "a": "seed:7", "b": "seed:10", "best_of": 1, "label": "Play-in 1"},
+    {"key": "PI2", "bracket": "upper", "stage": "PI", "slot": 2, "a": "seed:8", "b": "seed:9",  "best_of": 1, "label": "Play-in 2"},
     {"key": "QF1", "bracket": "upper", "stage": "QF", "slot": 1, "a": "seed:1", "b": "W:PI2",   "best_of": 3, "label": "Quarterfinal 1"},
     {"key": "QF2", "bracket": "upper", "stage": "QF", "slot": 2, "a": "seed:4", "b": "seed:5",   "best_of": 3, "label": "Quarterfinal 2"},
     {"key": "QF3", "bracket": "upper", "stage": "QF", "slot": 3, "a": "seed:3", "b": "seed:6",   "best_of": 3, "label": "Quarterfinal 3"},
@@ -49,16 +49,16 @@ BRACKET = [
 ]
 BY_KEY = {m["key"]: m for m in BRACKET}
 
-# Per-match start times. Four BO3 championship rounds with two one-hour breaks
-# (lunch 12:30-1:30 after the Play-in, dinner 6:30-7:30 before the Final):
-#   Play-in 10:00 -> Quarterfinals 1:30 -> Semifinals 4:00 -> Final 7:30,
-# done 10:00 PM. Consolation matches run in the same blocks on spare servers; the
-# last of them (3/4, 5/6, 7/8) run alongside the Final, so nothing trails it.
+# Per-match start times. Play-in BO1 11:00-12:00, QF straight after, then a
+# one-hour break after the QF and after the SF:
+#   Play-in 11:00 -> Quarterfinals 12:00 -> [break] -> Semifinals 3:30
+#   -> [break] -> Final 7:00, done ~9:30 PM. Consolation runs in the same blocks
+# on spare servers; the last of them (3/4, 5/6, 7/8) run alongside the Final.
 MATCH_TIMES = {
-    "PI1": "10:00 AM", "PI2": "10:00 AM",
-    "QF1": "1:30 PM", "QF2": "1:30 PM", "QF3": "1:30 PM", "QF4": "1:30 PM", "P910": "1:30 PM",
-    "SF1": "4:00 PM", "SF2": "4:00 PM", "LS1": "4:00 PM", "LS2": "4:00 PM",
-    "F": "7:30 PM", "P34": "7:30 PM", "P56": "7:30 PM", "P78": "7:30 PM",
+    "PI1": "11:00 AM", "PI2": "11:00 AM",
+    "QF1": "12:00 PM", "QF2": "12:00 PM", "QF3": "12:00 PM", "QF4": "12:00 PM", "P910": "12:00 PM",
+    "SF1": "3:30 PM", "SF2": "3:30 PM", "LS1": "3:30 PM", "LS2": "3:30 PM",
+    "F": "7:00 PM", "P34": "7:00 PM", "P56": "7:00 PM", "P78": "7:00 PM",
 }
 
 
