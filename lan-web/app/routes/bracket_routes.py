@@ -175,5 +175,7 @@ async def set_map(request: Request):
     mkey = f.get("mkey", "")
     if not db.query_one("SELECT 1 FROM lan_bracket WHERE mkey=%s", (mkey,)):
         raise HTTPException(404, "No such bracket match.")
-    bracket.set_map(mkey, (f.get("map") or "").strip()[:96] or None)
+    # BO3 series can use several maps — collect each picker and join in order.
+    maps = [m.strip() for m in f.getlist("map") if m and m.strip()]
+    bracket.set_map(mkey, " / ".join(maps)[:96] or None)
     return RedirectResponse(url=request.url_for("bracket"), status_code=303)

@@ -40,7 +40,10 @@
       </form>
       <form class="bkt-srv-set" method="post" action="{{ url_for('bracket_set_map') }}">
         <input type="hidden" name="mkey" value="{{ s.mkey }}">
-        <input name="map" list="comp-maps" value="{{ m.map or '' }}" placeholder="map(s)" style="font-size:11px;width:9rem;" title="Series map(s)">
+        {% set maps = (m.map or '').split(' / ') %}
+        {% for i in range(m.best_of or 1) %}
+        <input name="map" list="comp-maps" value="{{ maps[i] if i < maps|length else '' }}" placeholder="{{ 'map' if (m.best_of or 1) == 1 else 'map ' ~ (i + 1) }}" style="font-size:11px;width:7rem;" title="{{ 'Match map' if (m.best_of or 1) == 1 else 'Series map ' ~ (i + 1) }}">
+        {% endfor %}
         <button type="submit" style="font-size:11px;">set</button>
       </form>
       {% endif %}

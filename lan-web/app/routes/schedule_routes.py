@@ -88,13 +88,13 @@ async def set_station(request: Request):
     return RedirectResponse(url=request.url_for("schedule"), status_code=303)
 
 
-@router.post("/admin/schedule/map", name="schedule_set_map")
-async def set_map(request: Request):
+@router.post("/admin/schedule/round-map", name="schedule_set_round_map")
+async def set_round_map(request: Request):
     auth.require_admin(request)
     f = await request.form()
     try:
-        match_id = int(f["match_id"])
+        rnd = int(f["round"])
     except (KeyError, ValueError):
-        raise HTTPException(400, "match id required")
-    sched.set_map(match_id, (f.get("map") or "").strip()[:48] or None)
+        raise HTTPException(400, "round required")
+    sched.set_round_map(rnd, (f.get("map") or "").strip()[:48] or None)
     return RedirectResponse(url=request.url_for("schedule"), status_code=303)

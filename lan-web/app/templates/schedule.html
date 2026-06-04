@@ -72,18 +72,28 @@
 
       <h3 style="margin-top:30px;">Matches</h3>
       <p style="font-size:13px;color:var(--ink-faint);">Each map is best-of-one. Report the two <strong>flag scores</strong> — the
-         higher score wins the map. The left box is the team listed first.{% if is_admin %} Staff also set each match's <strong>server</strong> (1–6) and <strong>map</strong> here.{% endif %}</p>
+         higher score wins the map. The left box is the team listed first.{% if is_admin %} Every match in a round is on the <strong>same map</strong>, set once at the round header; staff also set each match's <strong>server</strong> (1–6).{% endif %}</p>
       <datalist id="comp-maps">{% for mp in comp_maps %}<option value="{{ mp }}">{% endfor %}</datalist>
       {% for rnum, group in matches|groupby('round') %}
+      {% set rmap = (group|first).map %}
       <article class="unit-card" style="margin-bottom:14px;">
-        <div class="unit-tag-strip"><h3 class="unit-name">Round {{ rnum }}</h3></div>
+        <div class="unit-tag-strip" style="flex-wrap:wrap;gap:8px 14px;align-items:center;">
+          <h3 class="unit-name">Round {{ rnum }}</h3>
+          {% if rmap %}<span style="font-family:var(--mono);font-size:12.5px;color:var(--olive);">Map: {{ rmap }}</span>{% endif %}
+          {% if is_admin %}
+          <form method="post" action="{{ url_for('schedule_set_round_map') }}" style="display:flex;gap:4px;align-items:center;">
+            <input type="hidden" name="round" value="{{ rnum }}">
+            <input name="map" list="comp-maps" value="{{ rmap or '' }}" placeholder="round map" style="width:8rem;font-size:12px;">
+            <button type="submit" style="font-size:11px;">Set round map</button>
+          </form>
+          {% endif %}
+        </div>
         <table>
           <thead>
             <tr style="font-family:var(--stencil);text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--ink-soft);">
               <td style="width:auto;">Match</td>
               <td style="width:5rem;text-align:center;">Final score</td>
               <td style="width:7rem;">Server</td>
-              <td style="width:9rem;">Map</td>
               <td style="width:13rem;">Report flag score</td>
             </tr>
           </thead>
@@ -108,16 +118,6 @@
                     <option value="">srv —</option>
                     {% for n in range(1, 7) %}<option value="{{ n }}"{{ ' selected' if m.station == n }}>Srv {{ n }}</option>{% endfor %}
                   </select>
-                </form>
-                {% endif %}
-              </td>
-              <td style="width:9rem;">
-                {% if m.map %}<span style="font-family:var(--mono);font-size:12px;color:var(--olive);">{{ m.map }}</span>{% endif %}
-                {% if is_admin %}
-                <form method="post" action="{{ url_for('schedule_set_map') }}" style="display:flex;gap:3px;margin-top:2px;">
-                  <input type="hidden" name="match_id" value="{{ m.id }}">
-                  <input name="map" list="comp-maps" value="{{ m.map or '' }}" placeholder="map" style="width:6.5rem;font-size:11px;">
-                  <button type="submit" style="font-size:11px;">set</button>
                 </form>
                 {% endif %}
               </td>

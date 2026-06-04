@@ -161,10 +161,11 @@ def set_station(match_id: int, station):
     db.execute("UPDATE lan_schedule SET station=%s WHERE id=%s", (station, match_id))
 
 
-def set_map(match_id: int, mapname):
-    """Admin: set (or clear) the map for a Saturday match."""
+def set_round_map(round_no: int, mapname):
+    """Admin: set (or clear) the map for every match in a Saturday round —
+    each round is one map for all five matches."""
     from . import db
-    db.execute("UPDATE lan_schedule SET `map`=%s WHERE id=%s", (mapname, match_id))
+    db.execute("UPDATE lan_schedule SET `map`=%s WHERE round=%s", (mapname, round_no))
 
 
 # LAN 2026 map pool — drives the map-picker datalist (free text still allowed).
