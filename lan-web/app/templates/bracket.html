@@ -131,8 +131,14 @@
       </div>
       {% endif %}
 
-      <h3>Grand Final &mdash; Best of 5{% if grand_final.time %} &middot; {{ grand_final.time }}{% endif %}</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">The upper-bracket champion meets the lower-bracket champion. One best-of-five &mdash; no bracket reset.</p>
+      <h3>Grand Final &mdash; Best of 3{% if grand_final.time %} &middot; {{ grand_final.time }}{% endif %}</h3>
+      <p style="font-size:13px;color:var(--ink-faint);">The upper-bracket champion meets the lower-bracket champion. One best-of-three &mdash; no bracket reset.{% if gf_advantage %} The upper champion starts <strong>1&ndash;0</strong> (needs one map; the lower champion needs two) &mdash; the reward for an undefeated run.{% endif %}</p>
+      {% if is_admin %}
+      <form method="post" action="{{ url_for('bracket_gf_advantage') }}" style="margin:-2px 0 8px;">
+        <button type="submit">{{ 'Remove upper-champ 1–0 head start' if gf_advantage else 'Give upper champ a 1–0 head start' }}</button>
+        <span style="font-size:12px;color:var(--ink-faint);margin-left:6px;">{{ 'On — report the GF score including that map.' if gf_advantage else 'Off — equal best-of-three.' }}</span>
+      </form>
+      {% endif %}
       <div class="bkt-grand">{{ matchbox(grand_final, is_admin, am_captain, my_team_id) }}</div>
       {% if upper_champion or lower_champion %}
       <p style="font-size:12px;color:var(--ink-soft);margin-top:2px;">{% if upper_champion %}Upper champion: <b>{{ upper_champion }}</b>{% endif %}{% if upper_champion and lower_champion %} &nbsp;·&nbsp; {% endif %}{% if lower_champion %}Lower champion: <b>{{ lower_champion }}</b>{% endif %}</p>

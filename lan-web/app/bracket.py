@@ -6,11 +6,12 @@ the Upper Final loser into the Lower Final. So the top seeds keep a second life.
 Lower bracket (seeds 7-10 + all upper droppers): single-elim, crowns the lower
 champion. Grand Final reunites the two, BO5, no bracket reset.
 
-Lower-bracket rounds are BO1 to keep Sunday inside an 11 PM finish; the Upper
-bracket and Lower Final are BO3, the Grand Final BO5. Placement matches (5/6,
-7/8, 9/10) settle the same-round eliminations off to the side; 3rd and 4th fall
-out of the lower final / lower semifinal positionally. 'seed:N' = group rank N,
-'W:KEY' = winner of KEY, 'L:KEY' = loser of KEY."""
+Nearly everything is BO3 — only the Lower Semifinal stays BO1 (it's the one
+match that would push the final past midnight). The Grand Final is BO3, no reset;
+optionally the upper champion starts it 1-0 (gf_advantage setting) as the reward
+for an undefeated run. Placement matches (5/6, 7/8, 9/10) settle the same-round
+eliminations off to the side; 3rd and 4th fall out of the lower final / lower
+semifinal positionally. 'seed:N' = group rank N, 'W:KEY' = winner, 'L:KEY' = loser."""
 from __future__ import annotations
 
 import json
@@ -31,17 +32,17 @@ BRACKET = [
     {"key": "SF1",  "bracket": "upper", "stage": "SF",  "slot": 1, "a": "seed:1", "b": "W:QF2",   "best_of": 3, "label": "Semifinal 1"},
     {"key": "SF2",  "bracket": "upper", "stage": "SF",  "slot": 2, "a": "seed:2", "b": "W:QF1",   "best_of": 3, "label": "Semifinal 2"},
     {"key": "UF",   "bracket": "upper", "stage": "UF",  "slot": 1, "a": "W:SF1", "b": "W:SF2",    "best_of": 3, "label": "Upper Final"},
-    # Lower bracket — BO1 until the Lower Final (BO3). Drops: QF->LB, SF->LB3/4, UF->LF.
-    {"key": "PA",   "bracket": "lower", "stage": "LR1", "slot": 1, "a": "seed:7", "b": "seed:10", "best_of": 1, "label": "Play-in A"},
-    {"key": "PB",   "bracket": "lower", "stage": "LR1", "slot": 2, "a": "seed:8", "b": "seed:9",  "best_of": 1, "label": "Play-in B"},
-    {"key": "LB1",  "bracket": "lower", "stage": "LR2", "slot": 1, "a": "L:QF1", "b": "W:PA",     "best_of": 1, "label": "Lower R2 — 1"},
-    {"key": "LB2",  "bracket": "lower", "stage": "LR2", "slot": 2, "a": "L:QF2", "b": "W:PB",     "best_of": 1, "label": "Lower R2 — 2"},
-    {"key": "LB3",  "bracket": "lower", "stage": "LR3", "slot": 1, "a": "L:SF1", "b": "W:LB2",    "best_of": 1, "label": "Lower R3 — 1"},
-    {"key": "LB4",  "bracket": "lower", "stage": "LR3", "slot": 2, "a": "L:SF2", "b": "W:LB1",    "best_of": 1, "label": "Lower R3 — 2"},
+    # Lower bracket — BO3 except the Lower Semifinal (BO1). Drops: QF->LB, SF->LB3/4, UF->LF.
+    {"key": "PA",   "bracket": "lower", "stage": "LR1", "slot": 1, "a": "seed:7", "b": "seed:10", "best_of": 3, "label": "Play-in A"},
+    {"key": "PB",   "bracket": "lower", "stage": "LR1", "slot": 2, "a": "seed:8", "b": "seed:9",  "best_of": 3, "label": "Play-in B"},
+    {"key": "LB1",  "bracket": "lower", "stage": "LR2", "slot": 1, "a": "L:QF1", "b": "W:PA",     "best_of": 3, "label": "Lower R2 — 1"},
+    {"key": "LB2",  "bracket": "lower", "stage": "LR2", "slot": 2, "a": "L:QF2", "b": "W:PB",     "best_of": 3, "label": "Lower R2 — 2"},
+    {"key": "LB3",  "bracket": "lower", "stage": "LR3", "slot": 1, "a": "L:SF1", "b": "W:LB2",    "best_of": 3, "label": "Lower R3 — 1"},
+    {"key": "LB4",  "bracket": "lower", "stage": "LR3", "slot": 2, "a": "L:SF2", "b": "W:LB1",    "best_of": 3, "label": "Lower R3 — 2"},
     {"key": "LSF",  "bracket": "lower", "stage": "LR4", "slot": 1, "a": "W:LB3", "b": "W:LB4",    "best_of": 1, "label": "Lower Semifinal"},
     {"key": "LF",   "bracket": "lower", "stage": "LR5", "slot": 1, "a": "L:UF", "b": "W:LSF",     "best_of": 3, "label": "Lower Final"},
-    # Grand Final — BO5, no reset.
-    {"key": "GF",   "bracket": "grand", "stage": "GF",  "slot": 1, "a": "W:UF",  "b": "W:LF",     "best_of": 5, "label": "Grand Final"},
+    # Grand Final — BO3, no reset (upper champ optionally starts 1-0).
+    {"key": "GF",   "bracket": "grand", "stage": "GF",  "slot": 1, "a": "W:UF",  "b": "W:LF",     "best_of": 3, "label": "Grand Final"},
     # Placement — same-round eliminations play off for the tier (BO3).
     {"key": "P56",  "bracket": "placement", "stage": "P56",  "slot": 1, "a": "L:LB3", "b": "L:LB4", "best_of": 3, "label": "5th / 6th place"},
     {"key": "P78",  "bracket": "placement", "stage": "P78",  "slot": 1, "a": "L:LB1", "b": "L:LB2", "best_of": 3, "label": "7th / 8th place"},
@@ -50,18 +51,20 @@ BRACKET = [
 BY_KEY = {m["key"]: m for m in BRACKET}
 
 # Per-match start times. True double-elim is 6 deep on the championship path, so
-# matches stagger rather than share clean global slots. BO1 lower bracket keeps
-# the Grand Final at 8:00 PM (BO5) -> ~11:00 PM finish on 6 stations.
+# matches stagger rather than share clean global slots. Almost all BO3 (only the
+# Lower Semifinal BO1) lands the Grand Final at 9:00 PM (BO3) -> ~11:30 PM finish,
+# peak 5 of 6 servers busy. Lower rounds shadow the upper-bracket drops, so their
+# BO3 length costs no extra wall-clock until LR3.
 MATCH_TIMES = {
     "QF1": "10:00 AM", "QF2": "10:00 AM", "PA": "10:00 AM", "PB": "10:00 AM",
-    "P910": "12:00 PM",
+    "P910": "12:30 PM",
     "SF1": "12:30 PM", "SF2": "12:30 PM", "LB1": "12:30 PM", "LB2": "12:30 PM",
-    "P78": "2:00 PM",
+    "P78": "3:00 PM",
     "UF": "3:00 PM", "LB3": "3:00 PM", "LB4": "3:00 PM",
-    "LSF": "4:00 PM",
-    "P56": "5:00 PM",
-    "LF": "5:30 PM",
-    "GF": "8:00 PM",
+    "LSF": "5:30 PM",
+    "P56": "5:30 PM",
+    "LF": "6:30 PM",
+    "GF": "9:00 PM",
 }
 
 
@@ -230,3 +233,9 @@ def set_map(mkey: str, mapname):
     """Admin: set (or clear) the map(s) for a bracket series."""
     from . import db
     db.execute("UPDATE lan_bracket SET `map`=%s WHERE mkey=%s", (mapname, mkey))
+
+
+def gf_advantage() -> bool:
+    """Whether the Grand Final spots the upper champion a 1-0 map lead."""
+    from . import seeding
+    return seeding.get_setting("gf_advantage") == "1"

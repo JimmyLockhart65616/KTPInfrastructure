@@ -80,11 +80,11 @@ def bracket_page(request: Request):
         {"title": "Semifinals", "time": _t("SF1"), "bo": 3, "matches": [_match("SF1"), _match("SF2")]},
         {"title": "Upper Final", "time": _t("UF"), "bo": 3, "matches": [_match("UF")]},
     ]
-    # Lower bracket (BO1 until the Final): upper losers drop in at LR2/LR3/LR5.
+    # Lower bracket (BO3 except the Semifinal): upper losers drop in at LR2/LR3/LR5.
     lower_rounds = [
-        {"title": "Play-ins", "time": _t("PA"), "bo": 1, "matches": [_match("PA"), _match("PB")]},
-        {"title": "Lower R2 · QF losers drop", "time": _t("LB1"), "bo": 1, "matches": [_match("LB1"), _match("LB2")]},
-        {"title": "Lower R3 · SF losers drop", "time": _t("LB3"), "bo": 1, "matches": [_match("LB3"), _match("LB4")]},
+        {"title": "Play-ins", "time": _t("PA"), "bo": 3, "matches": [_match("PA"), _match("PB")]},
+        {"title": "Lower R2 · QF losers drop", "time": _t("LB1"), "bo": 3, "matches": [_match("LB1"), _match("LB2")]},
+        {"title": "Lower R3 · SF losers drop", "time": _t("LB3"), "bo": 3, "matches": [_match("LB3"), _match("LB4")]},
         {"title": "Lower Semifinal", "time": _t("LSF"), "bo": 1, "matches": [_match("LSF")]},
         {"title": "Lower Final · UF loser drops", "time": _t("LF"), "bo": 3, "matches": [_match("LF")]},
     ]
@@ -112,6 +112,7 @@ def bracket_page(request: Request):
         lower_champion=_champ(by.get("LF")),
         group_complete=bool(matches) and all(m["status"] == "final" for m in matches),
         comp_maps=sched.COMP_MAPS,
+        gf_advantage=bracket.gf_advantage(),
         is_admin=auth.is_admin(request),
         my_team_id=ident["team_id"] if ident else None,
         am_captain=bool(ident and ident["is_captain"]),
@@ -179,6 +180,13 @@ async def set_station(request: Request):
                 [row["team_a_id"], row["team_b_id"]],
                 f"\U0001f3ae You're up — {label}: **{row['a']}** vs **{row['b']}** on **Server {station}**. Report to your station.",
             )
+    return RedirectResponse(url=request.url_for("bracket"), status_code=303)
+
+
+@router.post("/admin/bracket/gf-advantage", name="bracket_gf_advantage")
+async def gf_advantage_toggle(request: Request):
+    auth.require_admin(request)
+    seeding.set_setting("gf_advantage", "" if bracket.gf_advantage() else "1")
     return RedirectResponse(url=request.url_for("bracket"), status_code=303)
 
 

@@ -73,8 +73,9 @@ SUN_BLOCKS = [
     ("10:00 AM", 2.5, "QF / Play-ins"),
     ("12:30 PM", 2.5, "Semifinals / Lower R2"),
     ("3:00 PM", 2.5, "Upper Final / Lower R3"),
-    ("5:30 PM", 2.5, "Lower Final"),
-    ("8:00 PM", 3.0, "Grand Final"),
+    ("5:30 PM", 1.0, "Lower Semifinal"),
+    ("6:30 PM", 2.5, "Lower Final"),
+    ("9:00 PM", 2.5, "Grand Final"),
 ]
 
 
