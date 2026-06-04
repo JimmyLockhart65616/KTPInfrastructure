@@ -34,7 +34,13 @@
           <div class="dz-file" id="dzfile"></div>
         </label>
         <div class="demo-fields">
-          <input name="note" placeholder="note (map / match) — optional" style="width:14rem;">
+          {% if my_matches %}
+          <select name="match" style="width:15rem;">
+            <option value="">— attach to a match (optional) —</option>
+            {% for mm in my_matches %}<option value="{{ mm.value }}">{{ mm.label }}</option>{% endfor %}
+          </select>
+          {% endif %}
+          <input name="note" placeholder="note — optional" style="width:12rem;">
           <button type="submit">Upload</button>
         </div>
         <p style="font-size:12.5px;color:var(--ink-soft);margin-top:10px;line-height:1.55;">
@@ -75,15 +81,27 @@
       {% endif %}
 
       <h3 style="margin-top:26px;">Archive</h3>
+      {% if teams %}
+      <form method="get" style="margin-bottom:10px;">
+        <label style="font-size:12px;color:var(--ink-soft);">Filter by company&nbsp;
+          <select name="team" onchange="this.form.submit()">
+            <option value="">All companies</option>
+            {% for t in teams %}<option value="{{ t.id }}" {{ 'selected' if filter_team == t.id }}>{{ t.name }}</option>{% endfor %}
+          </select>
+        </label>
+        {% if filter_team %}<a href="{{ url_for('demos') }}" style="font-size:12px;margin-left:8px;">clear</a>{% endif %}
+      </form>
+      {% endif %}
       {% if demos %}
       <table>
-        <thead><tr><td>Alias</td><td>File</td><td>Team</td><td>Size</td><td>Uploaded</td><td></td></tr></thead>
+        <thead><tr><td>Alias</td><td>File</td><td>Team</td><td>Match</td><td>Size</td><td>Uploaded</td><td></td></tr></thead>
         <tbody>
         {% for d in demos %}
           <tr>
             <td style="color:var(--ink);">{{ d.alias }}</td>
             <td style="width:auto;">{{ d.original_filename }}{% if d.note %} <span style="color:var(--ink-faint);">· {{ d.note }}</span>{% endif %}</td>
             <td>{{ d.team_name or '—' }}</td>
+            <td style="font-size:12px;">{% if d.match_label %}<span style="color:var(--olive);">{{ d.match_label }}</span>{% else %}<span style="color:var(--ink-faint);">—</span>{% endif %}</td>
             <td>{{ fmtsize(d.size_bytes) }}</td>
             <td style="font-size:12px;color:var(--ink-faint);">{{ d.uploaded_at }}</td>
             <td>{% if d.stored_name %}<a href="{{ url_for('demos_download', demo_id=d.id) }}">download</a>{% else %}<span style="color:var(--ink-faint);">processing</span>{% endif %}</td>
@@ -92,7 +110,7 @@
         </tbody>
       </table>
       {% else %}
-      <div class="pending-note">No demos uploaded yet.</div>
+      <div class="pending-note">No demos {% if filter_team %}for that company {% endif %}uploaded yet.</div>
       {% endif %}
     </div>
   </section>

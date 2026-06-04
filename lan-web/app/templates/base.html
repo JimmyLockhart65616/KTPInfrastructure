@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="WSDoD LAN 2026 — Operations Dossier.">
 <meta name="theme-color" content="#f0e9d6">
+{% if auto_refresh and not is_admin %}<meta http-equiv="refresh" content="{{ auto_refresh }}">{% endif %}
 <title>{% block title %}WSDoD / LAN 2026{% endblock %}</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +20,12 @@
   .op-line a { color: var(--wsdod-blue); }
   .pending-note { border: 2px dashed var(--ink-margin); padding: 18px 22px; font-family: var(--typed);
                   color: var(--ink-soft); background: rgba(90,94,58,0.05); }
+  /* staff broadcast strip — shows on every page when set */
+  .announce { display:flex; align-items:center; gap:12px; margin:0 0 4px; padding:9px 16px;
+              background:var(--alert,#7a1f12); color:#f5ecd8; border-top:2px solid rgba(0,0,0,.25); }
+  .announce-tag { font-family:var(--stencil); letter-spacing:.18em; font-size:12px; text-transform:uppercase;
+                  background:rgba(0,0,0,.22); padding:2px 9px; white-space:nowrap; flex:0 0 auto; }
+  .announce-body { font-family:var(--typed); font-size:14.5px; line-height:1.35; }
 </style>
 </head>
 <body>
@@ -68,6 +75,13 @@
     <div class="stamp-decl" data-doc="DOC №WSDoD-26/I">DECLASSIFIED</div>
   </header>
 
+  {% if announcement %}
+  <aside class="announce" role="status">
+    <span class="announce-tag">DISPATCH</span>
+    <span class="announce-body">{{ announcement }}</span>
+  </aside>
+  {% endif %}
+
   <nav class="toc" aria-label="Document Index">
     <div class="toc-head">
       <h2>Index of Sections</h2>
@@ -84,6 +98,8 @@
       <li><a href="{{ url_for('checkin') }}" class="{{ 'active' if active_page == 'checkin' }}"><span class="toc-num">08</span> <span class="toc-title">Check-in</span>                   <span class="toc-page">p. 08</span></a></li>
       <li><a href="{{ url_for('demos') }}"   class="{{ 'active' if active_page == 'demos' }}"><span class="toc-num">09</span> <span class="toc-title">Demo Archive</span>               <span class="toc-page">p. 09</span></a></li>
       <li><a href="{{ url_for('rules') }}"    class="{{ 'active' if active_page == 'rules' }}"><span class="toc-num">10</span> <span class="toc-title">Rules &amp; Format</span>           <span class="toc-page">p. 10</span></a></li>
+      <li><a href="{{ url_for('awards') }}"  class="{{ 'active' if active_page == 'awards' }}"><span class="toc-num">11</span> <span class="toc-title">Awards &amp; Honors</span>          <span class="toc-page">p. 11</span></a></li>
+      <li><a href="{{ url_for('gallery') }}" class="{{ 'active' if active_page == 'gallery' }}"><span class="toc-num">12</span> <span class="toc-title">Photo Gallery</span>              <span class="toc-page">p. 12</span></a></li>
       {% if is_admin %}<li><a href="{{ url_for('admin') }}" class="{{ 'active' if active_page == 'admin' }}"><span class="toc-num">&#9733;</span> <span class="toc-title">Staff — Roster &amp; Control</span> <span class="toc-page">restricted</span></a></li>{% endif %}
     </ol>
   </nav>

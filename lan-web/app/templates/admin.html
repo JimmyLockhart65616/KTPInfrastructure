@@ -23,6 +23,25 @@
       </table>
       <p style="font-size:13px;color:var(--ink-faint);">Order of operations: build rosters → open poll → captains submit → close + compute seeds → generate Saturday matches → report results → generate bracket.</p>
 
+      <h3 style="margin-top:24px;">Broadcast dispatch <span style="font-size:12px;color:var(--ink-faint);">(shows on every page)</span></h3>
+      <form method="post" action="{{ url_for('admin_announce') }}" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <input name="announcement" value="{{ announcement }}" maxlength="240"
+               placeholder="e.g. Round 2 begins in 10 minutes — report to your station" style="flex:1;min-width:22rem;">
+        <button type="submit">{{ 'Update' if announcement else 'Post' }}</button>
+        {% if announcement %}<button type="submit" onclick="this.form.announcement.value='';">Clear</button>{% endif %}
+      </form>
+      <p style="font-size:12px;color:var(--ink-faint);">Leave empty and submit to take the strip down. Keep it short — it sits above the index on every page.</p>
+
+      <h3 style="margin-top:24px;">More controls</h3>
+      <table>
+        <tbody>
+          <tr><td>Caster / streams</td><td><a href="{{ url_for('stations') }}">manage on the station board</a></td></tr>
+          <tr><td>Result audit &amp; undo</td><td><a href="{{ url_for('audit_log') }}">view change log</a></td></tr>
+          <tr><td>Awards voting</td><td><a href="{{ url_for('awards') }}">open categories &amp; results</a></td></tr>
+          <tr><td>Photo gallery</td><td><a href="{{ url_for('gallery') }}">event photos</a></td></tr>
+        </tbody>
+      </table>
+
       <h3 style="margin-top:30px;">Staff access</h3>
       <p style="font-size:13px;color:var(--ink-faint);">Everyone listed here can see this page and run every control. <strong>Config</strong> admins are
          set in the server environment and can't be revoked here — that's the lockout guard.</p>

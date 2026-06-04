@@ -1,4 +1,4 @@
-"""Unit tests for pure bracket slot resolution."""
+"""Unit tests for pure bracket slot resolution (true double-elimination)."""
 from app.bracket import resolve_slots
 
 # standings rank -> team id (use 100+rank for clarity)
@@ -11,74 +11,78 @@ def test_initial_layout_from_seeds():
     assert s["QF2"] == (104, 105)   # seed 4 v seed 5
     assert s["SF1"] == (101, None)  # seed 1 waits on W:QF2
     assert s["SF2"] == (102, None)  # seed 2 waits on W:QF1
-    assert s["F"] == (None, None)
+    assert s["UF"] == (None, None)
     assert s["PA"] == (107, 110)    # seed 7 v seed 10
     assert s["PB"] == (108, 109)
-    assert s["LSF1"] == (None, None)  # L:QF2 and W:PA both undecided
+    assert s["LB1"] == (None, None)  # L:QF1 and W:PA both undecided
     assert s["LF"] == (None, None)
 
 
-def test_qf_losers_drop_into_lower_semis():
+def test_qf_losers_drop_into_lower_r2():
     outcomes = {
-        "QF1": (103, 106),  # 103 beats 106
-        "QF2": (104, 105),  # 104 beats 105
-        "PA": (107, 110),
-        "PB": (108, 109),
+        "QF1": (103, 106), "QF2": (104, 105),
+        "PA": (107, 110), "PB": (108, 109),
     }
     s = resolve_slots(RANK, outcomes)
     assert s["SF1"] == (101, 104)   # seed 1 v winner QF2
     assert s["SF2"] == (102, 103)   # seed 2 v winner QF1
-    assert s["LSF1"] == (105, 107)  # loser QF2 v winner Play-in A
-    assert s["LSF2"] == (106, 108)  # loser QF1 v winner Play-in B
+    assert s["LB1"] == (106, 107)   # loser QF1 v winner Play-in A
+    assert s["LB2"] == (105, 108)   # loser QF2 v winner Play-in B
 
 
-def test_finals_resolve():
+def test_sf_losers_drop_into_lower_r3():
     outcomes = {
         "QF1": (103, 106), "QF2": (104, 105),
         "SF1": (101, 104), "SF2": (102, 103),
         "PA": (107, 110), "PB": (108, 109),
-        "LSF1": (105, 107), "LSF2": (108, 106),
+        "LB1": (107, 106), "LB2": (108, 105),
     }
     s = resolve_slots(RANK, outcomes)
-    assert s["F"] == (101, 102)     # the two SF winners
-    assert s["LF"] == (105, 108)    # the two lower-SF winners
+    assert s["LB3"] == (104, 108)   # loser SF1 v winner LB2  (true 2nd life for an SF loser)
+    assert s["LB4"] == (103, 107)   # loser SF2 v winner LB1
 
 
-def test_qf_loser_never_meets_upper_again():
-    # a QF loser only appears in the lower bracket, not the upper SF/F
-    outcomes = {"QF1": (103, 106), "QF2": (104, 105)}
+def test_upper_final_loser_drops_to_lower_final():
+    outcomes = {
+        "QF1": (103, 106), "QF2": (104, 105),
+        "SF1": (101, 104), "SF2": (102, 103),
+        "UF":  (101, 102),
+        "PA": (107, 110), "PB": (108, 109),
+        "LB1": (107, 106), "LB2": (108, 105),
+        "LB3": (108, 104), "LB4": (107, 103),
+        "LSF": (108, 107),
+    }
     s = resolve_slots(RANK, outcomes)
-    upper_teams = {t for k in ("SF1", "SF2") for t in s[k] if t}
-    assert 105 not in upper_teams and 106 not in upper_teams  # losers
-    assert 105 in s["LSF1"] and 106 in s["LSF2"]
+    # seed 2 (102) lost the Upper Final but lands in the Lower Final — second life
+    assert s["LF"] == (102, 108)
 
 
-# Full outcomes through both finals so the Grand Final + every placement match resolve.
+# Full run-through so the Grand Final + every placement match resolve.
 _FULL = {
     "QF1": (103, 106), "QF2": (104, 105),
     "SF1": (101, 104), "SF2": (102, 103),
-    "F":   (101, 102),                       # upper champ 101, upper runner-up 102
-    "PA":  (107, 110), "PB": (108, 109),
-    "LSF1": (105, 107), "LSF2": (108, 106),
-    "LF":  (105, 108),                       # lower champ 105, lower runner-up 108
+    "UF":  (101, 102),
+    "PA": (107, 110), "PB": (108, 109),
+    "LB1": (107, 106), "LB2": (108, 105),
+    "LB3": (108, 104), "LB4": (107, 103),
+    "LSF": (108, 107),
+    "LF":  (102, 108),     # the dropped UF loser (102) wins the lower bracket
 }
 
 
-def test_grand_final_reunites_the_two_champions():
+def test_grand_final_reunites_upper_and_lower_champions():
     s = resolve_slots(RANK, _FULL)
-    assert s["GF"] == (101, 105)   # upper champ (W:F) v lower champ (W:LF)
+    assert s["GF"] == (101, 102)   # upper champ (W:UF) v lower champ (W:LF) — a UF rematch
 
 
-def test_placement_matches_pair_same_tier_losers():
+def test_placement_matches_pair_same_round_losers():
     s = resolve_slots(RANK, _FULL)
-    assert s["P34"]  == (102, 108)   # L:F  v L:LF  → 3rd/4th
-    assert s["P56"]  == (104, 103)   # L:SF1 v L:SF2 → 5th/6th
-    assert s["P78"]  == (107, 106)   # L:LSF1 v L:LSF2 → 7th/8th
-    assert s["P910"] == (110, 109)   # L:PA v L:PB → 9th/10th
+    assert s["P56"]  == (104, 103)   # L:LB3 v L:LB4 → 5th/6th
+    assert s["P78"]  == (106, 105)   # L:LB1 v L:LB2 → 7th/8th
+    assert s["P910"] == (110, 109)   # L:PA  v L:PB  → 9th/10th
 
 
 def test_grand_final_waits_on_both_finals():
-    # GF unresolved until BOTH the upper Final and Lower Final are decided
     partial = {**_FULL}
     del partial["LF"]
     s = resolve_slots(RANK, partial)

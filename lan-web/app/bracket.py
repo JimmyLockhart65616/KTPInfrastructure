@@ -1,13 +1,15 @@
-"""Sunday playoffs — bracket auto-fed from final group standings (Format C).
+"""Sunday playoffs — true double-elimination, auto-fed from group standings.
 
-Two brackets run in parallel and reunite in a Grand Final:
-- Upper (standings 1-6): seeds 1-2 bye to the SF, 3-6 into QFs; QF losers drop
-  into the lower bracket. Crowns the upper champion (Upper Final winner).
-- Lower (7-10 + the two QF losers): single-elim, crowns the lower champion.
-- Grand Final: upper champ vs lower champ, BO5, no bracket reset.
-- Placement matches (3/4, 5/6, 7/8, 9/10) decide each tied tier off to the side.
+Upper bracket (seeds 1-6): seeds 1-2 bye to the SF, 3-6 into QFs. EVERY upper-
+bracket loss drops to the lower bracket — QF losers at LR2, SF losers at LR3,
+the Upper Final loser into the Lower Final. So the top seeds keep a second life.
+Lower bracket (seeds 7-10 + all upper droppers): single-elim, crowns the lower
+champion. Grand Final reunites the two, BO5, no bracket reset.
 
-Series default BO3 (first to 2); the Grand Final is BO5. 'seed:N' = group rank N,
+Lower-bracket rounds are BO1 to keep Sunday inside an 11 PM finish; the Upper
+bracket and Lower Final are BO3, the Grand Final BO5. Placement matches (5/6,
+7/8, 9/10) settle the same-round eliminations off to the side; 3rd and 4th fall
+out of the lower final / lower semifinal positionally. 'seed:N' = group rank N,
 'W:KEY' = winner of KEY, 'L:KEY' = loser of KEY."""
 from __future__ import annotations
 
@@ -23,40 +25,49 @@ def wins_for(best_of: int) -> int:
 
 # Each slot: source 'seed:N' (standings rank), 'W:KEY' (winner of), 'L:KEY' (loser of).
 BRACKET = [
+    # Upper bracket — BO3.
     {"key": "QF1",  "bracket": "upper", "stage": "QF",  "slot": 1, "a": "seed:3", "b": "seed:6",  "best_of": 3, "label": "Quarterfinal 1"},
     {"key": "QF2",  "bracket": "upper", "stage": "QF",  "slot": 2, "a": "seed:4", "b": "seed:5",  "best_of": 3, "label": "Quarterfinal 2"},
     {"key": "SF1",  "bracket": "upper", "stage": "SF",  "slot": 1, "a": "seed:1", "b": "W:QF2",   "best_of": 3, "label": "Semifinal 1"},
     {"key": "SF2",  "bracket": "upper", "stage": "SF",  "slot": 2, "a": "seed:2", "b": "W:QF1",   "best_of": 3, "label": "Semifinal 2"},
-    {"key": "F",    "bracket": "upper", "stage": "F",   "slot": 1, "a": "W:SF1", "b": "W:SF2",    "best_of": 3, "label": "Upper Final"},
-    {"key": "PA",   "bracket": "lower", "stage": "PI",  "slot": 1, "a": "seed:7", "b": "seed:10", "best_of": 3, "label": "Play-in A"},
-    {"key": "PB",   "bracket": "lower", "stage": "PI",  "slot": 2, "a": "seed:8", "b": "seed:9",  "best_of": 3, "label": "Play-in B"},
-    {"key": "LSF1", "bracket": "lower", "stage": "LSF", "slot": 1, "a": "L:QF2", "b": "W:PA",     "best_of": 3, "label": "Lower Semifinal 1"},
-    {"key": "LSF2", "bracket": "lower", "stage": "LSF", "slot": 2, "a": "L:QF1", "b": "W:PB",     "best_of": 3, "label": "Lower Semifinal 2"},
-    {"key": "LF",   "bracket": "lower", "stage": "LF",  "slot": 1, "a": "W:LSF1", "b": "W:LSF2",  "best_of": 3, "label": "Lower Final"},
-    {"key": "GF",   "bracket": "grand", "stage": "GF",  "slot": 1, "a": "W:F",   "b": "W:LF",     "best_of": 5, "label": "Grand Final"},
-    {"key": "P34",  "bracket": "placement", "stage": "P34",  "slot": 1, "a": "L:F",    "b": "L:LF",    "best_of": 3, "label": "3rd / 4th place"},
-    {"key": "P56",  "bracket": "placement", "stage": "P56",  "slot": 1, "a": "L:SF1",  "b": "L:SF2",   "best_of": 3, "label": "5th / 6th place"},
-    {"key": "P78",  "bracket": "placement", "stage": "P78",  "slot": 1, "a": "L:LSF1", "b": "L:LSF2",  "best_of": 3, "label": "7th / 8th place"},
-    {"key": "P910", "bracket": "placement", "stage": "P910", "slot": 1, "a": "L:PA",   "b": "L:PB",    "best_of": 3, "label": "9th / 10th place"},
+    {"key": "UF",   "bracket": "upper", "stage": "UF",  "slot": 1, "a": "W:SF1", "b": "W:SF2",    "best_of": 3, "label": "Upper Final"},
+    # Lower bracket — BO1 until the Lower Final (BO3). Drops: QF->LB, SF->LB3/4, UF->LF.
+    {"key": "PA",   "bracket": "lower", "stage": "LR1", "slot": 1, "a": "seed:7", "b": "seed:10", "best_of": 1, "label": "Play-in A"},
+    {"key": "PB",   "bracket": "lower", "stage": "LR1", "slot": 2, "a": "seed:8", "b": "seed:9",  "best_of": 1, "label": "Play-in B"},
+    {"key": "LB1",  "bracket": "lower", "stage": "LR2", "slot": 1, "a": "L:QF1", "b": "W:PA",     "best_of": 1, "label": "Lower R2 — 1"},
+    {"key": "LB2",  "bracket": "lower", "stage": "LR2", "slot": 2, "a": "L:QF2", "b": "W:PB",     "best_of": 1, "label": "Lower R2 — 2"},
+    {"key": "LB3",  "bracket": "lower", "stage": "LR3", "slot": 1, "a": "L:SF1", "b": "W:LB2",    "best_of": 1, "label": "Lower R3 — 1"},
+    {"key": "LB4",  "bracket": "lower", "stage": "LR3", "slot": 2, "a": "L:SF2", "b": "W:LB1",    "best_of": 1, "label": "Lower R3 — 2"},
+    {"key": "LSF",  "bracket": "lower", "stage": "LR4", "slot": 1, "a": "W:LB3", "b": "W:LB4",    "best_of": 1, "label": "Lower Semifinal"},
+    {"key": "LF",   "bracket": "lower", "stage": "LR5", "slot": 1, "a": "L:UF", "b": "W:LSF",     "best_of": 3, "label": "Lower Final"},
+    # Grand Final — BO5, no reset.
+    {"key": "GF",   "bracket": "grand", "stage": "GF",  "slot": 1, "a": "W:UF",  "b": "W:LF",     "best_of": 5, "label": "Grand Final"},
+    # Placement — same-round eliminations play off for the tier (BO3).
+    {"key": "P56",  "bracket": "placement", "stage": "P56",  "slot": 1, "a": "L:LB3", "b": "L:LB4", "best_of": 3, "label": "5th / 6th place"},
+    {"key": "P78",  "bracket": "placement", "stage": "P78",  "slot": 1, "a": "L:LB1", "b": "L:LB2", "best_of": 3, "label": "7th / 8th place"},
+    {"key": "P910", "bracket": "placement", "stage": "P910", "slot": 1, "a": "L:PA",  "b": "L:PB",  "best_of": 3, "label": "9th / 10th place"},
 ]
 BY_KEY = {m["key"]: m for m in BRACKET}
 
-# Sunday plays out in 4 sequential rounds across the 6 stations — every upper,
-# lower and placement match of a round runs concurrently. Start times follow the
-# 2.5h-per-round + 1h-buffer cadence (the 8:30 Grand Final is BO5, so it may run
-# past the slot, but nothing follows it).
-PLAYOFF_ROUND = {
-    "QF1": 1, "QF2": 1, "PA": 1, "PB": 1,
-    "SF1": 2, "SF2": 2, "LSF1": 2, "LSF2": 2, "P910": 2,
-    "F": 3, "LF": 3, "P56": 3, "P78": 3,
-    "GF": 4, "P34": 4,
+# Per-match start times. True double-elim is 6 deep on the championship path, so
+# matches stagger rather than share clean global slots. BO1 lower bracket keeps
+# the Grand Final at 8:00 PM (BO5) -> ~11:00 PM finish on 6 stations.
+MATCH_TIMES = {
+    "QF1": "10:00 AM", "QF2": "10:00 AM", "PA": "10:00 AM", "PB": "10:00 AM",
+    "P910": "12:00 PM",
+    "SF1": "12:30 PM", "SF2": "12:30 PM", "LB1": "12:30 PM", "LB2": "12:30 PM",
+    "P78": "2:00 PM",
+    "UF": "3:00 PM", "LB3": "3:00 PM", "LB4": "3:00 PM",
+    "LSF": "4:00 PM",
+    "P56": "5:00 PM",
+    "LF": "5:30 PM",
+    "GF": "8:00 PM",
 }
-PLAYOFF_TIMES = {1: "10:00 AM", 2: "1:30 PM", 3: "5:00 PM", 4: "8:30 PM"}
 
 
 def match_time(mkey: str):
     """Scheduled start time for a bracket match, or None if unknown."""
-    return PLAYOFF_TIMES.get(PLAYOFF_ROUND.get(mkey))
+    return MATCH_TIMES.get(mkey)
 
 
 # ── pure resolution (no DB; unit-tested) ─────────────────────────────────
@@ -126,7 +137,7 @@ def get_bracket() -> list[dict]:
             LEFT JOIN lan_teams ta ON ta.id = b.team_a_id
             LEFT JOIN lan_teams tb ON tb.id = b.team_b_id
             ORDER BY FIELD(b.bracket,'upper','lower','grand','placement'),
-                     FIELD(b.stage,'QF','SF','F','PI','LSF','LF','GF','P34','P56','P78','P910'), b.slot
+                     FIELD(b.stage,'QF','SF','UF','LR1','LR2','LR3','LR4','LR5','GF','P56','P78','P910'), b.slot
             """
         )
     except Exception:
@@ -137,9 +148,12 @@ def bracket_exists() -> bool:
     return len(get_bracket()) > 0
 
 
-def report_series(mkey: str, sa: int, sb: int):
-    from . import db
-    row = db.query_one("SELECT team_a_id, team_b_id FROM lan_bracket WHERE mkey=%s", (mkey,))
+def report_series(mkey: str, sa: int, sb: int, actor=None):
+    from . import audit, db
+    row = db.query_one(
+        "SELECT team_a_id, team_b_id, score_a, score_b, winner_team_id, status "
+        "FROM lan_bracket WHERE mkey=%s", (mkey,)
+    )
     if not row:
         raise ValueError("No such bracket match.")
     if row["team_a_id"] is None or row["team_b_id"] is None:
@@ -158,6 +172,9 @@ def report_series(mkey: str, sa: int, sb: int):
         "UPDATE lan_bracket SET score_a=%s, score_b=%s, winner_team_id=%s, status=%s WHERE mkey=%s",
         (sa, sb, winner, status, mkey),
     )
+    audit.log("bracket", mkey, "edit" if row["status"] == "final" else "report",
+              {"a": row["score_a"], "b": row["score_b"], "winner": row["winner_team_id"], "status": row["status"]},
+              {"a": sa, "b": sb, "winner": winner, "status": status}, actor)
     resolve_dependents()
 
 
@@ -197,7 +214,8 @@ def team_bracket(team_id: int) -> list[dict]:
             "opponent": r["b_name"] if us_a else r["a_name"],
             "our_score": r["score_a"] if us_a else r["score_b"],
             "opp_score": r["score_b"] if us_a else r["score_a"],
-            "result": result, "station": r["station"], "status": r["status"],
+            "result": result, "station": r["station"], "map": r.get("map"),
+            "time": match_time(r["mkey"]), "status": r["status"],
         })
     return out
 
@@ -206,3 +224,9 @@ def set_station(mkey: str, station):
     """Admin: assign (or clear) the server/station number for a bracket match."""
     from . import db
     db.execute("UPDATE lan_bracket SET station=%s WHERE mkey=%s", (station, mkey))
+
+
+def set_map(mkey: str, mapname):
+    """Admin: set (or clear) the map(s) for a bracket series."""
+    from . import db
+    db.execute("UPDATE lan_bracket SET `map`=%s WHERE mkey=%s", (mapname, mkey))

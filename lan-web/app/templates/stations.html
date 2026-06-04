@@ -10,6 +10,26 @@
     <div class="chapter-body">
       {% if preview %}<div class="preview-banner">Preview — sample data · not real results</div>{% endif %}
 
+      {% if streams %}
+      <div class="watch-strip">
+        <span class="watch-tag">&#9654; WATCH LIVE</span>
+        {% for s in streams %}
+        <a class="watch-link {{ 'on' if s.live }}" href="{{ s.url }}" target="_blank" rel="noopener">
+          {% if s.live %}<span class="watch-dot"></span>{% endif %}{{ s.label }}{% if s.caster %} <span class="watch-caster">· {{ s.caster }}</span>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      <style>
+        .watch-strip { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0 0 16px; padding:10px 14px; border:1px solid var(--ink-margin); background:rgba(30,58,95,0.05); }
+        .watch-tag { font-family:var(--stencil); letter-spacing:.14em; font-size:12px; color:var(--wsdod-blue); }
+        .watch-link { font-family:var(--typed); font-size:13.5px; color:var(--ink); text-decoration:none; border-bottom:1px solid var(--ink-margin); padding-bottom:1px; }
+        .watch-link.on { color:var(--wsdod-blue); font-weight:700; }
+        .watch-caster { color:var(--ink-faint); }
+        .watch-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--alert); margin-right:5px; animation:wpulse 1.4s infinite; }
+        @keyframes wpulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+      </style>
+      {% endif %}
+
       <style>
         .stn-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-top:6px; }
         .stn { border:1px solid var(--ink-margin); background:var(--paper); padding:14px 16px; }
@@ -87,6 +107,36 @@
         <select name="status">{% for st in statuses %}<option value="{{ st }}">{{ st }}</option>{% endfor %}</select>
         <input name="sort_order" type="number" value="0" style="width:3.2rem;">
         <button type="submit">Add station</button>
+      </form>
+
+      <h3 style="margin-top:30px;">Caster / streams <span style="font-size:12px;color:var(--ink-faint);">(staff)</span></h3>
+      {% if streams %}
+      <table>
+        <tbody>
+        {% for s in streams %}
+          <tr><td colspan="6" style="padding:2px 0;">
+            <form method="post" action="{{ url_for('stream_edit') }}" style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;">
+              <input type="hidden" name="stream_id" value="{{ s.id }}">
+              <input name="label" value="{{ s.label }}" required style="width:9rem;">
+              <input name="url" value="{{ s.url }}" required style="width:15rem;">
+              <input name="caster" value="{{ s.caster or '' }}" placeholder="caster" style="width:8rem;">
+              <label style="font-size:12px;"><input type="checkbox" name="live" {{ 'checked' if s.live }}> live</label>
+              <input name="sort_order" type="number" value="{{ s.sort_order }}" style="width:3.2rem;">
+              <button type="submit">Save</button>
+              <button type="submit" formaction="{{ url_for('stream_delete') }}" formnovalidate onclick="return confirm('Delete {{ s.label }}?');">Delete</button>
+            </form>
+          </td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      <form method="post" action="{{ url_for('stream_add') }}" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;">
+        <input name="label" placeholder="label (e.g. Main stage)" required style="width:9rem;">
+        <input name="url" placeholder="https://twitch.tv/…" required style="width:15rem;">
+        <input name="caster" placeholder="caster" style="width:8rem;">
+        <label style="font-size:12px;"><input type="checkbox" name="live"> live</label>
+        <input name="sort_order" type="number" value="0" style="width:3.2rem;">
+        <button type="submit">Add stream</button>
       </form>
       {% endif %}
     </div>

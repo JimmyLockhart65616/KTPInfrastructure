@@ -1,8 +1,9 @@
 """Public, no-auth pages."""
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import Response
 
 from .. import bracket as bkt
-from .. import common, db
+from .. import common, db, ics
 from .. import schedule as sched
 from ..templating import templates
 
@@ -12,6 +13,26 @@ router = APIRouter()
 @router.get("/health")
 def health():
     return {"status": "ok"}
+
+
+def _ics(text: str, filename: str) -> Response:
+    return Response(
+        content=text, media_type="text/calendar; charset=utf-8",
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
+
+
+@router.get("/schedule.ics", name="schedule_ics")
+def schedule_ics():
+    return _ics(ics.schedule_feed(), "wsdod-lan-2026.ics")
+
+
+@router.get("/team/{team_id}.ics", name="team_ics")
+def team_ics(team_id: int):
+    team = db.query_one("SELECT id, name FROM lan_teams WHERE id=%s", (team_id,))
+    if not team:
+        raise HTTPException(404, "No such team.")
+    return _ics(ics.team_feed(team_id, team["name"]), f"wsdod-lan-{team_id}.ics")
 
 
 def get_rosters() -> list[dict]:

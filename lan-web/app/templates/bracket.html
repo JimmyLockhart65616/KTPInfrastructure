@@ -19,6 +19,7 @@
       {% set s = m.slot %}
       {% set need = ((m.best_of or 3) // 2 + 1) %}
       {% if s.station %}<div class="bkt-srv">Server {{ s.station }}</div>{% endif %}
+      {% if m.map %}<div class="bkt-srv">{{ m.map }}</div>{% endif %}
       {% set ready = s.team_a_id and s.team_b_id %}
       {% set can = is_admin or (am_captain and ready and (my_team_id == s.team_a_id or my_team_id == s.team_b_id)) %}
       {% if can %}
@@ -37,6 +38,11 @@
           {% for n in range(1, 7) %}<option value="{{ n }}"{{ ' selected' if s.station == n }}>Srv {{ n }}</option>{% endfor %}
         </select>
       </form>
+      <form class="bkt-srv-set" method="post" action="{{ url_for('bracket_set_map') }}">
+        <input type="hidden" name="mkey" value="{{ s.mkey }}">
+        <input name="map" list="comp-maps" value="{{ m.map or '' }}" placeholder="map(s)" style="font-size:11px;width:9rem;" title="Series map(s)">
+        <button type="submit" style="font-size:11px;">set</button>
+      </form>
       {% endif %}
     {% endif %}
   </div>
@@ -46,7 +52,7 @@
   <div class="bkt-tree">
     {% for rnd in rounds %}
     <div class="bkt-round">
-      <div class="bkt-round-head">{{ rnd.title }}<span>{% if rnd.time %}{{ rnd.time }} · {% endif %}Best of 3</span></div>
+      <div class="bkt-round-head">{{ rnd.title }}<span>{% if rnd.time %}{{ rnd.time }} · {% endif %}Best of {{ rnd.bo or 3 }}</span></div>
       <div class="bkt-body">
         {% for m in rnd.matches %}{{ matchbox(m, is_admin, am_captain, my_team_id) }}{% endfor %}
       </div>
@@ -64,6 +70,7 @@
     </header>
     <div class="chapter-body">
       {% if preview %}<div class="preview-banner">Preview — sample data · not real results</div>{% endif %}
+      <datalist id="comp-maps">{% for mp in comp_maps %}<option value="{{ mp }}">{% endfor %}</datalist>
       <style>
         .bkt-tree { display:flex; align-items:stretch; overflow-x:auto; padding:4px 0 14px; min-height:520px; }
         .bkt-round { display:flex; flex-direction:column; min-width:198px; }
@@ -127,11 +134,11 @@
       {% endif %}
 
       <h3 style="margin-top:32px;">Upper bracket &mdash; for the title</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Seeds 1–2 bye to the semifinals; QF losers drop to the lower bracket.</p>
+      <p style="font-size:13px;color:var(--ink-faint);">Seeds 1–2 bye to the semifinals. <strong>Every</strong> upper-bracket loss drops to the lower bracket — even the bye seeds keep a second life (true double-elimination).</p>
       {{ tree(upper_rounds, is_admin, am_captain, my_team_id) }}
 
       <h3 style="margin-top:32px;">Lower bracket &mdash; for the lower championship</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Seeds 7–10 plus the two QF losers (which drop in); single-elimination. Its champion advances to the Grand Final.</p>
+      <p style="font-size:13px;color:var(--ink-faint);">Seeds 7–10 plus every upper-bracket dropout (QF losers at R2, SF losers at R3, the Upper Final loser into the Lower Final). Best-of-one until the Lower Final; its champion advances to the Grand Final.</p>
       {{ tree(lower_rounds, is_admin, am_captain, my_team_id) }}
 
       <h3 style="margin-top:32px;">Placement matches &mdash; final standings</h3>

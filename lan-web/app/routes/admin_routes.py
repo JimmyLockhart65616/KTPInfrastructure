@@ -5,7 +5,7 @@ set captains, link Discord IDs. All routes require_admin."""
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .. import auth, bracket, common, db, seeding
+from .. import audit, auth, bracket, common, db, seeding
 from .. import schedule as sched
 from ..config import settings
 from ..templating import templates
@@ -73,8 +73,55 @@ def admin_home(request: Request):
         bracket_generated=bracket.bracket_exists(),
         admins=admins,
         admin_candidates=admin_candidates,
+        announcement=seeding.get_setting("announcement") or "",
     )
     return templates.TemplateResponse(request, "admin.html", ctx)
+
+
+@router.post("/admin/announce", name="admin_announce")
+async def admin_announce(request: Request):
+    """Set or clear the site-wide broadcast strip shown on every page."""
+    auth.require_admin(request)
+    f = await request.form()
+    seeding.set_setting("announcement", (f.get("announcement") or "").strip()[:240])
+    return RedirectResponse(request.url_for("admin"), status_code=303)
+
+
+@router.get("/admin/audit", name="audit_log")
+def audit_view(request: Request):
+    auth.require_admin(request)
+    rows = audit.recent(200)
+    sched_lbl = {str(m["id"]): f"R{m['round']}: {m['a_name']} v {m['b_name']}" for m in sched.get_matches()}
+    brk_lbl = {}
+    for r in bracket.get_bracket():
+        lbl = bracket.BY_KEY.get(r["mkey"], {}).get("label", r["mkey"])
+        brk_lbl[r["mkey"]] = f"{lbl}: {r.get('a_name') or '?'} v {r.get('b_name') or '?'}"
+    team_names = {t["id"]: t["name"] for t in db.query_all("SELECT id, name FROM lan_teams")}
+    ids = {int(r["actor"]) for r in rows if r["actor"]}
+    actor_names = {}
+    if ids:
+        ph = ",".join(["%s"] * len(ids))
+        for p in db.query_all(f"SELECT discord_id, display_name FROM lan_players WHERE discord_id IN ({ph})", tuple(ids)):
+            actor_names[int(p["discord_id"])] = p["display_name"]
+    for r in rows:
+        r["label"] = sched_lbl.get(r["ref"]) if r["scope"] == "schedule" else brk_lbl.get(r["ref"], r["ref"])
+        r["actor_name"] = actor_names.get(int(r["actor"])) if r["actor"] else None
+        r["prev_winner_name"] = team_names.get(r["prev_winner"])
+        r["new_winner_name"] = team_names.get(r["new_winner"])
+    ctx = common.base_ctx(request, "admin")
+    ctx["rows"] = rows
+    return templates.TemplateResponse(request, "audit.html", ctx)
+
+
+@router.post("/admin/audit/undo", name="audit_undo")
+async def audit_undo(request: Request):
+    me = auth.require_admin(request)
+    f = await request.form()
+    try:
+        audit.undo(int(f["audit_id"]), int(me))
+    except (KeyError, ValueError) as e:
+        raise HTTPException(400, str(e))
+    return RedirectResponse(request.url_for("audit_log"), status_code=303)
 
 
 @router.post("/admin/staff/add", name="admin_grant")

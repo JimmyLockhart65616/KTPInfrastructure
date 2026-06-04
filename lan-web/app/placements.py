@@ -35,7 +35,7 @@ def bracket_champions() -> tuple:
             return r["a_name"] if r["winner_team_id"] == r["team_a_id"] else r["b_name"]
         return None
 
-    return (champ("GF") or champ("F")), champ("LF")
+    return (champ("GF") or champ("UF")), champ("LF")
 
 
 def suggested_placements() -> list[int]:
@@ -66,17 +66,18 @@ def suggested_placements() -> list[int]:
     def by_seed(ids):
         return sorted([i for i in ids if i], key=lambda i: seed_of.get(i, 999))
 
-    # 1-2 from the Grand Final; each placement match settles its tier. Before a
-    # match is played, fall back to bracket position ordered by seed. Everything
-    # past the bracket falls back to group standings.
+    # 1-2 from the Grand Final. 3rd = Lower Final loser, 4th = Lower Semifinal
+    # loser (positional in true double-elim). Each placement match settles its
+    # tier; before it's played, fall back to bracket position ordered by seed,
+    # then group standings.
     if winner("GF"):
         order = [winner("GF"), loser("GF")]
     else:
-        order = by_seed([winner("F"), winner("LF")])      # GF entrants, order TBD
-    order += [winner("P34"),  loser("P34")]  if winner("P34")  else by_seed([loser("F"),    loser("LF")])
-    order += [winner("P56"),  loser("P56")]  if winner("P56")  else by_seed([loser("SF1"),  loser("SF2")])
-    order += [winner("P78"),  loser("P78")]  if winner("P78")  else by_seed([loser("LSF1"), loser("LSF2")])
-    order += [winner("P910"), loser("P910")] if winner("P910") else by_seed([loser("PA"),   loser("PB")])
+        order = by_seed([winner("UF"), winner("LF")])     # GF entrants, order TBD
+    order += [loser("LF"), loser("LSF")]                  # 3rd, 4th
+    order += [winner("P56"),  loser("P56")]  if winner("P56")  else by_seed([loser("LB3"), loser("LB4")])
+    order += [winner("P78"),  loser("P78")]  if winner("P78")  else by_seed([loser("LB1"), loser("LB2")])
+    order += [winner("P910"), loser("P910")] if winner("P910") else by_seed([loser("PA"),  loser("PB")])
     order += standings_order + [t["id"] for t in teams]
 
     seen, out = set(), []

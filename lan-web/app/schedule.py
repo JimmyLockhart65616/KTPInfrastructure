@@ -67,7 +67,7 @@ def get_matches() -> list[dict]:
     try:
         return db.query_all(
             """
-            SELECT m.id, m.round, m.station, m.status,
+            SELECT m.id, m.round, m.station, m.`map` AS map, m.status,
                    m.team_a_id, m.team_b_id, m.score_a, m.score_b, m.winner_team_id,
                    ta.name AS a_name, ta.tag AS a_tag, ta.seed AS a_seed,
                    tb.name AS b_name, tb.tag AS b_tag, tb.seed AS b_seed
@@ -103,8 +103,11 @@ def materialize_matches():
 
 
 def report_result(match_id: int, score_a: int, score_b: int, reporter_discord_id: int | None):
-    from . import db
-    m = db.query_one("SELECT team_a_id, team_b_id FROM lan_schedule WHERE id=%s", (match_id,))
+    from . import audit, db
+    m = db.query_one(
+        "SELECT team_a_id, team_b_id, score_a, score_b, winner_team_id, status "
+        "FROM lan_schedule WHERE id=%s", (match_id,)
+    )
     if not m:
         raise ValueError("No such match.")
     winner = m["team_a_id"] if score_a > score_b else m["team_b_id"] if score_b > score_a else None
@@ -113,6 +116,10 @@ def report_result(match_id: int, score_a: int, score_b: int, reporter_discord_id
         "reported_by=%s, reported_at=NOW() WHERE id=%s",
         (score_a, score_b, winner, reporter_discord_id, match_id),
     )
+    audit.log("schedule", match_id, "edit" if m["status"] == "final" else "report",
+              {"a": m["score_a"], "b": m["score_b"], "winner": m["winner_team_id"], "status": m["status"]},
+              {"a": score_a, "b": score_b, "winner": winner, "status": "final"},
+              reporter_discord_id)
 
 
 def round_times() -> dict[int, str]:
@@ -142,7 +149,7 @@ def team_schedule(team_id: int) -> list[dict]:
             "opp_tag": m["b_tag"] if us_a else m["a_tag"],
             "our_score": m["score_a"] if us_a else m["score_b"],
             "opp_score": m["score_b"] if us_a else m["score_a"],
-            "result": result, "station": m["station"], "status": m["status"],
+            "result": result, "station": m["station"], "map": m["map"], "status": m["status"],
         })
     out.sort(key=lambda r: r["round"])
     return out
@@ -152,4 +159,18 @@ def set_station(match_id: int, station):
     """Admin: assign (or clear) the server/station number for a Saturday match."""
     from . import db
     db.execute("UPDATE lan_schedule SET station=%s WHERE id=%s", (station, match_id))
+
+
+def set_map(match_id: int, mapname):
+    """Admin: set (or clear) the map for a Saturday match."""
+    from . import db
+    db.execute("UPDATE lan_schedule SET `map`=%s WHERE id=%s", (mapname, match_id))
+
+
+# Common DoD competitive maps — drives the map-picker datalist (free text still allowed).
+COMP_MAPS = [
+    "dod_anzio", "dod_avalanche", "dod_caen", "dod_charlie", "dod_donner",
+    "dod_flash", "dod_jagd", "dod_kalt", "dod_kraftstoff", "dod_merderet",
+    "dod_saints", "dod_switch", "dod_vossenack",
+]
 

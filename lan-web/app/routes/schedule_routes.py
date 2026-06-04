@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .. import auth, common, db, seeding, standings
+from .. import auth, common, db, notify, seeding, standings
 from .. import schedule as sched
 from ..templating import templates
 
@@ -19,12 +19,14 @@ def schedule_page(request: Request):
         matches=matches,
         rounds=sched.rounds_with_teams(),          # seed-slot template fallback
         timetable=sched.SATURDAY_TIMETABLE,
+        comp_maps=sched.COMP_MAPS,
         seeds_locked=sched.seeds_locked(),
         standings=standings.compute_standings(teams, matches) if matches else [],
         is_admin=auth.is_admin(request),
         my_team_id=ident["team_id"] if ident else None,
         am_captain=bool(ident and ident["is_captain"]),
         preview=seeding.get_setting("preview_banner") == "1",
+        auto_refresh=60,
     )
     return templates.TemplateResponse(request, "schedule.html", ctx)
 
@@ -72,4 +74,27 @@ async def set_station(request: Request):
     raw = (f.get("station") or "").strip()
     station = int(raw) if raw.isdigit() and 1 <= int(raw) <= 6 else None
     sched.set_station(match_id, station)
+    if station:  # ping both captains: you're up on Server N
+        m = db.query_one(
+            "SELECT m.round, m.team_a_id, m.team_b_id, ta.name a, tb.name b FROM lan_schedule m "
+            "JOIN lan_teams ta ON ta.id=m.team_a_id JOIN lan_teams tb ON tb.id=m.team_b_id WHERE m.id=%s",
+            (match_id,),
+        )
+        if m:
+            notify.notify_captains(
+                [m["team_a_id"], m["team_b_id"]],
+                f"\U0001f3ae You're up — Round {m['round']}: **{m['a']}** vs **{m['b']}** on **Server {station}**. Report to your station.",
+            )
+    return RedirectResponse(url=request.url_for("schedule"), status_code=303)
+
+
+@router.post("/admin/schedule/map", name="schedule_set_map")
+async def set_map(request: Request):
+    auth.require_admin(request)
+    f = await request.form()
+    try:
+        match_id = int(f["match_id"])
+    except (KeyError, ValueError):
+        raise HTTPException(400, "match id required")
+    sched.set_map(match_id, (f.get("map") or "").strip()[:48] or None)
     return RedirectResponse(url=request.url_for("schedule"), status_code=303)

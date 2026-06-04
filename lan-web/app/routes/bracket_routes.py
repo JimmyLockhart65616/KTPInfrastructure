@@ -4,7 +4,7 @@ import json
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .. import auth, bracket, common, db, seeding
+from .. import auth, bracket, common, db, notify, seeding
 from .. import schedule as sched
 from ..templating import templates
 
@@ -32,7 +32,7 @@ def bracket_page(request: Request):
             "team_a_id": r.get("team_a_id"), "team_b_id": r.get("team_b_id"),
             "score_a": r.get("score_a"), "score_b": r.get("score_b"),
             "winner_team_id": r.get("winner_team_id"), "status": r.get("status", "pending"),
-            "station": r.get("station"),
+            "station": r.get("station"), "map": r.get("map"),
         })
     by = {s["mkey"]: s for s in slots}
 
@@ -60,7 +60,7 @@ def bracket_page(request: Request):
         return {"top": _comp(s, "a"), "bottom": _comp(s, "b"), "slot": s,
                 "best_of": bracket.BY_KEY[mkey]["best_of"],
                 "label": bracket.BY_KEY[mkey]["label"],
-                "time": bracket.match_time(mkey)}
+                "time": bracket.match_time(mkey), "map": s.get("map")}
 
     def _adv(team_id, label, bottom):
         if team_id and team_id in teamrows:
@@ -69,29 +69,29 @@ def bracket_page(request: Request):
             top = {"name": label, "seed": None, "score": None, "win": False, "tbd": True}
         return {"top": top, "bottom": {"name": bottom, "seed": None, "score": None, "win": False, "tbd": True}, "slot": None}
 
-    def _loser(mkey):
-        q = by[mkey]
-        if q["status"] == "final" and q["winner_team_id"]:
-            return q["team_a_id"] if q["winner_team_id"] == q["team_b_id"] else q["team_b_id"]
-        return None
+    def _t(mkey):
+        return bracket.match_time(mkey)
 
-    T = bracket.PLAYOFF_TIMES
+    # Upper bracket (BO3): seeds 1-2 bye to the SF.
     upper_rounds = [
-        {"title": "Quarterfinals", "time": T[1], "matches": [_adv(rank_map.get(1), "Seed 1", "BYE"), _match("QF2"),
-                                               _match("QF1"), _adv(rank_map.get(2), "Seed 2", "BYE")]},
-        {"title": "Semifinals", "time": T[2], "matches": [_match("SF1"), _match("SF2")]},
-        {"title": "Final", "time": T[3], "matches": [_match("F")]},
+        {"title": "Quarterfinals", "time": _t("QF1"), "bo": 3,
+         "matches": [_adv(rank_map.get(1), "Seed 1", "BYE"), _match("QF2"),
+                     _match("QF1"), _adv(rank_map.get(2), "Seed 2", "BYE")]},
+        {"title": "Semifinals", "time": _t("SF1"), "bo": 3, "matches": [_match("SF1"), _match("SF2")]},
+        {"title": "Upper Final", "time": _t("UF"), "bo": 3, "matches": [_match("UF")]},
     ]
+    # Lower bracket (BO1 until the Final): upper losers drop in at LR2/LR3/LR5.
     lower_rounds = [
-        {"title": "Play-ins", "time": T[1], "matches": [_adv(_loser("QF2"), "Loser QF2", "↓ dropped"), _match("PA"),
-                                          _match("PB"), _adv(_loser("QF1"), "Loser QF1", "↓ dropped")]},
-        {"title": "Lower Semifinals", "time": T[2], "matches": [_match("LSF1"), _match("LSF2")]},
-        {"title": "Lower Final", "time": T[3], "matches": [_match("LF")]},
+        {"title": "Play-ins", "time": _t("PA"), "bo": 1, "matches": [_match("PA"), _match("PB")]},
+        {"title": "Lower R2 · QF losers drop", "time": _t("LB1"), "bo": 1, "matches": [_match("LB1"), _match("LB2")]},
+        {"title": "Lower R3 · SF losers drop", "time": _t("LB3"), "bo": 1, "matches": [_match("LB3"), _match("LB4")]},
+        {"title": "Lower Semifinal", "time": _t("LSF"), "bo": 1, "matches": [_match("LSF")]},
+        {"title": "Lower Final · UF loser drops", "time": _t("LF"), "bo": 3, "matches": [_match("LF")]},
     ]
     # Grand Final reunites the two bracket champions (BO5). Placement matches
-    # settle each tied tier off to the side.
+    # settle each same-round tier off to the side.
     grand_final = _match("GF")
-    placements = [_match("P34"), _match("P56"), _match("P78"), _match("P910")]
+    placements = [_match("P56"), _match("P78"), _match("P910")]
 
     def _runner(row):
         if not row or row["status"] != "final" or not row["winner_team_id"]:
@@ -108,13 +108,15 @@ def bracket_page(request: Request):
         placements=placements,
         champion=_champ(by.get("GF")),               # overall grand champion
         runner_up=_runner(by.get("GF")),
-        upper_champion=_champ(by.get("F")),           # the two grand-final entrants
+        upper_champion=_champ(by.get("UF")),          # the two grand-final entrants
         lower_champion=_champ(by.get("LF")),
         group_complete=bool(matches) and all(m["status"] == "final" for m in matches),
+        comp_maps=sched.COMP_MAPS,
         is_admin=auth.is_admin(request),
         my_team_id=ident["team_id"] if ident else None,
         am_captain=bool(ident and ident["is_captain"]),
         preview=seeding.get_setting("preview_banner") == "1",
+        auto_refresh=60,
     )
     return templates.TemplateResponse(request, "bracket.html", ctx)
 
@@ -139,7 +141,7 @@ async def report(request: Request):
     if not can:
         raise HTTPException(403, "Only a captain of one of the two teams (or staff) may report.")
     try:
-        bracket.report_series(mkey, sa, sb)
+        bracket.report_series(mkey, sa, sb, actor=ident["discord_id"])
     except ValueError as e:
         raise HTTPException(400, str(e))
     return RedirectResponse(url=request.url_for("bracket"), status_code=303)
@@ -165,4 +167,27 @@ async def set_station(request: Request):
     raw = (f.get("station") or "").strip()
     station = int(raw) if raw.isdigit() and 1 <= int(raw) <= 6 else None
     bracket.set_station(mkey, station)
+    if station:
+        row = db.query_one(
+            "SELECT b.team_a_id, b.team_b_id, ta.name a, tb.name b FROM lan_bracket b "
+            "LEFT JOIN lan_teams ta ON ta.id=b.team_a_id LEFT JOIN lan_teams tb ON tb.id=b.team_b_id WHERE b.mkey=%s",
+            (mkey,),
+        )
+        if row and row["team_a_id"] and row["team_b_id"]:
+            label = bracket.BY_KEY.get(mkey, {}).get("label", mkey)
+            notify.notify_captains(
+                [row["team_a_id"], row["team_b_id"]],
+                f"\U0001f3ae You're up — {label}: **{row['a']}** vs **{row['b']}** on **Server {station}**. Report to your station.",
+            )
+    return RedirectResponse(url=request.url_for("bracket"), status_code=303)
+
+
+@router.post("/admin/bracket/map", name="bracket_set_map")
+async def set_map(request: Request):
+    auth.require_admin(request)
+    f = await request.form()
+    mkey = f.get("mkey", "")
+    if not db.query_one("SELECT 1 FROM lan_bracket WHERE mkey=%s", (mkey,)):
+        raise HTTPException(404, "No such bracket match.")
+    bracket.set_map(mkey, (f.get("map") or "").strip()[:96] or None)
     return RedirectResponse(url=request.url_for("bracket"), status_code=303)

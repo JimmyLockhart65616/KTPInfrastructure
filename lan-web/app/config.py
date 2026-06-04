@@ -17,6 +17,7 @@ class Settings:
     discord_client_id: str
     discord_client_secret: str
     discord_redirect_uri: str
+    discord_bot_token: str
     admin_discord_ids: frozenset
     db_host: str
     db_port: int
@@ -25,6 +26,8 @@ class Settings:
     db_name: str
     demo_dir: str
     demo_max_bytes: int
+    photo_dir: str
+    photo_max_bytes: int
 
     @property
     def is_prod(self) -> bool:
@@ -46,6 +49,7 @@ def load() -> Settings:
         discord_client_id=os.getenv("DISCORD_CLIENT_ID", ""),
         discord_client_secret=os.getenv("DISCORD_CLIENT_SECRET", ""),
         discord_redirect_uri=os.getenv("DISCORD_REDIRECT_URI", ""),
+        discord_bot_token=os.getenv("LAN_DISCORD_BOT_TOKEN", ""),
         admin_discord_ids=_parse_ids(os.getenv("LAN_ADMIN_DISCORD_IDS", "")),
         db_host=os.getenv("LAN_DB_HOST", "127.0.0.1"),
         db_port=int(os.getenv("LAN_DB_PORT", "3306")),
@@ -57,6 +61,11 @@ def load() -> Settings:
             str(Path(__file__).resolve().parent.parent / "data" / "demos"),
         ),
         demo_max_bytes=int(os.getenv("LAN_DEMO_MAX_MB", "250")) * 1024 * 1024,
+        photo_dir=os.getenv(
+            "LAN_PHOTO_DIR",
+            str(Path(__file__).resolve().parent.parent / "data" / "photos"),
+        ),
+        photo_max_bytes=int(os.getenv("LAN_PHOTO_MAX_MB", "15")) * 1024 * 1024,
     )
 
 
