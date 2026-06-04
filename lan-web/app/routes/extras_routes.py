@@ -90,9 +90,15 @@ async def award_delete(request: Request):
 # ── photo gallery ────────────────────────────────────────────────────────
 @router.get("/gallery", name="gallery")
 def gallery_page(request: Request):
-    rows = db.query_all("SELECT * FROM lan_photos ORDER BY uploaded_at DESC, id DESC")
+    # Admins see the upload audit (who + IP); the roster name resolves it where
+    # the uploader is on a team, otherwise the stored Discord name stands in.
+    rows = db.query_all(
+        "SELECT ph.*, p.display_name AS roster_name FROM lan_photos ph "
+        "LEFT JOIN lan_players p ON p.discord_id = ph.uploaded_by "
+        "ORDER BY ph.uploaded_at DESC, ph.id DESC"
+    )
     ctx = common.base_ctx(request, "gallery")
-    ctx.update(photos=rows, can_upload=auth.current_identity(request) is not None,
+    ctx.update(photos=rows, can_upload=auth.session_user(request) is not None,
                is_admin=auth.is_admin(request),
                max_mb=settings.photo_max_bytes // (1024 * 1024))
     return templates.TemplateResponse(request, "gallery.html", ctx)
@@ -100,9 +106,9 @@ def gallery_page(request: Request):
 
 @router.post("/gallery/upload", name="gallery_upload")
 async def gallery_upload(request: Request, file: UploadFile = File(...), caption: str = Form("")):
-    ident = auth.current_identity(request)
-    if not ident:
-        raise HTTPException(403, "Your Discord must be linked to a roster to post photos.")
+    su = auth.session_user(request)
+    if not su:
+        raise HTTPException(403, "Sign in with Discord to post photos.")
     ext = (file.filename or "").rsplit(".", 1)[-1].lower()
     if ext not in _IMG_EXT:
         raise HTTPException(400, "Image must be jpg, png, webp, or gif.")
@@ -112,8 +118,10 @@ async def gallery_upload(request: Request, file: UploadFile = File(...), caption
     if len(data) > settings.photo_max_bytes:
         raise HTTPException(413, f"Image exceeds the {settings.photo_max_bytes // (1024*1024)} MB limit.")
     pid = db.execute(
-        "INSERT INTO lan_photos (stored_name, caption, uploaded_by) VALUES (%s,%s,%s)",
-        ("pending", (caption or "").strip()[:200] or None, ident["discord_id"]),
+        "INSERT INTO lan_photos (stored_name, caption, uploaded_by, uploaded_ip, uploaded_name) "
+        "VALUES (%s,%s,%s,%s,%s)",
+        ("pending", (caption or "").strip()[:200] or None,
+         su["discord_id"], common.client_ip(request), (su.get("discord_name") or "")[:64] or None),
     )
     Path(settings.photo_dir).mkdir(parents=True, exist_ok=True)
     stored = f"{pid:06d}.{ext}"

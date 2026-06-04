@@ -9,24 +9,76 @@
     </header>
     <div class="chapter-body">
       <style>
+        .dz { display:block; border:2px dashed var(--khaki); background:rgba(90,94,58,0.06);
+              padding:26px 18px; text-align:center; cursor:pointer; transition:.12s; position:relative; }
+        .dz:hover { border-color:var(--wsdod-blue); background:rgba(30,58,95,0.06); }
+        .dz.over { border-color:var(--wsdod-blue); background:rgba(30,58,95,0.12); border-style:solid; }
+        .dz.has { border-style:solid; border-color:var(--olive); }
+        .dz-stamp { font-family:var(--stencil); letter-spacing:.18em; font-size:20px; color:var(--ink-soft); text-transform:uppercase; }
+        .dz.over .dz-stamp, .dz.has .dz-stamp { color:var(--wsdod-blue); }
+        .dz-sub { font-family:var(--typed); font-size:12px; color:var(--ink-faint); margin-top:6px; }
+        .dz-file { font-family:var(--mono); font-size:13px; color:var(--olive-dark); margin-top:10px; font-weight:700; }
+        .dz-prev { margin-top:10px; }
+        .dz-prev img { max-height:120px; border:1px solid var(--ink-margin); }
+        .gal-fields { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
         .gal-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:8px; }
         .gal-card { border:1px solid var(--ink-margin); background:var(--paper); padding:6px; }
         .gal-card a { display:block; }
         .gal-card img { width:100%; height:170px; object-fit:cover; display:block; background:var(--paper-2,#0001); }
         .gal-cap { font-family:var(--typed); font-size:12.5px; color:var(--ink-soft); padding:6px 4px 2px; }
+        .gal-meta { font-family:var(--mono); font-size:11px; color:var(--ink-faint); padding:2px 4px; line-height:1.4; }
         .gal-del { margin-top:4px; }
       </style>
 
       {% if can_upload %}
       <h3>Add a photo</h3>
-      <form method="post" action="{{ url_for('gallery_upload') }}" enctype="multipart/form-data" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-        <input type="file" name="file" accept="image/*" required>
-        <input name="caption" placeholder="caption — optional" style="width:16rem;">
-        <button type="submit">Upload</button>
-        <span style="font-size:12px;color:var(--ink-faint);">jpg / png / webp / gif · max {{ max_mb }} MB</span>
+      <form method="post" action="{{ url_for('gallery_upload') }}" enctype="multipart/form-data" id="photoform">
+        <label class="dz" id="dz" for="photofile">
+          <input id="photofile" type="file" name="file" accept="image/*" required hidden>
+          <div class="dz-stamp">&#9660; Drop photo here &#9660;</div>
+          <div class="dz-sub">or click to select &mdash; jpg / png / webp / gif &middot; max {{ max_mb }} MB</div>
+          <div class="dz-file" id="dzfile"></div>
+          <div class="dz-prev" id="dzprev"></div>
+        </label>
+        <div class="gal-fields">
+          <input name="caption" placeholder="caption — optional" style="width:16rem;">
+          <button type="submit">Upload</button>
+        </div>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">
+          Posting as <strong>{{ session_user.discord_name }}</strong>. Uploads are logged to your Discord account and IP for moderation.
+        </p>
       </form>
-      {% elif session_user %}
-      <div class="pending-note">Your Discord isn't linked to a roster yet — ask staff, then you can post photos. Anyone may view.</div>
+      <script>
+        (function () {
+          var dz = document.getElementById('dz'), inp = document.getElementById('photofile'),
+              out = document.getElementById('dzfile'), prev = document.getElementById('dzprev');
+          function show() {
+            if (inp.files && inp.files.length) {
+              var f = inp.files[0];
+              out.textContent = 'LOADED — ' + f.name + ' (' + (f.size / 1048576).toFixed(1) + ' MB)';
+              dz.classList.add('has');
+              prev.innerHTML = '';
+              if (f.type && f.type.indexOf('image/') === 0) {
+                var img = document.createElement('img');
+                img.src = URL.createObjectURL(f);
+                img.onload = function () { URL.revokeObjectURL(img.src); };
+                prev.appendChild(img);
+              }
+            }
+          }
+          ['dragenter', 'dragover'].forEach(function (e) {
+            dz.addEventListener(e, function (ev) { ev.preventDefault(); dz.classList.add('over'); });
+          });
+          ['dragleave', 'dragend'].forEach(function (e) {
+            dz.addEventListener(e, function () { dz.classList.remove('over'); });
+          });
+          dz.addEventListener('drop', function (ev) {
+            ev.preventDefault(); dz.classList.remove('over');
+            if (ev.dataTransfer.files.length) { inp.files = ev.dataTransfer.files; show(); }
+          });
+          inp.addEventListener('change', show);
+        })();
+      </script>
       {% else %}
       <div class="pending-note"><a href="{{ url_for('login') }}">Sign in via Discord</a> to post photos. Anyone may view.</div>
       {% endif %}
@@ -41,6 +93,8 @@
           </a>
           {% if p.caption %}<div class="gal-cap">{{ p.caption }}</div>{% endif %}
           {% if is_admin %}
+          <div class="gal-meta">&#9873; {{ p.roster_name or p.uploaded_name or ('discord ' ~ p.uploaded_by) }}
+            &middot; {{ p.uploaded_ip or 'no ip' }} &middot; {{ p.uploaded_at }}</div>
           <form class="gal-del" method="post" action="{{ url_for('gallery_delete') }}" onsubmit="return confirm('Delete this photo?');">
             <input type="hidden" name="photo_id" value="{{ p.id }}"><button type="submit">Delete</button>
           </form>

@@ -61,6 +61,7 @@ def demos_page(request: Request, team: int | None = None):
     ctx["teams"] = db.query_all("SELECT id, name FROM lan_teams ORDER BY name")
     ctx["filter_team"] = team
     ctx["my_matches"] = my_matches
+    ctx["is_admin"] = auth.is_admin(request)
     return templates.TemplateResponse(request, "demos.html", ctx)
 
 
@@ -88,10 +89,10 @@ async def demos_upload(
 
     schedule_id, bracket_mkey = _parse_match(match)
     demo_id = db.execute(
-        "INSERT INTO lan_demos (alias, team_id, schedule_id, bracket_mkey, original_filename, note, uploaded_by) "
-        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        "INSERT INTO lan_demos (alias, team_id, schedule_id, bracket_mkey, original_filename, note, uploaded_by, uploaded_ip) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
         (alias[:64], ident["team_id"], schedule_id, bracket_mkey, orig,
-         (note or "").strip()[:255] or None, ident["discord_id"]),
+         (note or "").strip()[:255] or None, ident["discord_id"], common.client_ip(request)),
     )
     Path(settings.demo_dir).mkdir(parents=True, exist_ok=True)
     stored = f"{demo_id:06d}.zip"

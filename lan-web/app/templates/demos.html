@@ -99,7 +99,8 @@
         {% for d in demos %}
           <tr>
             <td style="color:var(--ink);">{{ d.alias }}</td>
-            <td style="width:auto;">{{ d.original_filename }}{% if d.note %} <span style="color:var(--ink-faint);">· {{ d.note }}</span>{% endif %}</td>
+            <td style="width:auto;">{{ d.original_filename }}{% if d.note %} <span style="color:var(--ink-faint);">· {{ d.note }}</span>{% endif %}
+              {% if is_admin %}<div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);">&#9873; discord {{ d.uploaded_by or '—' }} · {{ d.uploaded_ip or 'no ip' }}</div>{% endif %}</td>
             <td>{{ d.team_name or '—' }}</td>
             <td style="font-size:12px;">{% if d.match_label %}<span style="color:var(--olive);">{{ d.match_label }}</span>{% else %}<span style="color:var(--ink-faint);">—</span>{% endif %}</td>
             <td>{{ fmtsize(d.size_bytes) }}</td>

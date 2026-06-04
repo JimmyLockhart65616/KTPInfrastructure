@@ -13,6 +13,16 @@ def now_edt() -> str:
     return dt.strftime("%d %b %Y / %H:%M EDT").upper()
 
 
+def client_ip(request: Request) -> str | None:
+    """Real client IP, trusting nginx's forwarded headers (the app binds to
+    127.0.0.1 behind the proxy, so request.client.host alone is useless)."""
+    for h in ("x-forwarded-for", "x-real-ip"):
+        v = request.headers.get(h)
+        if v:
+            return v.split(",")[0].strip()[:45]
+    return request.client.host if request.client else None
+
+
 def base_ctx(request: Request, active: str = "") -> dict:
     """Vars every page needs. `request` is passed positionally to
     TemplateResponse, so it is intentionally NOT included here."""
