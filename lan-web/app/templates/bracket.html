@@ -131,38 +131,25 @@
       </div>
       {% endif %}
 
-      <h3>Grand Final &mdash; Best of 3{% if grand_final.time %} &middot; {{ grand_final.time }}{% endif %}</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">The upper-bracket champion meets the lower-bracket champion. One best-of-three &mdash; no bracket reset.{% if gf_advantage %} The upper champion starts <strong>1&ndash;0</strong> (needs one map; the lower champion needs two) &mdash; the reward for an undefeated run.{% endif %}</p>
-      {% if is_admin %}
-      <form method="post" action="{{ url_for('bracket_gf_advantage') }}" style="margin:-2px 0 8px;">
-        <button type="submit">{{ 'Remove upper-champ 1–0 head start' if gf_advantage else 'Give upper champ a 1–0 head start' }}</button>
-        <span style="font-size:12px;color:var(--ink-faint);margin-left:6px;">{{ 'On — report the GF score including that map.' if gf_advantage else 'Off — equal best-of-three.' }}</span>
-      </form>
-      {% endif %}
-      <div class="bkt-grand">{{ matchbox(grand_final, is_admin, am_captain, my_team_id) }}</div>
-      {% if upper_champion or lower_champion %}
-      <p style="font-size:12px;color:var(--ink-soft);margin-top:2px;">{% if upper_champion %}Upper champion: <b>{{ upper_champion }}</b>{% endif %}{% if upper_champion and lower_champion %} &nbsp;·&nbsp; {% endif %}{% if lower_champion %}Lower champion: <b>{{ lower_champion }}</b>{% endif %}</p>
-      {% endif %}
+      <p style="font-size:13px;color:var(--ink-faint);">Single elimination — one loss ends your run for the title. Four best-of-three rounds, an hour break after each:
+         <b>Play-in 10:00</b> → <b>Quarterfinals 1:30</b> → <b>Semifinals 5:00</b> → <b>Final 8:30</b>, done by ~11 PM.
+         Eliminated teams keep playing in the consolation bracket below for final standing.</p>
 
-      <h3 style="margin-top:32px;">Upper bracket &mdash; for the title</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Seeds 1–2 bye to the semifinals. <strong>Every</strong> upper-bracket loss drops to the lower bracket — even the bye seeds keep a second life (true double-elimination).</p>
-      {{ tree(upper_rounds, is_admin, am_captain, my_team_id) }}
-
-      <h3 style="margin-top:32px;">Lower bracket &mdash; for the lower championship</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Seeds 7–10 plus every upper-bracket dropout (QF losers at R2, SF losers at R3, the Upper Final loser into the Lower Final). Best-of-one until the Lower Final; its champion advances to the Grand Final.</p>
-      <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 8px;">Read left to right — each match box names its two feeders: the winner advancing from the previous round and the team dropping in from the upper bracket.</p>
-      {{ tree(lower_rounds, is_admin, am_captain, my_team_id, flow=true) }}
-
-      <h3 style="margin-top:32px;">Placement matches &mdash; final standings</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Played off to the side on spare stations. Each starts at the next round time after those teams are eliminated. Best of 3.</p>
+      <h3>Play-in &mdash; Best of 3 · 10:00 AM</h3>
+      <p style="font-size:13px;color:var(--ink-faint);">Seeds 7–10. The two winners join seeds 1–6 (byes) in the Quarterfinals; the losers play for 9th/10th below.</p>
       <div class="bkt-placements">
-        {% for m in placements %}
-        <div class="bkt-place">
-          <div class="bkt-place-head">{{ m.label }}{% if m.time %} <span style="color:var(--wsdod-blue);font-family:var(--typed);letter-spacing:.04em;">{{ m.time }}</span>{% endif %}</div>
-          {{ matchbox(m, is_admin, am_captain, my_team_id) }}
-        </div>
+        {% for m in playin %}
+        <div class="bkt-place"><div class="bkt-place-head">{{ m.label }}</div>{{ matchbox(m, is_admin, am_captain, my_team_id) }}</div>
         {% endfor %}
       </div>
+
+      <h3 style="margin-top:32px;">Championship &mdash; for the title</h3>
+      <p style="font-size:13px;color:var(--ink-faint);">Quarterfinals → Semifinals → Final. The Final winner takes it all — there's no grand final, and nothing feeds back in.</p>
+      {{ tree(champ_rounds, is_admin, am_captain, my_team_id) }}
+
+      <h3 style="margin-top:32px;">Consolation &mdash; final standings (3rd–10th)</h3>
+      <p style="font-size:13px;color:var(--ink-faint);">Runs in parallel on spare servers — never feeds the championship. Play-in losers settle 9/10; the four QF losers play a lower semifinal then off for 5/6 and 7/8; the two SF losers play for 3/4. The last of these run alongside the Final, so nothing trails it.</p>
+      {{ tree(consolation_rounds, is_admin, am_captain, my_team_id, flow=true) }}
     </div>
   </section>
 {% endblock %}

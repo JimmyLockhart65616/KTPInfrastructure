@@ -15,7 +15,7 @@ router = APIRouter()
 def placements_page(request: Request):
     ctx = common.base_ctx(request, "placements")
     placed = placements.get_placements()
-    champ, lower = placements.bracket_champions()
+    champ = placements.bracket_champion()
     is_admin = auth.is_admin(request)
 
     all_teams = db.query_all("SELECT id, name, tag FROM lan_teams ORDER BY name")
@@ -28,7 +28,6 @@ def placements_page(request: Request):
     ctx.update(
         placements=placed,
         champion=champ,
-        lower_champion=lower,
         is_admin=is_admin,
         all_teams=all_teams,
         slots=slots,

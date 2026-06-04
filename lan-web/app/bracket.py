@@ -1,17 +1,19 @@
-"""Sunday playoffs — true double-elimination, auto-fed from group standings.
+"""Sunday playoffs — single-elimination championship + a consolation lower
+bracket for final standings, auto-fed from group standings.
 
-Upper bracket (seeds 1-6): seeds 1-2 bye to the SF, 3-6 into QFs. EVERY upper-
-bracket loss drops to the lower bracket — QF losers at LR2, SF losers at LR3,
-the Upper Final loser into the Lower Final. So the top seeds keep a second life.
-Lower bracket (seeds 7-10 + all upper droppers): single-elim, crowns the lower
-champion. Grand Final reunites the two, BO5, no bracket reset.
+Championship (one loss = out of the running): seeds 7-10 play a Play-in, the two
+winners join seeds 1-6 (byes) in the Quarterfinals → Semifinals → Final. The
+Final winner is the champion; nothing feeds back up.
 
-Nearly everything is BO3 — only the Lower Semifinal stays BO1 (it's the one
-match that would push the final past midnight). The Grand Final is BO3, no reset;
-optionally the upper champion starts it 1-0 (gf_advantage setting) as the reward
-for an undefeated run. Placement matches (5/6, 7/8, 9/10) settle the same-round
-eliminations off to the side; 3rd and 4th fall out of the lower final / lower
-semifinal positionally. 'seed:N' = group rank N, 'W:KEY' = winner, 'L:KEY' = loser."""
+Lower / consolation bracket (runs in parallel on spare servers, never rejoins
+the championship), to give eliminated teams more games and a played-out rank:
+- Play-in losers play for 9th/10th.
+- The four QF losers drop into a lower semifinal, then play off for 5/6 and 7/8.
+- The two SF losers play each other for 3rd/4th.
+Every match is BO3. Start times stagger four championship rounds with an hour
+break after each — 10:00 AM to ~11:00 PM — and the last placement matches run
+alongside the Final, so nothing trails it. 'seed:N' = group rank N,
+'W:KEY' = winner, 'L:KEY' = loser."""
 from __future__ import annotations
 
 import json
@@ -25,46 +27,37 @@ def wins_for(best_of: int) -> int:
 
 
 # Each slot: source 'seed:N' (standings rank), 'W:KEY' (winner of), 'L:KEY' (loser of).
+# Championship uses bracket 'upper'; the consolation uses 'placement'.
 BRACKET = [
-    # Upper bracket — BO3.
-    {"key": "QF1",  "bracket": "upper", "stage": "QF",  "slot": 1, "a": "seed:3", "b": "seed:6",  "best_of": 3, "label": "Quarterfinal 1"},
-    {"key": "QF2",  "bracket": "upper", "stage": "QF",  "slot": 2, "a": "seed:4", "b": "seed:5",  "best_of": 3, "label": "Quarterfinal 2"},
-    {"key": "SF1",  "bracket": "upper", "stage": "SF",  "slot": 1, "a": "seed:1", "b": "W:QF2",   "best_of": 3, "label": "Semifinal 1"},
-    {"key": "SF2",  "bracket": "upper", "stage": "SF",  "slot": 2, "a": "seed:2", "b": "W:QF1",   "best_of": 3, "label": "Semifinal 2"},
-    {"key": "UF",   "bracket": "upper", "stage": "UF",  "slot": 1, "a": "W:SF1", "b": "W:SF2",    "best_of": 3, "label": "Upper Final"},
-    # Lower bracket — BO3 except the Lower Semifinal (BO1). Drops: QF->LB, SF->LB3/4, UF->LF.
-    {"key": "PA",   "bracket": "lower", "stage": "LR1", "slot": 1, "a": "seed:7", "b": "seed:10", "best_of": 3, "label": "Play-in A"},
-    {"key": "PB",   "bracket": "lower", "stage": "LR1", "slot": 2, "a": "seed:8", "b": "seed:9",  "best_of": 3, "label": "Play-in B"},
-    {"key": "LB1",  "bracket": "lower", "stage": "LR2", "slot": 1, "a": "L:QF1", "b": "W:PA",     "best_of": 3, "label": "Lower R2 — 1"},
-    {"key": "LB2",  "bracket": "lower", "stage": "LR2", "slot": 2, "a": "L:QF2", "b": "W:PB",     "best_of": 3, "label": "Lower R2 — 2"},
-    {"key": "LB3",  "bracket": "lower", "stage": "LR3", "slot": 1, "a": "L:SF1", "b": "W:LB2",    "best_of": 3, "label": "Lower R3 — 1"},
-    {"key": "LB4",  "bracket": "lower", "stage": "LR3", "slot": 2, "a": "L:SF2", "b": "W:LB1",    "best_of": 3, "label": "Lower R3 — 2"},
-    {"key": "LSF",  "bracket": "lower", "stage": "LR4", "slot": 1, "a": "W:LB3", "b": "W:LB4",    "best_of": 1, "label": "Lower Semifinal"},
-    {"key": "LF",   "bracket": "lower", "stage": "LR5", "slot": 1, "a": "L:UF", "b": "W:LSF",     "best_of": 3, "label": "Lower Final"},
-    # Grand Final — BO3, no reset (upper champ optionally starts 1-0).
-    {"key": "GF",   "bracket": "grand", "stage": "GF",  "slot": 1, "a": "W:UF",  "b": "W:LF",     "best_of": 3, "label": "Grand Final"},
-    # Placement — same-round eliminations play off for the tier (BO3).
-    {"key": "P56",  "bracket": "placement", "stage": "P56",  "slot": 1, "a": "L:LB3", "b": "L:LB4", "best_of": 3, "label": "5th / 6th place"},
-    {"key": "P78",  "bracket": "placement", "stage": "P78",  "slot": 1, "a": "L:LB1", "b": "L:LB2", "best_of": 3, "label": "7th / 8th place"},
-    {"key": "P910", "bracket": "placement", "stage": "P910", "slot": 1, "a": "L:PA",  "b": "L:PB",  "best_of": 3, "label": "9th / 10th place"},
+    # Championship — single elim, BO3. Seeds 1-6 bye to the QF; 7-10 play in.
+    {"key": "PI1", "bracket": "upper", "stage": "PI", "slot": 1, "a": "seed:7", "b": "seed:10", "best_of": 3, "label": "Play-in 1"},
+    {"key": "PI2", "bracket": "upper", "stage": "PI", "slot": 2, "a": "seed:8", "b": "seed:9",  "best_of": 3, "label": "Play-in 2"},
+    {"key": "QF1", "bracket": "upper", "stage": "QF", "slot": 1, "a": "seed:1", "b": "W:PI2",   "best_of": 3, "label": "Quarterfinal 1"},
+    {"key": "QF2", "bracket": "upper", "stage": "QF", "slot": 2, "a": "seed:4", "b": "seed:5",   "best_of": 3, "label": "Quarterfinal 2"},
+    {"key": "QF3", "bracket": "upper", "stage": "QF", "slot": 3, "a": "seed:3", "b": "seed:6",   "best_of": 3, "label": "Quarterfinal 3"},
+    {"key": "QF4", "bracket": "upper", "stage": "QF", "slot": 4, "a": "seed:2", "b": "W:PI1",   "best_of": 3, "label": "Quarterfinal 4"},
+    {"key": "SF1", "bracket": "upper", "stage": "SF", "slot": 1, "a": "W:QF1", "b": "W:QF2",     "best_of": 3, "label": "Semifinal 1"},
+    {"key": "SF2", "bracket": "upper", "stage": "SF", "slot": 2, "a": "W:QF3", "b": "W:QF4",     "best_of": 3, "label": "Semifinal 2"},
+    {"key": "F",   "bracket": "upper", "stage": "F",  "slot": 1, "a": "W:SF1", "b": "W:SF2",     "best_of": 3, "label": "Final"},
+    # Consolation / lower bracket — BO3, parallel, never feeds the championship.
+    {"key": "P34",  "bracket": "placement", "stage": "P34",  "slot": 1, "a": "L:SF1", "b": "L:SF2", "best_of": 3, "label": "3rd / 4th place"},
+    {"key": "LS1",  "bracket": "placement", "stage": "LS",   "slot": 1, "a": "L:QF1", "b": "L:QF4", "best_of": 3, "label": "Lower Semifinal 1"},
+    {"key": "LS2",  "bracket": "placement", "stage": "LS",   "slot": 2, "a": "L:QF2", "b": "L:QF3", "best_of": 3, "label": "Lower Semifinal 2"},
+    {"key": "P56",  "bracket": "placement", "stage": "P56",  "slot": 1, "a": "W:LS1", "b": "W:LS2", "best_of": 3, "label": "5th / 6th place"},
+    {"key": "P78",  "bracket": "placement", "stage": "P78",  "slot": 1, "a": "L:LS1", "b": "L:LS2", "best_of": 3, "label": "7th / 8th place"},
+    {"key": "P910", "bracket": "placement", "stage": "P910", "slot": 1, "a": "L:PI1", "b": "L:PI2", "best_of": 3, "label": "9th / 10th place"},
 ]
 BY_KEY = {m["key"]: m for m in BRACKET}
 
-# Per-match start times. True double-elim is 6 deep on the championship path, so
-# matches stagger rather than share clean global slots. Almost all BO3 (only the
-# Lower Semifinal BO1) lands the Grand Final at 9:00 PM (BO3) -> ~11:30 PM finish,
-# peak 5 of 6 servers busy. Lower rounds shadow the upper-bracket drops, so their
-# BO3 length costs no extra wall-clock until LR3.
+# Per-match start times. Four championship rounds, an hour break after each
+# (2.5h play + 1h break = 3.5h cadence): 10:00 -> 1:30 -> 5:00 -> 8:30, done
+# ~11 PM. Consolation matches run in the same blocks on spare servers; the last
+# of them (3/4, 5/6, 7/8) run alongside the Final, so nothing trails it.
 MATCH_TIMES = {
-    "QF1": "10:00 AM", "QF2": "10:00 AM", "PA": "10:00 AM", "PB": "10:00 AM",
-    "P910": "12:30 PM",
-    "SF1": "12:30 PM", "SF2": "12:30 PM", "LB1": "12:30 PM", "LB2": "12:30 PM",
-    "P78": "3:00 PM",
-    "UF": "3:00 PM", "LB3": "3:00 PM", "LB4": "3:00 PM",
-    "LSF": "5:30 PM",
-    "P56": "5:30 PM",
-    "LF": "6:30 PM",
-    "GF": "9:00 PM",
+    "PI1": "10:00 AM", "PI2": "10:00 AM",
+    "QF1": "1:30 PM", "QF2": "1:30 PM", "QF3": "1:30 PM", "QF4": "1:30 PM", "P910": "1:30 PM",
+    "SF1": "5:00 PM", "SF2": "5:00 PM", "LS1": "5:00 PM", "LS2": "5:00 PM",
+    "F": "8:30 PM", "P34": "8:30 PM", "P56": "8:30 PM", "P78": "8:30 PM",
 }
 
 
@@ -139,8 +132,8 @@ def get_bracket() -> list[dict]:
             FROM lan_bracket b
             LEFT JOIN lan_teams ta ON ta.id = b.team_a_id
             LEFT JOIN lan_teams tb ON tb.id = b.team_b_id
-            ORDER BY FIELD(b.bracket,'upper','lower','grand','placement'),
-                     FIELD(b.stage,'QF','SF','UF','LR1','LR2','LR3','LR4','LR5','GF','P56','P78','P910'), b.slot
+            ORDER BY FIELD(b.bracket,'upper','placement'),
+                     FIELD(b.stage,'PI','QF','SF','F','P34','LS','P56','P78','P910'), b.slot
             """
         )
     except Exception:
@@ -235,7 +228,3 @@ def set_map(mkey: str, mapname):
     db.execute("UPDATE lan_bracket SET `map`=%s WHERE mkey=%s", (mapname, mkey))
 
 
-def gf_advantage() -> bool:
-    """Whether the Grand Final spots the upper champion a 1-0 map lead."""
-    from . import seeding
-    return seeding.get_setting("gf_advantage") == "1"

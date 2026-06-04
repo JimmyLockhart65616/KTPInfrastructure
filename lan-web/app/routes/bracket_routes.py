@@ -62,36 +62,25 @@ def bracket_page(request: Request):
                 "label": bracket.BY_KEY[mkey]["label"],
                 "time": bracket.match_time(mkey), "map": s.get("map")}
 
-    def _adv(team_id, label, bottom):
-        if team_id and team_id in teamrows:
-            top = {"name": teamrows[team_id]["name"], "seed": seed_of.get(team_id), "score": None, "win": True, "tbd": False}
-        else:
-            top = {"name": label, "seed": None, "score": None, "win": False, "tbd": True}
-        return {"top": top, "bottom": {"name": bottom, "seed": None, "score": None, "win": False, "tbd": True}, "slot": None}
-
     def _t(mkey):
         return bracket.match_time(mkey)
 
-    # Upper bracket (BO3): seeds 1-2 bye to the SF.
-    upper_rounds = [
+    # Championship — single elim. The Play-in feeds two of the eight QF slots;
+    # QF -> SF -> Final is a clean 4->2->1 tree the connectors line up against.
+    playin = [_match("PI1"), _match("PI2")]
+    champ_rounds = [
         {"title": "Quarterfinals", "time": _t("QF1"), "bo": 3,
-         "matches": [_adv(rank_map.get(1), "Seed 1", "BYE"), _match("QF2"),
-                     _match("QF1"), _adv(rank_map.get(2), "Seed 2", "BYE")]},
+         "matches": [_match("QF1"), _match("QF2"), _match("QF3"), _match("QF4")]},
         {"title": "Semifinals", "time": _t("SF1"), "bo": 3, "matches": [_match("SF1"), _match("SF2")]},
-        {"title": "Upper Final", "time": _t("UF"), "bo": 3, "matches": [_match("UF")]},
+        {"title": "Final", "time": _t("F"), "bo": 3, "matches": [_match("F")]},
     ]
-    # Lower bracket (BO3 except the Semifinal): upper losers drop in at LR2/LR3/LR5.
-    lower_rounds = [
-        {"title": "Play-ins", "time": _t("PA"), "bo": 3, "matches": [_match("PA"), _match("PB")]},
-        {"title": "Lower R2 · QF losers drop", "time": _t("LB1"), "bo": 3, "matches": [_match("LB1"), _match("LB2")]},
-        {"title": "Lower R3 · SF losers drop", "time": _t("LB3"), "bo": 3, "matches": [_match("LB3"), _match("LB4")]},
-        {"title": "Lower Semifinal", "time": _t("LSF"), "bo": 1, "matches": [_match("LSF")]},
-        {"title": "Lower Final · UF loser drops", "time": _t("LF"), "bo": 3, "matches": [_match("LF")]},
+    # Consolation / lower bracket — parallel, never feeds the championship.
+    consolation_rounds = [
+        {"title": "9th / 10th · play-in losers", "time": _t("P910"), "bo": 3, "matches": [_match("P910")]},
+        {"title": "Lower semifinals · QF losers", "time": _t("LS1"), "bo": 3, "matches": [_match("LS1"), _match("LS2")]},
+        {"title": "Placement finals · 3/4 · 5/6 · 7/8", "time": _t("P34"), "bo": 3,
+         "matches": [_match("P34"), _match("P56"), _match("P78")]},
     ]
-    # Grand Final reunites the two bracket champions (BO5). Placement matches
-    # settle each same-round tier off to the side.
-    grand_final = _match("GF")
-    placements = [_match("P56"), _match("P78"), _match("P910")]
 
     def _runner(row):
         if not row or row["status"] != "final" or not row["winner_team_id"]:
@@ -102,17 +91,13 @@ def bracket_page(request: Request):
     ident = ctx["ident"]
     ctx.update(
         generated=bool(db_rows),
-        upper_rounds=upper_rounds,
-        lower_rounds=lower_rounds,
-        grand_final=grand_final,
-        placements=placements,
-        champion=_champ(by.get("GF")),               # overall grand champion
-        runner_up=_runner(by.get("GF")),
-        upper_champion=_champ(by.get("UF")),          # the two grand-final entrants
-        lower_champion=_champ(by.get("LF")),
+        playin=playin,
+        champ_rounds=champ_rounds,
+        consolation_rounds=consolation_rounds,
+        champion=_champ(by.get("F")),
+        runner_up=_runner(by.get("F")),
         group_complete=bool(matches) and all(m["status"] == "final" for m in matches),
         comp_maps=sched.COMP_MAPS,
-        gf_advantage=bracket.gf_advantage(),
         is_admin=auth.is_admin(request),
         my_team_id=ident["team_id"] if ident else None,
         am_captain=bool(ident and ident["is_captain"]),
@@ -180,13 +165,6 @@ async def set_station(request: Request):
                 [row["team_a_id"], row["team_b_id"]],
                 f"\U0001f3ae You're up — {label}: **{row['a']}** vs **{row['b']}** on **Server {station}**. Report to your station.",
             )
-    return RedirectResponse(url=request.url_for("bracket"), status_code=303)
-
-
-@router.post("/admin/bracket/gf-advantage", name="bracket_gf_advantage")
-async def gf_advantage_toggle(request: Request):
-    auth.require_admin(request)
-    seeding.set_setting("gf_advantage", "" if bracket.gf_advantage() else "1")
     return RedirectResponse(url=request.url_for("bracket"), status_code=303)
 
 
