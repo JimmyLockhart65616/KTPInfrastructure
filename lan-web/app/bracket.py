@@ -49,16 +49,18 @@ BRACKET = [
 ]
 BY_KEY = {m["key"]: m for m in BRACKET}
 
-# Per-match start times. Play-in BO1 11:00-12:00, QF straight after, then a
-# one-hour break after the QF and after the SF:
-#   Play-in 11:00 -> Quarterfinals 12:00 -> [break] -> Semifinals 3:30
-#   -> [break] -> Final 7:00, done ~9:30 PM. Consolation runs in the same blocks
-# on spare servers; the last of them (3/4, 5/6, 7/8) run alongside the Final.
+# Per-match start times. Play-in BO1 11:00-12:00, QF straight after, a break
+# after the QF and a dinner break after the SF. The BO1 placement finals (3/4,
+# 5/6, 7/8) play 7:00-8:00 BEFORE the Final, so the Final stands alone:
+#   Play-in 11:00 -> QF 12:00 -> [break] -> Semifinals 3:30 -> [dinner]
+#   -> Placement finals 7:00 -> Final 8:00, done ~10:30 PM. The 9/10 (BO3) runs
+# in the QF block and the lower semifinals (BO3) in the SF block, on spare servers.
 MATCH_TIMES = {
     "PI1": "11:00 AM", "PI2": "11:00 AM",
     "QF1": "12:00 PM", "QF2": "12:00 PM", "QF3": "12:00 PM", "QF4": "12:00 PM", "P910": "12:00 PM",
     "SF1": "3:30 PM", "SF2": "3:30 PM", "LS1": "3:30 PM", "LS2": "3:30 PM",
-    "F": "7:00 PM", "P34": "7:00 PM", "P56": "7:00 PM", "P78": "7:00 PM",
+    "P34": "7:00 PM", "P56": "7:00 PM", "P78": "7:00 PM",
+    "F": "8:00 PM",
 }
 
 
