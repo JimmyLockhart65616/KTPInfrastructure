@@ -136,7 +136,7 @@
          Eliminated teams keep playing in the consolation bracket below for final standing.</p>
 
       <h3>Play-in &mdash; Best of 3 · 10:00 AM</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Seeds 7–10. The two winners join seeds 1–6 (byes) in the Quarterfinals; the losers play for 9th/10th below.</p>
+      <p style="font-size:13px;color:var(--ink-faint);">Seeds 5–10. The three winners join seeds 1–4 (byes) in the Quarterfinals; the losers play down for 8th–10th below.</p>
       <div class="bkt-placements">
         {% for m in playin %}
         <div class="bkt-place"><div class="bkt-place-head">{{ m.label }}</div>{{ matchbox(m, is_admin, am_captain, my_team_id) }}</div>
@@ -144,12 +144,19 @@
       </div>
 
       <h3 style="margin-top:32px;">Championship &mdash; for the title</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Quarterfinals → Semifinals → Final. The Final winner takes it all — there's no grand final, and nothing feeds back in.</p>
+      <p style="font-size:13px;color:var(--ink-faint);">Quarterfinals → Semifinals → Final. The Final winner takes it all — no grand final, nothing feeds back in. <strong>Seed 1 byes the Quarterfinals as well</strong> (4 byes + 3 play-in winners is an odd seven), straight to the Semifinals — the reward for finishing first on Saturday.</p>
       {{ tree(champ_rounds, is_admin, am_captain, my_team_id) }}
 
       <h3 style="margin-top:32px;">Consolation &mdash; final standings (3rd–10th)</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Runs in parallel on spare servers — never feeds the championship. Play-in losers settle 9/10; the four QF losers play a lower semifinal then off for 5/6 and 7/8; the two SF losers play for 3/4. The last of these run alongside the Final, so nothing trails it.</p>
-      {{ tree(consolation_rounds, is_admin, am_captain, my_team_id, flow=true) }}
+      <p style="font-size:13px;color:var(--ink-faint);">Runs in parallel on spare servers — never feeds the championship. The 3 play-in losers play down for 8th–10th; the 3 QF losers play down for 5th–7th; the two SF losers play each other for 3/4. The last of these run alongside the Final, so nothing trails it. (7th and 10th fall to the two lower-semifinal losers.)</p>
+      <div class="bkt-placements">
+        {% for m in consolation %}
+        <div class="bkt-place">
+          <div class="bkt-place-head">{{ m.label }}{% if m.time %} <span style="color:var(--wsdod-blue);font-family:var(--typed);letter-spacing:.04em;">{{ m.time }}</span>{% endif %}</div>
+          {{ matchbox(m, is_admin, am_captain, my_team_id) }}
+        </div>
+        {% endfor %}
+      </div>
     </div>
   </section>
 {% endblock %}

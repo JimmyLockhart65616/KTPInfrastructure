@@ -1,4 +1,4 @@
-"""Unit tests for pure bracket slot resolution (single-elim + consolation)."""
+"""Unit tests for pure bracket slot resolution (4-bye single-elim + consolation)."""
 from app.bracket import resolve_slots
 
 # standings rank -> team id (use 100+rank for clarity)
@@ -7,67 +7,70 @@ RANK = {r: 100 + r for r in range(1, 11)}
 
 def test_initial_layout_from_seeds():
     s = resolve_slots(RANK, {})
-    assert s["PI1"] == (107, 110)   # seed 7 v seed 10
-    assert s["PI2"] == (108, 109)   # seed 8 v seed 9
-    assert s["QF1"] == (101, None)  # seed 1 waits on W:PI2
-    assert s["QF2"] == (104, 105)   # seed 4 v seed 5 (both byes)
-    assert s["QF3"] == (103, 106)   # seed 3 v seed 6
-    assert s["QF4"] == (102, None)  # seed 2 waits on W:PI1
-    assert s["SF1"] == (None, None)
+    assert s["PI1"] == (105, 110)   # seed 5 v seed 10
+    assert s["PI2"] == (106, 109)
+    assert s["PI3"] == (107, 108)
+    assert s["QF1"] == (104, None)  # seed 4 waits on W:PI1
+    assert s["QF2"] == (103, None)
+    assert s["QF3"] == (102, None)
+    assert s["SF1"] == (101, None)  # seed 1 byes the QF, waits on W:QF1
     assert s["F"] == (None, None)
 
 
-def test_playin_winners_feed_top_seeds():
-    s = resolve_slots(RANK, {"PI1": (107, 110), "PI2": (108, 109)})
-    assert s["QF1"] == (101, 108)   # seed 1 v winner PI2
-    assert s["QF4"] == (102, 107)   # seed 2 v winner PI1
-    assert s["P910"] == (110, 109)  # the two play-in losers settle 9/10
+def test_seed1_double_bye_never_in_the_qf():
+    # seed 1 (101) appears only in SF1, never in any quarterfinal
+    s = resolve_slots(RANK, {})
+    qf_sides = {x for k in ("QF1", "QF2", "QF3") for x in s[k]}
+    assert 101 not in qf_sides
+    assert s["SF1"][0] == 101
 
 
-def test_qf_losers_into_lower_semis():
+def test_playin_winners_feed_qf():
+    s = resolve_slots(RANK, {"PI1": (105, 110), "PI2": (106, 109), "PI3": (107, 108)})
+    assert s["QF1"] == (104, 105)   # seed 4 v winner PI1
+    assert s["QF2"] == (103, 106)
+    assert s["QF3"] == (102, 107)
+    assert s["PLS"] == (110, 109)   # the play-in losers start the consolation
+
+
+def test_qf_losers_into_lower_semi_and_seed1_into_sf():
     outcomes = {
-        "PI1": (107, 110), "PI2": (108, 109),
-        "QF1": (101, 108), "QF2": (104, 105), "QF3": (103, 106), "QF4": (102, 107),
+        "PI1": (105, 110), "PI2": (106, 109), "PI3": (107, 108),
+        "QF1": (104, 105), "QF2": (103, 106), "QF3": (102, 107),
     }
     s = resolve_slots(RANK, outcomes)
-    assert s["SF1"] == (101, 104)   # W:QF1 v W:QF2
-    assert s["SF2"] == (103, 102)   # W:QF3 v W:QF4
-    assert s["LS1"] == (108, 107)   # L:QF1 v L:QF4
-    assert s["LS2"] == (105, 106)   # L:QF2 v L:QF3
+    assert s["SF1"] == (101, 104)   # seed 1 (bye) v winner QF1
+    assert s["SF2"] == (103, 102)   # winner QF2 v winner QF3
+    assert s["LS1"] == (105, 106)   # the two lower QF losers
+    assert s["P56"] == (107, None)  # highest QF loser waits on W:LS1
 
 
 def test_sf_losers_play_each_other_for_third():
     outcomes = {
-        "PI1": (107, 110), "PI2": (108, 109),
-        "QF1": (101, 108), "QF2": (104, 105), "QF3": (103, 106), "QF4": (102, 107),
+        "PI1": (105, 110), "PI2": (106, 109), "PI3": (107, 108),
+        "QF1": (104, 105), "QF2": (103, 106), "QF3": (102, 107),
         "SF1": (101, 104), "SF2": (102, 103),
     }
     s = resolve_slots(RANK, outcomes)
     assert s["P34"] == (104, 103)   # the two SF losers, not dropped anywhere
-    assert s["F"] == (101, 102)     # the two SF winners
+    assert s["F"] == (101, 102)
 
 
 _FULL = {
-    "PI1": (107, 110), "PI2": (108, 109),
-    "QF1": (101, 108), "QF2": (104, 105), "QF3": (103, 106), "QF4": (102, 107),
+    "PI1": (105, 110), "PI2": (106, 109), "PI3": (107, 108),
+    "QF1": (104, 105), "QF2": (103, 106), "QF3": (102, 107),
     "SF1": (101, 104), "SF2": (102, 103),
     "F":   (101, 102),
     "P34": (104, 103),
-    "LS1": (108, 107), "LS2": (105, 106),
+    "LS1": (105, 106),
+    "PLS": (110, 109),
 }
 
 
-def test_placement_tiers_resolve():
+def test_consolation_tiers_resolve():
     s = resolve_slots(RANK, _FULL)
-    assert s["P56"]  == (108, 105)   # W:LS1 v W:LS2 → 5th/6th
-    assert s["P78"]  == (107, 106)   # L:LS1 v L:LS2 → 7th/8th
-    assert s["P910"] == (110, 109)   # L:PI1 v L:PI2 → 9th/10th
-
-
-def test_consolation_never_touches_the_final():
-    # the Final is fed only by the two semifinals; no placement key feeds it
-    s = resolve_slots(RANK, _FULL)
-    assert s["F"] == (101, 102)
+    assert s["P56"] == (107, 105)   # L:QF3 v W:LS1 → 5th/6th
+    assert s["P89"] == (108, 110)   # L:PI3 v W:PLS → 8th/9th
 
 
 if __name__ == "__main__":
