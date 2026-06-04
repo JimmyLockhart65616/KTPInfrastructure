@@ -114,3 +114,42 @@ def report_result(match_id: int, score_a: int, score_b: int, reporter_discord_id
         (score_a, score_b, winner, reporter_discord_id, match_id),
     )
 
+
+def round_times() -> dict[int, str]:
+    """Group round number -> its timetable slot label."""
+    times, n = {}, 0
+    for label_time, _label, kind in SATURDAY_TIMETABLE:
+        if kind == "round":
+            n += 1
+            times[n] = label_time
+    return times
+
+
+def team_schedule(team_id: int) -> list[dict]:
+    """This team's Saturday matches, normalized to us/opponent, in round order."""
+    times = round_times()
+    out = []
+    for m in get_matches():
+        if team_id not in (m["team_a_id"], m["team_b_id"]):
+            continue
+        us_a = m["team_a_id"] == team_id
+        result = None
+        if m["status"] == "final" and m["winner_team_id"]:
+            result = "W" if m["winner_team_id"] == team_id else "L"
+        out.append({
+            "round": m["round"], "time": times.get(m["round"]),
+            "opponent": m["b_name"] if us_a else m["a_name"],
+            "opp_tag": m["b_tag"] if us_a else m["a_tag"],
+            "our_score": m["score_a"] if us_a else m["score_b"],
+            "opp_score": m["score_b"] if us_a else m["score_a"],
+            "result": result, "station": m["station"], "status": m["status"],
+        })
+    out.sort(key=lambda r: r["round"])
+    return out
+
+
+def set_station(match_id: int, station):
+    """Admin: assign (or clear) the server/station number for a Saturday match."""
+    from . import db
+    db.execute("UPDATE lan_schedule SET station=%s WHERE id=%s", (station, match_id))
+

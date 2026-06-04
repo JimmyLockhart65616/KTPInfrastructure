@@ -88,6 +88,18 @@
               <td style="width:5rem;text-align:center;">
                 {% if m.status == 'final' %}{{ m.score_a }}–{{ m.score_b }}{% else %}<span style="color:var(--ink-faint);">pending</span>{% endif %}
               </td>
+              <td style="width:7rem;">
+                {% if m.station %}<span style="font-family:var(--mono);font-size:12px;color:var(--olive);">Server {{ m.station }}</span>{% endif %}
+                {% if is_admin %}
+                <form method="post" action="{{ url_for('schedule_set_station') }}" style="display:inline;">
+                  <input type="hidden" name="match_id" value="{{ m.id }}">
+                  <select name="station" onchange="this.form.submit()" style="font-size:11px;" title="Assign server / station">
+                    <option value="">srv —</option>
+                    {% for n in range(1, 7) %}<option value="{{ n }}"{{ ' selected' if m.station == n }}>Srv {{ n }}</option>{% endfor %}
+                  </select>
+                </form>
+                {% endif %}
+              </td>
               <td style="width:13rem;">
                 {% if can %}
                 <form method="post" action="{{ url_for('report_result') }}" style="display:flex;gap:4px;align-items:center;">

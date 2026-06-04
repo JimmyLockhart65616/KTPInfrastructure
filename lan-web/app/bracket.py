@@ -160,3 +160,32 @@ def resolve_dependents():
             r = rows.get(k)
             if r and (r["team_a_id"] != a or r["team_b_id"] != b):
                 cur.execute("UPDATE lan_bracket SET team_a_id=%s, team_b_id=%s WHERE mkey=%s", (a, b, k))
+
+
+def team_bracket(team_id: int) -> list[dict]:
+    """This team's Sunday bracket/placement matches, normalized to us/opponent.
+    Already in bracket->stage order from get_bracket()."""
+    out = []
+    for r in get_bracket():
+        if team_id not in (r["team_a_id"], r["team_b_id"]):
+            continue
+        us_a = r["team_a_id"] == team_id
+        m = BY_KEY.get(r["mkey"], {})
+        result = None
+        if r["status"] == "final" and r["winner_team_id"]:
+            result = "W" if r["winner_team_id"] == team_id else "L"
+        out.append({
+            "label": m.get("label", r["mkey"]),
+            "best_of": m.get("best_of", BEST_OF),
+            "opponent": r["b_name"] if us_a else r["a_name"],
+            "our_score": r["score_a"] if us_a else r["score_b"],
+            "opp_score": r["score_b"] if us_a else r["score_a"],
+            "result": result, "station": r["station"], "status": r["status"],
+        })
+    return out
+
+
+def set_station(mkey: str, station):
+    """Admin: assign (or clear) the server/station number for a bracket match."""
+    from . import db
+    db.execute("UPDATE lan_bracket SET station=%s WHERE mkey=%s", (station, mkey))

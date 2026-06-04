@@ -1,7 +1,9 @@
 """Public, no-auth pages."""
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
+from .. import bracket as bkt
 from .. import common, db
+from .. import schedule as sched
 from ..templating import templates
 
 router = APIRouter()
@@ -42,6 +44,30 @@ def teams(request: Request):
     ctx["team_count"] = len(rosters)
     ctx["total_players"] = sum(len(t["players"]) for t in rosters)
     return templates.TemplateResponse(request, "teams.html", ctx)
+
+
+@router.get("/team/{team_id}", name="team")
+def team_detail(request: Request, team_id: int):
+    team = db.query_one("SELECT * FROM lan_teams WHERE id=%s", (team_id,))
+    if not team:
+        raise HTTPException(404, "No such team.")
+    players = db.query_all(
+        "SELECT display_name, is_captain FROM lan_players WHERE team_id=%s "
+        "ORDER BY is_captain DESC, display_name",
+        (team_id,),
+    )
+    saturday = sched.team_schedule(team_id)
+    sunday = bkt.team_bracket(team_id)
+    ctx = common.base_ctx(request, "teams")
+    ctx.update(
+        team=team,
+        players=players,
+        saturday=saturday,
+        sunday=sunday,
+        wins=sum(1 for m in saturday if m["result"] == "W"),
+        losses=sum(1 for m in saturday if m["result"] == "L"),
+    )
+    return templates.TemplateResponse(request, "team.html", ctx)
 
 
 @router.get("/rules", name="rules")

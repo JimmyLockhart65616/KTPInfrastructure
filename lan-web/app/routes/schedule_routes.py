@@ -59,3 +59,17 @@ def generate(request: Request):
     except ValueError as e:
         raise HTTPException(400, str(e))
     return RedirectResponse(url=request.url_for("schedule"), status_code=303)
+
+
+@router.post("/admin/schedule/station", name="schedule_set_station")
+async def set_station(request: Request):
+    auth.require_admin(request)
+    f = await request.form()
+    try:
+        match_id = int(f["match_id"])
+    except (KeyError, ValueError):
+        raise HTTPException(400, "match id required")
+    raw = (f.get("station") or "").strip()
+    station = int(raw) if raw.isdigit() and 1 <= int(raw) <= 6 else None
+    sched.set_station(match_id, station)
+    return RedirectResponse(url=request.url_for("schedule"), status_code=303)

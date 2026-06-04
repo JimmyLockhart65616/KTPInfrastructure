@@ -18,6 +18,7 @@
     {% if m.slot %}
       {% set s = m.slot %}
       {% set need = ((m.best_of or 3) // 2 + 1) %}
+      {% if s.station %}<div class="bkt-srv">Server {{ s.station }}</div>{% endif %}
       {% set ready = s.team_a_id and s.team_b_id %}
       {% set can = is_admin or (am_captain and ready and (my_team_id == s.team_a_id or my_team_id == s.team_b_id)) %}
       {% if can %}
@@ -26,6 +27,15 @@
         <input type="number" name="score_a" min="0" max="{{ need }}" value="{{ s.score_a if s.score_a is not none else '' }}" required>
         <input type="number" name="score_b" min="0" max="{{ need }}" value="{{ s.score_b if s.score_b is not none else '' }}" required>
         <button type="submit">{{ 'Edit' if s.status == 'final' else 'Report' }}</button>
+      </form>
+      {% endif %}
+      {% if is_admin %}
+      <form class="bkt-srv-set" method="post" action="{{ url_for('bracket_set_station') }}">
+        <input type="hidden" name="mkey" value="{{ s.mkey }}">
+        <select name="station" onchange="this.form.submit()" title="Assign server / station">
+          <option value="">srv —</option>
+          {% for n in range(1, 7) %}<option value="{{ n }}"{{ ' selected' if s.station == n }}>Srv {{ n }}</option>{% endfor %}
+        </select>
       </form>
       {% endif %}
     {% endif %}
@@ -86,6 +96,10 @@
         .bkt-placements { display:flex; flex-wrap:wrap; gap:16px 28px; }
         .bkt-place { min-width:212px; }
         .bkt-place-head { font-family:var(--stencil); text-transform:uppercase; letter-spacing:.1em; font-size:12px; color:var(--ink-soft); margin-bottom:4px; }
+        /* per-match server assignment */
+        .bkt-srv { font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--olive); margin-top:4px; text-align:right; }
+        .bkt-srv-set { margin-top:4px; text-align:right; }
+        .bkt-srv-set select { font-size:11px; padding:1px 3px; color:var(--ink-soft); }
       </style>
 
       {% if champion %}

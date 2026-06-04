@@ -32,6 +32,7 @@ def bracket_page(request: Request):
             "team_a_id": r.get("team_a_id"), "team_b_id": r.get("team_b_id"),
             "score_a": r.get("score_a"), "score_b": r.get("score_b"),
             "winner_team_id": r.get("winner_team_id"), "status": r.get("status", "pending"),
+            "station": r.get("station"),
         })
     by = {s["mkey"]: s for s in slots}
 
@@ -149,4 +150,17 @@ def generate(request: Request):
         bracket.generate_bracket()
     except ValueError as e:
         raise HTTPException(400, str(e))
+    return RedirectResponse(url=request.url_for("bracket"), status_code=303)
+
+
+@router.post("/admin/bracket/station", name="bracket_set_station")
+async def set_station(request: Request):
+    auth.require_admin(request)
+    f = await request.form()
+    mkey = f.get("mkey", "")
+    if not db.query_one("SELECT 1 FROM lan_bracket WHERE mkey=%s", (mkey,)):
+        raise HTTPException(404, "No such bracket match.")
+    raw = (f.get("station") or "").strip()
+    station = int(raw) if raw.isdigit() and 1 <= int(raw) <= 6 else None
+    bracket.set_station(mkey, station)
     return RedirectResponse(url=request.url_for("bracket"), status_code=303)

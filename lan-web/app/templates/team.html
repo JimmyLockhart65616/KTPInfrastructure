@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}WSDoD / LAN 2026 / {{ team.name }}{% endblock %}
+{% block content %}
+  <section class="chapter">
+    <header class="chapter-head">
+      <div class="chapter-num">02</div>
+      <h2 class="chapter-title">{{ team.name }}{% if team.tag %} <span style="color:var(--ink-soft);font-size:.7em;">[{{ team.tag }}]</span>{% endif %}</h2>
+      <span class="chapter-stamp">{% if team.seed %}SEED {{ team.seed }}{% else %}SEED PENDING{% endif %}{% if wins or losses %} · {{ wins }}–{{ losses }} GROUP{% endif %}</span>
+    </header>
+
+    <div class="chapter-body">
+      <style>
+        .tm-back { display:inline-block; font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--ink-soft); margin-bottom:14px; }
+        .tm-sched { width:100%; border-collapse:collapse; margin:4px 0 6px; font-size:13.5px; }
+        .tm-sched th { font-family:var(--stencil); text-transform:uppercase; letter-spacing:.1em; font-size:11px; color:var(--ink-soft);
+          text-align:left; border-bottom:1px solid var(--ink-margin); padding:4px 8px; }
+        .tm-sched td { padding:5px 8px; border-bottom:1px solid var(--ink-margin); color:var(--ink); vertical-align:middle; }
+        .tm-sched tr:hover td { background:var(--paper-2, rgba(0,0,0,.02)); }
+        .tm-rnd { font-family:var(--mono); color:var(--ink-soft); white-space:nowrap; }
+        .tm-tag { color:var(--ink-faint); font-size:.86em; }
+        .tm-srv { font-family:var(--mono); font-size:12px; color:var(--olive); white-space:nowrap; }
+        .tm-score { font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .tm-w { font-family:var(--stencil); letter-spacing:.08em; color:var(--wsdod-blue); font-size:12px; }
+        .tm-l { font-family:var(--stencil); letter-spacing:.08em; color:var(--alert); font-size:12px; }
+        .tm-p { font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-transform:uppercase; }
+        .tm-empty { font-size:13px; color:var(--ink-faint); font-style:italic; }
+      </style>
+
+      <a class="tm-back" href="{{ url_for('teams') }}">&larr; Order of Battle</a>
+
+      <h3>Roster</h3>
+      <ol class="unit-roster">
+        {% for p in players %}
+        <li>
+          <span class="num">{{ loop.index }}.</span>
+          {% if p.is_captain %}<span class="role">CPT</span>{% endif %}
+          <span class="player">{{ p.display_name }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+
+      {% macro sched_table(rows, kind) %}
+      <table class="tm-sched">
+        <thead><tr>
+          <th>{{ 'Round' if kind == 'sat' else 'Match' }}</th>
+          {% if kind == 'sat' %}<th>Time</th>{% endif %}
+          <th>Opponent</th><th>Server</th><th>Score</th><th>Result</th>
+        </tr></thead>
+        <tbody>
+          {% for m in rows %}
+          <tr>
+            <td class="tm-rnd">{{ ('R' ~ m.round) if kind == 'sat' else m.label }}</td>
+            {% if kind == 'sat' %}<td class="tm-rnd">{{ m.time or '' }}</td>{% endif %}
+            <td>{% if m.opponent %}{{ m.opponent }}{% if m.opp_tag %} <span class="tm-tag">[{{ m.opp_tag }}]</span>{% endif %}{% else %}<span class="tm-p">TBD</span>{% endif %}</td>
+            <td class="tm-srv">{% if m.station %}Server {{ m.station }}{% else %}—{% endif %}</td>
+            <td class="tm-score">{% if m.status == 'final' or (m.our_score is not none and m.opp_score is not none) %}{{ m.our_score }}–{{ m.opp_score }}{% else %}—{% endif %}</td>
+            <td>{% if m.result == 'W' %}<span class="tm-w">WIN</span>{% elif m.result == 'L' %}<span class="tm-l">LOSS</span>{% elif m.status == 'live' %}<span class="tm-p">live</span>{% else %}<span class="tm-p">—</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endmacro %}
+
+      <h3 style="margin-top:28px;">Saturday &mdash; group stage</h3>
+      {% if saturday %}{{ sched_table(saturday, 'sat') }}{% else %}
+      <p class="tm-empty">Saturday matches post here once the group stage is generated.</p>{% endif %}
+
+      <h3 style="margin-top:28px;">Sunday &mdash; playoffs</h3>
+      {% if sunday %}{{ sched_table(sunday, 'sun') }}{% else %}
+      <p class="tm-empty">Sunday bracket matches appear here once the playoff bracket is seeded.</p>{% endif %}
+    </div>
+  </section>
+{% endblock %}
