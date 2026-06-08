@@ -2,6 +2,28 @@
 
 All notable changes to KTP Infrastructure will be documented in this file.
 
+## [1.5.27] - 2026-06-06
+
+### `provision` + `docs`: LAN box supports 6 servers, dynamic core pinning, custom-map deploy fix, TeamSpeak
+
+#### Provision changes
+
+**1. 6 game servers end-to-end.** `install-linuxgsm.sh` now honors `NUM_INSTANCES` (env or arg 2, default 5) and generates the monitor crontab per instance instead of a hardcoded 5-line block; `lan-deploy.sh` forwards the count to it. `HLTV_BASE_PORT` defaults to `BASE_PORT+NUM_INSTANCES` (27021 for 6 servers) so HLTV no longer collides with a 6th game server at 27020.
+
+**2. Dynamic CPU pinning + under-provision alert.** `provision-gameserver.sh` detects the real core count and pins one game server per CPU from CPU 2 up (cores 0,1 reserved for OS/IRQ/HLTV/TeamSpeak), adapting to whatever chip the box has. If a host has fewer usable cores than servers, it prints a loud warning (and prompts unless `YES=1`) that servers will share cores. `isolcpus`/`nohz_full`/`rcu_nocbs` now derive from the actual game-CPU set. The proven cloud-fleet 4c/8t map (8 CPUs, ≤5 servers) is preserved byte-for-byte — no production drift.
+
+**3. Custom-map/overview deploy gap fixed.** `lan-deploy.sh` never passed `--dod-base` to `clone-ktp-stack.sh`, so custom KTP maps, command-map **overviews**, WADs and `ktp_*.cfg` were left off the game servers (Steam provides stock content only). Added `DOD_BASE_PATH` config key, wired into the orchestrator and surfaced in the run summary. This is the historical "left out the maps/overviews folder" bug.
+
+#### Doc changes
+
+**1. Cross-referenced the two LAN docs.** `docs/LAN_SETUP.md` (operational guide) and `provision/LAN-DEPLOY.md` (automated `lan-deploy.sh` install) now link to each other with clear, non-overlapping roles. README and `DEPLOYMENT_TARGETS.md` now point at the orchestrator as the primary LAN install path (previously only the older manual `provision-lan-dataserver.sh` was referenced; `LAN-DEPLOY.md` had no inbound links).
+
+**2. Both docs brought current with the July 2026 all-in-one plan.** One box runs game servers + HLTV + TeamSpeak for up to 72 players (12 teams × 6). Hardware row added (8–12 cores, 32GB, 2× SSD, x86-64 only — i386 multilib rules out ARM); Ubuntu 24.04 noted alongside 22.04.
+
+**3. TeamSpeak Voice Server section.** Native Linux amd64 server install (user, download, license-accept, first-run admin token, `ts3server` systemd unit), UFW ports (9987/udp, 30033/tcp, 10011/tcp LAN-only), the free 512-slot non-commercial license required for 72 players, channel layout, troubleshooting, offline-USB staging, and day-of checklist items.
+
+**4. Open item flagged in both docs:** plan calls for 6 concurrent game servers; `install-linuxgsm.sh` still creates 5. 6th instance + HLTV/ports to settle before the event.
+
 ## [1.5.26] - 2026-05-31
 
 ### `scripts` + `tests`: AC alternate-hash allowlist, match-flow coverage, orphan-demo cleanup

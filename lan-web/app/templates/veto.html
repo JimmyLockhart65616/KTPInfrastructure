@@ -27,7 +27,7 @@
       </style>
 
       {% if not st.supported %}
-      <div class="pending-note">Map veto applies to best-of-three matches only. This match uses a single map.</div>
+      <div class="pending-note">This match format doesn't use a map veto.</div>
       {% elif not st.ready %}
       <div class="pending-note">Both teams must be decided before the veto can start. Check back once the feeding matches are final.</div>
       {% else %}
@@ -36,6 +36,7 @@
         <strong style="color:var(--wsdod-blue);">{{ st.ts_name }}</strong> <span style="color:var(--ink-faint);">(top seed)</span>
         &nbsp;vs&nbsp;
         <strong>{{ st.ls_name }}</strong> <span style="color:var(--ink-faint);">(lower seed)</span>
+        &nbsp;·&nbsp;<span style="color:var(--ink-faint);">Best of {{ st.best_of }}{% if st.best_of == 1 %} — ban down to one map{% endif %}</span>
       </p>
 
       {# ---- map pool ---- #}
@@ -53,7 +54,7 @@
 
       {% if st.complete %}
       <div class="vt-result">
-        <strong style="font-family:var(--stencil);letter-spacing:.1em;">SERIES SET</strong>
+        <strong style="font-family:var(--stencil);letter-spacing:.1em;">{{ 'MAP SET' if st.best_of == 1 else 'SERIES SET' }}</strong>
         <ol style="margin:6px 0 0 18px;font-family:var(--typed);">
           {% for a in st.actions if a.action in ('pick','decider') %}
           <li>{{ a.map }} <span style="color:var(--ink-faint);">— {{ a.actor }} ·

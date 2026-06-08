@@ -80,7 +80,7 @@ This stack is tied to the sibling `DoD-hud-observer` repo. It activates only wit
 | Use case | Path to follow |
 |----------|----------------|
 | New bare-metal region (adding a location to the fleet) | `provision/*` scripts in order + `config/online/` |
-| LAN event on a bare-metal host | `provision/*` + `config/lan/` |
+| LAN event on a bare-metal host | `provision/lan-deploy.sh` (all-in-one orchestrator) — see `provision/LAN-DEPLOY.md` + `docs/LAN_SETUP.md` |
 | LAN event on a Docker host | `runtime/Dockerfile` + `config/lan/` |
 | Dev iteration on KTP code (single machine) | `make local-up` |
 | Dev iteration including HUD Observer | `make local-up-full` (needs sibling `DoD-hud-observer`) |

@@ -81,15 +81,20 @@ su - dodserver
 ./provision/clone-ktp-stack.sh /path/to/artifacts/20260127
 ```
 
-### Provision LAN Data Server
+### Provision a LAN Box
 
-For LAN events, set up a local data server with HLTV, stats, and FastDL:
+For LAN events the primary path is the single-config orchestrator, which
+provisions an all-in-one box (game servers + HLTV + stats + FastDL) in one run:
 
 ```bash
-sudo ./provision/provision-lan-dataserver.sh
+cd provision
+cp lan-deploy.conf.example lan-deploy.conf   # set LAN_IP, ARTIFACTS_PATH, LIBSTEAM_API_PATH
+./lan-deploy.sh
 ```
 
-See [docs/LAN_SETUP.md](docs/LAN_SETUP.md) for complete LAN setup.
+See [provision/LAN-DEPLOY.md](provision/LAN-DEPLOY.md) for the automated install,
+and [docs/LAN_SETUP.md](docs/LAN_SETUP.md) for architecture, the day-of runbook,
+and TeamSpeak/HLTV/stats setup. (TeamSpeak is a manual post-install step.)
 
 ---
 
@@ -165,7 +170,8 @@ KTPInfrastructure/
 | [DEPLOYMENT_TARGETS.md](docs/DEPLOYMENT_TARGETS.md) | **Start here** — distinguishes canonical production/LAN paths from dev conveniences |
 | [BUILDING.md](docs/BUILDING.md) | Docker build system, component builds |
 | [DEPLOYING.md](docs/DEPLOYING.md) | Deployment to production/test clusters |
-| [LAN_SETUP.md](docs/LAN_SETUP.md) | Setting up for LAN events |
+| [provision/LAN-DEPLOY.md](provision/LAN-DEPLOY.md) | **LAN install** — automated all-in-one orchestrator (`lan-deploy.sh`) |
+| [LAN_SETUP.md](docs/LAN_SETUP.md) | LAN operations — architecture, day-of runbook, TeamSpeak/HLTV/stats |
 
 ### Infrastructure Reference (Private - gitignored)
 These files contain server IPs and credentials. Create your own copies:

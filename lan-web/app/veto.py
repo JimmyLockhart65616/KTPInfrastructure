@@ -1,10 +1,15 @@
-"""Map pick/ban veto for BO3 bracket matches — captain-driven, turn-gated.
+"""Map pick/ban veto for bracket matches — captain-driven, turn-gated.
 
-KTP TS-advantage model, generalised to any pool size: bans = pool - 3 (two map
-picks + one decider). The top seed (TS) bans first AND last so it controls the
-decider; the lower seed (LS) fills the bans in the middle. The team that PICKS a
-map also picks its side; TS picks the decider's side. State is the replayed
-action log in lan_veto; when complete the maps are written to lan_bracket.map.
+KTP TS-advantage model, for both series lengths:
+- BO3: bans = pool - 3 (two map picks + one decider). The top seed (TS) bans
+  first AND last so it controls the decider; the lower seed (LS) fills the bans
+  in the middle. The team that PICKS a map also picks its side; TS picks the
+  decider's side.
+- BO1: alternate bans down to one map (TS bans first); the lower seed (LS) picks
+  the side of the single remaining map.
+
+State is the replayed action log in lan_veto; when complete the maps are written
+to lan_bracket.map.
 """
 from __future__ import annotations
 
@@ -18,9 +23,22 @@ def pool_maps() -> list[str]:
     return list(sched.COMP_MAPS)
 
 
-def sequence(pool_size: int) -> list[dict]:
-    """Ordered BO3 veto steps for `pool_size` maps. Each step: {actor, action}.
-    TS bans first + last; LS bans the middle; two picks then a decider."""
+def sequence(pool_size: int, best_of: int = 3) -> list[dict]:
+    """Ordered veto steps for `pool_size` maps. Each step: {actor, action}.
+
+    BO1: alternate bans (TS first) down to one map; LS picks its side.
+    BO3: TS bans first + last; LS bans the middle; two picks then a decider."""
+    if best_of == 1:
+        bans = pool_size - 1
+        if bans < 0:
+            return []
+        steps: list[dict] = []
+        actor = "TS"
+        for _ in range(bans):
+            steps.append({"actor": actor, "action": "ban"})
+            actor = "LS" if actor == "TS" else "TS"
+        steps.append({"actor": "LS", "action": "decider"})   # LS picks the side
+        return steps
     bans = pool_size - 3
     if bans < 0:
         return []
@@ -52,23 +70,25 @@ def _ts_ls(team_a: int, team_b: int) -> tuple[int, int]:
 def get_state(mkey: str):
     """Full veto state for a match, or None if the match key is unknown."""
     from . import bracket, db
-    meta = bracket.BY_KEY.get(mkey)
+    meta = bracket.active_by_key().get(mkey) or bracket.BY_KEY.get(mkey)
     if not meta:
         return None
-    if meta["best_of"] != 3:
-        return {"mkey": mkey, "label": meta["label"], "supported": False, "ready": False}
+    if meta["best_of"] not in (1, 3):
+        return {"mkey": mkey, "label": meta["label"], "best_of": meta["best_of"],
+                "supported": False, "ready": False}
     row = db.query_one(
         "SELECT b.team_a_id, b.team_b_id, ta.name AS a_name, tb.name AS b_name "
         "FROM lan_bracket b LEFT JOIN lan_teams ta ON ta.id=b.team_a_id "
         "LEFT JOIN lan_teams tb ON tb.id=b.team_b_id WHERE b.mkey=%s", (mkey,)
     )
-    base = {"mkey": mkey, "label": meta["label"], "supported": True, "ready": False}
+    base = {"mkey": mkey, "label": meta["label"], "best_of": meta["best_of"],
+            "supported": True, "ready": False}
     if not row or not row["team_a_id"] or not row["team_b_id"]:
         return base
     ts_id, ls_id = _ts_ls(row["team_a_id"], row["team_b_id"])
     names = {row["team_a_id"]: row["a_name"], row["team_b_id"]: row["b_name"]}
     pool = pool_maps()
-    seq = sequence(len(pool))
+    seq = sequence(len(pool), meta["best_of"])
     actions = db.query_all("SELECT * FROM lan_veto WHERE mkey=%s ORDER BY step_no", (mkey,))
     used = {a["map"] for a in actions if a["map"]}
     remaining = [m for m in pool if m not in used]

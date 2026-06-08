@@ -15,11 +15,13 @@ def schedule_page(request: Request):
     matches = sched.get_matches()
     teams = db.query_all("SELECT id, name, tag, seed FROM lan_teams") if matches else []
     ident = ctx["ident"]
+    n = sched.team_count() or 10
     ctx.update(
         matches=matches,
         rounds=sched.rounds_with_teams(),          # seed-slot template fallback
         timetable=sched.SATURDAY_TIMETABLE,
         comp_maps=sched.COMP_MAPS,
+        n_teams=n, bye_seeds=16 - n if 10 <= n <= 12 else 6,
         seeds_locked=sched.seeds_locked(),
         standings=standings.compute_standings(teams, matches) if matches else [],
         is_admin=auth.is_admin(request),

@@ -20,7 +20,7 @@
       {% set need = ((m.best_of or 3) // 2 + 1) %}
       {% if s.station %}<div class="bkt-srv">Server {{ s.station }}</div>{% endif %}
       {% if m.map %}<div class="bkt-srv">{{ m.map }}</div>{% endif %}
-      {% if (m.best_of or 1) == 3 and s.team_a_id and s.team_b_id %}<div class="bkt-srv"><a href="{{ url_for('veto', mkey=s.mkey) }}" style="color:var(--wsdod-blue);">map veto &rsaquo;</a></div>{% endif %}
+      {% if s.team_a_id and s.team_b_id %}<div class="bkt-srv"><a href="{{ url_for('veto', mkey=s.mkey) }}" style="color:var(--wsdod-blue);">{% if m.map %}map veto{% else %}run map veto{% endif %} &rsaquo;</a></div>{% endif %}
       {% set ready = s.team_a_id and s.team_b_id %}
       {% set can = is_admin or (am_captain and ready and (my_team_id == s.team_a_id or my_team_id == s.team_b_id)) %}
       {% if can %}
@@ -38,14 +38,6 @@
           <option value="">srv —</option>
           {% for n in range(1, 7) %}<option value="{{ n }}"{{ ' selected' if s.station == n }}>Srv {{ n }}</option>{% endfor %}
         </select>
-      </form>
-      <form class="bkt-srv-set" method="post" action="{{ url_for('bracket_set_map') }}">
-        <input type="hidden" name="mkey" value="{{ s.mkey }}">
-        {% set maps = (m.map or '').split(' / ') %}
-        {% for i in range(m.best_of or 1) %}
-        <input name="map" list="comp-maps" value="{{ maps[i] if i < maps|length else '' }}" placeholder="{{ 'map' if (m.best_of or 1) == 1 else 'map ' ~ (i + 1) }}" style="font-size:11px;width:7rem;" title="{{ 'Match map' if (m.best_of or 1) == 1 else 'Series map ' ~ (i + 1) }}">
-        {% endfor %}
-        <button type="submit" style="font-size:11px;">set</button>
       </form>
       {% endif %}
     {% endif %}
@@ -74,7 +66,6 @@
     </header>
     <div class="chapter-body">
       {% if preview %}<div class="preview-banner">Preview — sample data · not real results</div>{% endif %}
-      <datalist id="comp-maps">{% for mp in comp_maps %}<option value="{{ mp }}">{% endfor %}</datalist>
       <style>
         .bkt-tree { display:flex; align-items:stretch; overflow-x:auto; padding:4px 0 14px; min-height:520px; }
         .bkt-round { display:flex; flex-direction:column; min-width:198px; }
@@ -140,7 +131,7 @@
          Eliminated teams keep playing in the consolation bracket below for final standing.</p>
 
       <h3>Play-in &mdash; Best of 1 · 11:00 AM</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Seeds 7–10. The two winners join seeds 1–6 (byes) in the Quarterfinals; the losers play for 9th/10th below.</p>
+      <p style="font-size:13px;color:var(--ink-faint);">Seeds {{ playin_lo }}–{{ playin_hi }}. The {{ playin|length }} winner{{ '' if playin|length == 1 else 's' }} join seeds 1–{{ bye_seeds }} (byes) in the Quarterfinals; the losers settle the bottom places below.</p>
       <div class="bkt-placements">
         {% for m in playin %}
         <div class="bkt-place"><div class="bkt-place-head">{{ m.label }}</div>{{ matchbox(m, is_admin, am_captain, my_team_id) }}</div>
@@ -151,10 +142,20 @@
       <p style="font-size:13px;color:var(--ink-faint);">Quarterfinals → Semifinals → Final. The Final winner takes it all — there's no grand final, and nothing feeds back in.</p>
       {{ tree(champ_rounds, is_admin, am_captain, my_team_id) }}
 
-      <h3 style="margin-top:32px;">Consolation &mdash; final standings (3rd–10th)</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Runs in parallel on spare servers — never feeds the championship. Play-in losers settle 9/10; the four QF losers play a lower semifinal then off for 5/6 and 7/8; the two SF losers play for 3/4. The last of these run alongside the Final, so nothing trails it.
-         The <strong>9/10 match and the lower semifinals are best-of-three</strong> (the play-in losers never got a BO3 otherwise); the <strong>3/4, 5/6 and 7/8 deciders are best-of-one</strong> and play at 7:00 PM, <strong>before</strong> the Final, so the Final stands alone.</p>
+      <h3 style="margin-top:32px;">Consolation &mdash; final standings (3rd–{{ n_teams }}th)</h3>
+      <p style="font-size:13px;color:var(--ink-faint);">Runs in parallel on spare servers — never feeds the championship. The play-in losers settle the bottom places; the four QF losers play a lower semifinal then off for 5/6 and 7/8; the two SF losers play for 3/4. The last of these run alongside the Final, so nothing trails it.
+         The <strong>lower semifinals and the lowest-tier matches are best-of-three</strong> (so eliminated teams still get a real series); the <strong>3/4, 5/6 and 7/8 deciders are best-of-one</strong> and play at 7:00 PM, <strong>before</strong> the Final, so the Final stands alone.</p>
       {{ tree(consolation_rounds, is_admin, am_captain, my_team_id, flow=true) }}
+
+      {% set settled = placements | selectattr('name') | list %}
+      {% if settled %}
+      <h3 style="margin-top:32px;">Final standings</h3>
+      <ol class="bkt-final" style="font-size:14px;column-count:2;max-width:540px;">
+        {% for p in placements %}
+        <li style="margin:2px 0;{{ 'color:var(--ink-faint);font-style:italic;' if not p.name }}">{{ p.name or 'TBD' }}</li>
+        {% endfor %}
+      </ol>
+      {% endif %}
     </div>
   </section>
 {% endblock %}

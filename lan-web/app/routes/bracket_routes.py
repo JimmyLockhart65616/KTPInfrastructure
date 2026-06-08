@@ -21,9 +21,10 @@ def _champ(row):
 def bracket_page(request: Request):
     ctx = common.base_ctx(request, "bracket")
     db_rows = {r["mkey"]: r for r in bracket.get_bracket()}
-    # Always draw the full shape from the BRACKET constant; overlay DB data where present.
+    # Always draw the full shape for the active team count; overlay DB data where present.
+    mats = bracket.active_matches()
     slots = []
-    for m in bracket.BRACKET:
+    for m in mats:
         r = db_rows.get(m["key"], {})
         slots.append({
             "mkey": m["key"], "label": m["label"], "bracket": m["bracket"], "stage": m["stage"],
@@ -62,25 +63,28 @@ def bracket_page(request: Request):
                 "label": bracket.BY_KEY[mkey]["label"],
                 "time": bracket.match_time(mkey), "map": s.get("map")}
 
-    def _t(mkey):
-        return bracket.match_time(mkey)
+    # Group the active layout's matches by stage so the championship and
+    # consolation render the same regardless of team count (10/11/12).
+    by_stage: dict[str, list[str]] = {}
+    for m in mats:
+        by_stage.setdefault(m["stage"], []).append(m["key"])
 
-    # Championship — single elim. The Play-in feeds two of the eight QF slots;
+    def _round(title, keys):
+        ms = [_match(k) for k in keys]
+        return {"title": title, "time": ms[0]["time"] if ms else None,
+                "bo": ms[0]["best_of"] if ms else 3, "matches": ms}
+
+    # Championship — single elim. The Play-in feeds the open QF slots;
     # QF -> SF -> Final is a clean 4->2->1 tree the connectors line up against.
-    playin = [_match("PI1"), _match("PI2")]
+    playin = [_match(k) for k in by_stage.get("PI", [])]
     champ_rounds = [
-        {"title": "Quarterfinals", "time": _t("QF1"), "bo": 3,
-         "matches": [_match("QF1"), _match("QF2"), _match("QF3"), _match("QF4")]},
-        {"title": "Semifinals", "time": _t("SF1"), "bo": 3, "matches": [_match("SF1"), _match("SF2")]},
-        {"title": "Final", "time": _t("F"), "bo": 3, "matches": [_match("F")]},
+        _round("Quarterfinals", by_stage.get("QF", [])),
+        _round("Semifinals", by_stage.get("SF", [])),
+        _round("Final", by_stage.get("F", [])),
     ]
     # Consolation / lower bracket — parallel, never feeds the championship.
-    consolation_rounds = [
-        {"title": "9th / 10th · play-in losers", "time": _t("P910"), "bo": 3, "matches": [_match("P910")]},
-        {"title": "Lower semifinals · QF losers", "time": _t("LS1"), "bo": 3, "matches": [_match("LS1"), _match("LS2")]},
-        {"title": "Placement finals · 3/4 · 5/6 · 7/8", "time": _t("P34"), "bo": 1,
-         "matches": [_match("P34"), _match("P56"), _match("P78")]},
-    ]
+    # Groups (and their depth) come from the active layout.
+    consolation_rounds = [_round(g["title"], g["mkeys"]) for g in bracket.consolation_groups()]
 
     def _runner(row):
         if not row or row["status"] != "final" or not row["winner_team_id"]:
@@ -89,15 +93,18 @@ def bracket_page(request: Request):
 
     matches = sched.get_matches()
     ident = ctx["ident"]
+    n = bracket.active_count()
+    byes = 16 - n                      # main bracket is always 8
     ctx.update(
         generated=bool(db_rows),
+        n_teams=n, bye_seeds=byes, playin_lo=byes + 1, playin_hi=n,
         playin=playin,
         champ_rounds=champ_rounds,
         consolation_rounds=consolation_rounds,
         champion=_champ(by.get("F")),
         runner_up=_runner(by.get("F")),
+        placements=bracket.placement_order() if db_rows else [],
         group_complete=bool(matches) and all(m["status"] == "final" for m in matches),
-        comp_maps=sched.COMP_MAPS,
         is_admin=auth.is_admin(request),
         my_team_id=ident["team_id"] if ident else None,
         am_captain=bool(ident and ident["is_captain"]),
@@ -165,17 +172,4 @@ async def set_station(request: Request):
                 [row["team_a_id"], row["team_b_id"]],
                 f"\U0001f3ae You're up — {label}: **{row['a']}** vs **{row['b']}** on **Server {station}**. Report to your station.",
             )
-    return RedirectResponse(url=request.url_for("bracket"), status_code=303)
-
-
-@router.post("/admin/bracket/map", name="bracket_set_map")
-async def set_map(request: Request):
-    auth.require_admin(request)
-    f = await request.form()
-    mkey = f.get("mkey", "")
-    if not db.query_one("SELECT 1 FROM lan_bracket WHERE mkey=%s", (mkey,)):
-        raise HTTPException(404, "No such bracket match.")
-    # BO3 series can use several maps — collect each picker and join in order.
-    maps = [m.strip() for m in f.getlist("map") if m and m.strip()]
-    bracket.set_map(mkey, " / ".join(maps)[:96] or None)
     return RedirectResponse(url=request.url_for("bracket"), status_code=303)

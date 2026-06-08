@@ -5,6 +5,7 @@ opponents' wins) -> round/flag differential -> seed. Pure function over team
 rows + final match rows; unit-tested."""
 from __future__ import annotations
 
+from fractions import Fraction
 from itertools import groupby
 
 
@@ -46,9 +47,16 @@ def compute_standings(teams: list[dict], matches: list[dict]) -> list[dict]:
         sd = by_id[tid].get("seed")
         return sd if sd is not None else 999
 
+    # Primary key is win % (exact via Fraction), so an odd field where some teams
+    # play an extra group game isn't skewed by raw win count. With equal games
+    # (10/12 teams) this is identical to ordering by wins.
+    def win_pct(tid: int) -> Fraction:
+        p = stat[tid]["played"]
+        return Fraction(stat[tid]["wins"], p) if p else Fraction(0)
+
     ordered: list[int] = []
-    ids_by_wins = sorted((t["id"] for t in teams), key=lambda t: -stat[t]["wins"])
-    for _wins, grp in groupby(ids_by_wins, key=lambda t: stat[t]["wins"]):
+    ids_by_pct = sorted((t["id"] for t in teams), key=lambda t: -win_pct(t))
+    for _pct, grp in groupby(ids_by_pct, key=win_pct):
         g = list(grp)
         if len(g) > 1:
             def h2h(tid, group=g):  # wins against others in this tied group

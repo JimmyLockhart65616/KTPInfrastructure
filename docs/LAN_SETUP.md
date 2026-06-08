@@ -1,6 +1,25 @@
 # KTP LAN Event Setup
 
-This guide covers setting up a complete KTP infrastructure for LAN events - including game servers, a local data server, HLTV, and stats tracking.
+This guide covers setting up a complete KTP infrastructure for LAN events - including game servers, a local data server, HLTV, voice (TeamSpeak), and stats tracking.
+
+> **Two docs, two jobs — keep them in sync.**
+> - To *install* the box, use the automated single-config orchestrator:
+>   [`../provision/LAN-DEPLOY.md`](../provision/LAN-DEPLOY.md) (`lan-deploy.sh`,
+>   one config file, one command). That is the primary install path.
+> - **This** doc is the operational companion: architecture, day-of runbook,
+>   HLTV / stats / TeamSpeak setup, and troubleshooting.
+>
+> **Current plan (July 2026 LAN):** one all-in-one box runs everything —
+> game servers + HLTV + TeamSpeak — for up to **72 players (12 teams × 6)**.
+> Hardware sizing and current build options live in the benchmark dossier
+> (AC-admin → `fleet-benchmark.html`).
+>
+> **6 game servers:** set `NUM_INSTANCES=6` in `lan-deploy.conf`. The scripts now
+> create 6 instances (ports 27015-27020), auto-place HLTV right after
+> (27021-27026), and pin one CPU core per server — provisioning warns if the box
+> has fewer than `NUM_INSTANCES + 2` cores. Leave `HLTV_BASE_PORT` empty so it
+> auto-adapts. The port tables further down still show the 5-server example
+> ranges for reference.
 
 ## Overview
 
@@ -12,7 +31,8 @@ LAN Network
 │   ├── HLTV instances (spectating + recording)
 │   ├── HLTV API (automated recording control)
 │   ├── MySQL + HLStatsX (stats tracking)
-│   └── FastDL (client file downloads)
+│   ├── FastDL (client file downloads)
+│   └── TeamSpeak 3 (voice — all players)
 │
 └── Game Servers (1+ machines)
     └── 5 DoD instances per machine
@@ -29,24 +49,33 @@ LAN Network
 
 | Role | Minimum Specs | Recommended |
 |------|---------------|-------------|
-| Game Server | 4 cores, 8GB RAM | 8 cores, 16GB RAM |
-| Data Server | 2 cores, 4GB RAM | 4 cores, 8GB RAM |
+| **All-in-one LAN box (current plan)** | 8 cores, 32GB RAM, 2× SSD | 12 cores, 32–64GB, 2× NVMe |
+| Game Server (split setup) | 4 cores, 8GB RAM | 8 cores, 16GB RAM |
+| Data Server (split setup) | 2 cores, 4GB RAM | 4 cores, 8GB RAM |
 
-A single powerful machine can run both roles (game servers in VMs, data server on host).
+The current plan runs **everything on one all-in-one box** — game servers, data
+server, HLTV, and TeamSpeak. It must be **x86-64**: the engine binaries are
+32-bit i386 and need i386 multilib, so ARM is ruled out. The two SSDs split
+game-server data from HLTV recordings. Full sizing rationale and current build
+options are in the benchmark dossier (AC-admin → `fleet-benchmark.html`). A
+split setup (separate game/data machines) still works if you prefer.
 
 ### Software
-- Ubuntu 22.04 LTS on all servers
+- Ubuntu 22.04 LTS or 24.04 LTS on all servers
 - Pre-built KTP artifacts (on USB drive or local storage)
 - Network connectivity between all machines
 
 ### Network Requirements
 | Port | Protocol | Service |
 |------|----------|---------|
-| 27015-27019 | UDP | Game servers |
+| 27015-27019 | UDP | Game servers (current plan: 6 — see Open item) |
 | 27020-27029 | UDP | HLTV instances |
 | 8087 | TCP | HLTV API |
 | 80 | TCP | FastDL |
 | 27500 | UDP | HLStatsX logging |
+| 9987 | UDP | TeamSpeak voice |
+| 30033 | TCP | TeamSpeak file transfer |
+| 10011 | TCP | TeamSpeak ServerQuery (LAN admin only — do not expose off-LAN) |
 
 ## Quick Start
 
@@ -333,6 +362,110 @@ SELECT * FROM hlstats_Events_Entries
 ORDER BY id DESC LIMIT 100;
 ```
 
+## TeamSpeak Voice Server
+
+All LAN players connect to one TeamSpeak 3 server running on the LAN box
+alongside the game servers. **TeamSpeak ships an official Linux amd64 server
+build — it runs natively on Ubuntu, no Windows needed** (Linux is the normal way
+to host it). It's a 64-bit binary, so unlike the game servers it needs no 32-bit
+libraries, and it rides the OS/housekeeping cores next to HLTV — it never
+consumes an isolated game core. Footprint at 72 players: ~50–150 MB RAM and a
+fraction of one core.
+
+### Ports
+
+```bash
+sudo ufw allow 9987/udp comment "TeamSpeak voice"
+sudo ufw allow 30033/tcp comment "TeamSpeak file transfer"
+sudo ufw allow 10011/tcp comment "TeamSpeak ServerQuery (LAN admin)"
+```
+
+Keep 10011 (ServerQuery) on the LAN only — never expose it off-network.
+
+### Install
+
+The download needs internet — **grab the tarball before the event** if the box
+will be air-gapped (stage it on the USB package; see Offline Artifact
+Preparation).
+
+```bash
+# Dedicated unprivileged user
+sudo useradd -m -s /bin/bash teamspeak
+
+# Latest Linux amd64 server from https://teamspeak.com/downloads
+# (pin a known version for air-gapped installs)
+TS_VER=3.13.7
+sudo -u teamspeak bash -c "cd ~ && \
+  wget https://files.teamspeak-services.com/releases/server/${TS_VER}/teamspeak3-server_linux_amd64-${TS_VER}.tar.bz2 && \
+  tar xjf teamspeak3-server_linux_amd64-${TS_VER}.tar.bz2"
+
+# Accept the license (without this the server refuses to start)
+touch /home/teamspeak/teamspeak3-server_linux_amd64/.ts3server_license_accepted
+```
+
+### First run — capture the admin token (shown once)
+
+The first start prints a one-time **ServerAdmin privilege key** and the
+ServerQuery login. **Save both** — the privilege key is how you claim admin in
+the client, and it is only shown once.
+
+```bash
+sudo -u teamspeak /home/teamspeak/teamspeak3-server_linux_amd64/ts3server_startscript.sh start
+sleep 3
+grep -iE "token=|loginname=" /home/teamspeak/teamspeak3-server_linux_amd64/logs/*.log
+sudo -u teamspeak /home/teamspeak/teamspeak3-server_linux_amd64/ts3server_startscript.sh stop
+```
+
+### Auto-start with systemd
+
+```bash
+sudo tee /etc/systemd/system/ts3server.service >/dev/null <<'EOF'
+[Unit]
+Description=TeamSpeak 3 Server
+After=network.target
+
+[Service]
+Type=simple
+User=teamspeak
+WorkingDirectory=/home/teamspeak/teamspeak3-server_linux_amd64
+ExecStart=/home/teamspeak/teamspeak3-server_linux_amd64/ts3server_minimal_runscript.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now ts3server
+sudo systemctl status ts3server
+```
+
+### Slot license — REQUIRED for 72 players
+
+The default (unlicensed) server caps at **32 slots**. A full LAN is 72 players,
+so you must raise the cap with TeamSpeak's **free non-commercial license** (up
+to 512 slots):
+
+1. Request it at https://teamspeak.com/en/licensing (free, non-profit/gamer tier).
+2. Drop `licensekey.dat` in the server directory
+   (`/home/teamspeak/teamspeak3-server_linux_amd64/`).
+3. `sudo systemctl restart ts3server`.
+
+**Do this well before the event** — without the key you're locked to 32 of 72
+players on the day.
+
+### Players connect
+
+Point the TeamSpeak client at the LAN box (default port 9987, no port needed):
+
+```
+<LAN_IP>
+```
+
+Suggested layout: a lobby plus one channel per team. Splitting into team
+channels keeps per-channel voice relay tiny (a few Mbps) instead of one big
+72-person channel.
+
 ## Troubleshooting
 
 ### HLTV Won't Connect to Game Server
@@ -390,6 +523,24 @@ ORDER BY id DESC LIMIT 100;
 2. Verify correct IP in LinuxGSM config
 3. Test with: `ping <GAME_SERVER_IP>`
 
+### TeamSpeak Issues
+
+1. Server won't start — confirm the license-accepted file exists:
+   ```bash
+   ls -la /home/teamspeak/teamspeak3-server_linux_amd64/.ts3server_license_accepted
+   ```
+2. Capped at 32 slots — the free-license cap; install `licensekey.dat` and restart.
+3. Lost the admin privilege key — generate a new one:
+   ```bash
+   sudo -u teamspeak /home/teamspeak/teamspeak3-server_linux_amd64/ts3server_startscript.sh stop
+   grep -i "token=" /home/teamspeak/teamspeak3-server_linux_amd64/logs/*.log   # or use ServerQuery: tokenadd
+   ```
+4. Players can't connect — check the service and the voice port:
+   ```bash
+   systemctl status ts3server
+   sudo ufw status | grep 9987
+   ```
+
 ## Offline Artifact Preparation
 
 Before the LAN event, prepare a USB drive with everything needed:
@@ -414,11 +565,25 @@ ktp-lan-package/
 │   └── proxy.so
 ├── hlstatsx/
 │   └── hlstatsx-ce.zip
+├── teamspeak/
+│   ├── teamspeak3-server_linux_amd64-<version>.tar.bz2
+│   └── licensekey.dat          # free 512-slot non-commercial key
+├── dod-base/
+│   └── dod-base-files.tar.gz   # game-server dod/: custom maps + OVERVIEWS,
+│                               # WADs, ktp_*.cfg (scripts/package-dod-base.sh)
 └── fastdl/
     └── dod/
         ├── maps/
         └── sound/
 ```
+
+The **dod-base** tarball (set as `DOD_BASE_PATH`) is what puts the custom KTP
+maps and their command-map overviews on the game servers. Steam only provides
+stock DoD content, so without it the servers can't load custom maps. This is
+separate from `fastdl/` (which only feeds client downloads).
+
+If the LAN is air-gapped, the TeamSpeak tarball and the `licensekey.dat` must be
+on the USB — neither can be fetched on the day without internet.
 
 ## Example: 16-Player Tournament
 
@@ -449,6 +614,8 @@ ktp-lan-package/
 - [ ] Start data server services (HLTV, HLStatsX, Nginx)
 - [ ] Start game servers
 - [ ] Connect HLTV to game servers
+- [ ] Start TeamSpeak (`systemctl status ts3server`); confirm slot license is active (72-capable, not 32)
+- [ ] Test a TeamSpeak client connects and admin claims the privilege key
 - [ ] Test match workflow on warmup server
 - [ ] Verify HLTV recording works
 - [ ] Verify stats are tracking

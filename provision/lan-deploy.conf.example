@@ -43,7 +43,18 @@ HLSTATSX_SOURCE_PATH=""
 # Produce with scripts/package-fastdl-bundle.sh on a current data server
 # (use --maps-only for a much smaller bundle if you only need new maps).
 # Empty = clients can't download missing assets via HTTP.
+# NOTE: FastDL serves files to CLIENTS. It does NOT put maps on the game
+# servers themselves — that's DOD_BASE_PATH below.
 FASTDL_FILES_PATH=""
+
+# Optional but IMPORTANT for KTP: the game servers' own dod/ content tarball —
+# custom maps + their command-map overviews, WADs, ktp_*.cfg, and any custom
+# models/sprites/sounds. install-linuxgsm pulls only STOCK DoD from Steam, so
+# WITHOUT this the custom KTP maps and overviews are missing from the servers
+# (clone-ktp-stack.sh warns and continues). This is the gap that historically
+# "left out the maps/overviews folder." Produce with scripts/package-dod-base.sh.
+# Empty = stock DoD maps only.
+DOD_BASE_PATH=""
 
 # ============================================================================
 # Host config (optional, sensible defaults)
@@ -58,12 +69,17 @@ SERVER_NAME_PREFIX="KTP LAN"
 # sv_password — server join password.
 SV_PASSWORD="REDACTED"
 
-# Number of DoD game server instances and starting port.
+# Number of DoD game server instances and starting port. The current LAN plan
+# uses 6 (one server per concurrent match, 12 teams). The host needs at least
+# NUM_INSTANCES + 2 CPU cores, or provisioning warns about servers sharing cores.
 NUM_INSTANCES=5
 BASE_PORT=27015
 
-# HLTV proxy starting port (the dataserver provisioner uses this too).
-HLTV_BASE_PORT=27020
+# HLTV proxy starting port (the dataserver provisioner uses this too). Leave
+# EMPTY to auto-place it right after the last game port (BASE_PORT+NUM_INSTANCES)
+# — that avoids a collision when NUM_INSTANCES=6 (game 27015-27020, HLTV 27021+).
+# Only set a fixed value if you have a specific reason.
+HLTV_BASE_PORT=""
 
 # ============================================================================
 # Optional services

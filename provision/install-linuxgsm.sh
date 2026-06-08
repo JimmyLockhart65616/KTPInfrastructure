@@ -1,15 +1,17 @@
 #!/bin/bash
 # KTP LinuxGSM Installation Script
-# Installs LinuxGSM and creates 5 DoD server instances
+# Installs LinuxGSM and creates N DoD server instances (default 5)
 #
-# Usage: ./install-linuxgsm.sh <SERVER_IP>
+# Usage: ./install-linuxgsm.sh <SERVER_IP> [NUM_INSTANCES]
+#        NUM_INSTANCES may also be passed as an environment variable.
+#        LAN events use 6 (one server per concurrent match, 12 teams).
 #
 # Run as: dodserver user
 #
 # This script:
 # 1. Downloads and installs LinuxGSM
 # 2. Installs Day of Defeat via SteamCMD
-# 3. Creates 5 server instances (ports 27015-27019)
+# 3. Creates NUM_INSTANCES server instances (ports 27015+)
 # 4. Configures each instance with correct IP and ports
 
 set -e
@@ -18,14 +20,15 @@ set -e
 # Configuration
 # ============================================
 if [ -z "$1" ]; then
-    echo "Usage: $0 <SERVER_IP>"
-    echo "Example: $0 192.168.1.100"
+    echo "Usage: $0 <SERVER_IP> [NUM_INSTANCES]"
+    echo "Example: $0 192.168.1.100 6"
     exit 1
 fi
 
 SERVER_IP="$1"
 BASE_PORT=27015
-NUM_INSTANCES=5
+# Instance count: env var wins, then positional arg 2, then default 5.
+NUM_INSTANCES="${NUM_INSTANCES:-${2:-5}}"
 DEFAULT_MAP="dod_anzio"
 
 # Colors
@@ -290,16 +293,17 @@ log_info "Management scripts created"
 # ============================================
 log_info "Setting up cron jobs..."
 
-# Create crontab entries
-(crontab -l 2>/dev/null || true; cat << 'EOF'
-# KTP Server Monitor - check every minute
-* * * * * ~/dod-27015/dodserver monitor > /dev/null 2>&1
-* * * * * ~/dod-27016/dodserver2 monitor > /dev/null 2>&1
-* * * * * ~/dod-27017/dodserver3 monitor > /dev/null 2>&1
-* * * * * ~/dod-27018/dodserver4 monitor > /dev/null 2>&1
-* * * * * ~/dod-27019/dodserver5 monitor > /dev/null 2>&1
-EOF
-) | crontab -
+# Create crontab entries — generated per instance so the monitor list always
+# matches NUM_INSTANCES (was hardcoded to 5; broke the 6th server's monitor).
+CRON_BLOCK="# KTP Server Monitor - check every minute"
+for i in $(seq 1 $NUM_INSTANCES); do
+    port=$((BASE_PORT + i - 1))
+    name="dodserver"
+    [ $i -gt 1 ] && name="dodserver$i"
+    CRON_BLOCK="$CRON_BLOCK
+* * * * * ~/dod-$port/$name monitor > /dev/null 2>&1"
+done
+(crontab -l 2>/dev/null || true; echo "$CRON_BLOCK") | crontab -
 
 log_info "Cron jobs configured"
 

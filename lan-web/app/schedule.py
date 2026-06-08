@@ -16,6 +16,46 @@ SCHEDULE_10 = [
     [(1, 2), (3, 4),  (5, 9), (6, 8),  (7, 10)],
 ]
 
+# 11 teams — 6 rounds, one seed byes each round (the seed absent from the round).
+# Balanced like SCHEDULE_10: no repeat pairings, top-4 never meet before R4,
+# 1v2 closes; byes fall on the rested top seeds (standings use win %, so unequal
+# game counts don't skew seeding). The byes are 3,9,1,2,5,4 across R1..R6.
+SCHEDULE_11 = [
+    [(10, 7), (6, 2),  (4, 8),  (1, 9),  (5, 11)],
+    [(10, 4), (1, 6),  (5, 3),  (11, 7), (8, 2)],
+    [(10, 9), (8, 11), (2, 5),  (7, 4),  (3, 6)],
+    [(10, 1), (5, 4),  (11, 6), (9, 3),  (8, 7)],
+    [(10, 6), (4, 3),  (1, 7),  (11, 2), (9, 8)],
+    [(10, 3), (6, 7),  (1, 2),  (5, 8),  (11, 9)],
+]
+
+# 12 teams — 6 rounds, 6 matches, everyone plays six. Same balance constraints.
+SCHEDULE_12 = [
+    [(2, 7),  (4, 12), (9, 8),   (11, 3), (6, 10), (1, 5)],
+    [(2, 5),  (10, 1), (3, 6),   (8, 11), (12, 9), (7, 4)],
+    [(2, 9),  (11, 4), (6, 7),   (1, 12), (5, 8),  (10, 3)],
+    [(2, 11), (6, 9),  (1, 4),   (5, 7),  (10, 12),(3, 8)],
+    [(2, 4),  (9, 7),  (11, 12), (6, 8),  (1, 3),  (5, 10)],
+    [(2, 1),  (5, 6),  (10, 11), (3, 9),  (8, 4),  (12, 7)],
+]
+
+SCHEDULES = {10: SCHEDULE_10, 11: SCHEDULE_11, 12: SCHEDULE_12}
+
+
+def team_count() -> int:
+    """Number of registered teams (drives which group schedule is active)."""
+    from . import db
+    try:
+        return db.query_one("SELECT COUNT(*) AS c FROM lan_teams")["c"] or 0
+    except Exception:
+        return 0
+
+
+def active_schedule() -> list:
+    """The seed-pairing schedule for the current team count (10/11/12);
+    falls back to the 10-team layout for preview before registration settles."""
+    return SCHEDULES.get(team_count(), SCHEDULE_10)
+
 # Saturday timetable — (time, label, kind). kind: 'round' | 'break'.
 # 11:00 start, 1-hour match blocks, two 1-hour food breaks; 1v2 closes.
 SATURDAY_TIMETABLE = [
@@ -52,12 +92,13 @@ def rounds_with_teams():
             {"a_seed": a, "b_seed": b, "a_team": smap.get(a), "b_team": smap.get(b)}
             for (a, b) in rnd
         ]
-        for rnd in SCHEDULE_10
+        for rnd in active_schedule()
     ]
 
 
 def seeds_locked() -> bool:
-    return len(seed_map()) >= 10
+    n = team_count()
+    return n in SCHEDULES and len(seed_map()) >= n
 
 
 # ── materialized matches (after seeds lock) ──────────────────────────────
@@ -86,14 +127,19 @@ def matches_exist() -> bool:
 
 
 def materialize_matches():
-    """Insert lan_schedule rows from SCHEDULE_10, mapping seed->team. Requires all 10 seeds."""
+    """Insert lan_schedule rows from the active schedule, mapping seed->team.
+    Requires a 10/11/12-team field with every seed assigned (byes create no row)."""
     from . import db
+    n = team_count()
+    if n not in SCHEDULES:
+        raise ValueError("Saturday supports 10–12 teams — adjust the field first.")
     smap = seed_map()
-    if len(smap) < 10:
+    if len(smap) < n:
         raise ValueError("Seeds are not locked — cannot generate matches.")
+    schedule = SCHEDULES[n]
     with db.get_conn() as conn, conn.cursor() as cur:
         cur.execute("DELETE FROM lan_schedule")
-        for rnd_i, rnd in enumerate(SCHEDULE_10, 1):
+        for rnd_i, rnd in enumerate(schedule, 1):
             for a, b in rnd:
                 cur.execute(
                     "INSERT INTO lan_schedule (round, team_a_id, team_b_id, status) "

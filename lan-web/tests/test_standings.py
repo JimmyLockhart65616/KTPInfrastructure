@@ -45,6 +45,19 @@ def test_differential_when_no_h2h():
     assert ids.index(2) < ids.index(3)
 
 
+def test_win_pct_beats_raw_win_tie_on_unequal_games():
+    # Odd-field case: a team that played fewer games shouldn't be out-ranked by
+    # one with the same raw wins but a worse record. Team 1 is 1-0 (100%); team 2
+    # is 1-1 (50%); both have 1 raw win, but 1 must rank above 2.
+    teams = [{"id": i, "name": f"T{i}", "tag": None, "seed": i} for i in (1, 2, 3)]
+    matches = [_m(1, 3, 5, 0),                 # team 1: 1-0  (played 1)
+               _m(2, 3, 5, 0), _m(2, 3, 0, 5)]  # team 2: 1-1 (played 2), team 3: 1-2
+    s = compute_standings(teams, matches)
+    ids = [r["team"]["id"] for r in s]
+    assert ids == [1, 2, 3]
+    assert s[0]["played"] == 1 and s[1]["played"] == 2
+
+
 if __name__ == "__main__":
     import sys
     funcs = [v for k, v in sorted(globals().items()) if k.startswith("test_")]

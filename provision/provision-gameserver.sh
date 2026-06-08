@@ -580,14 +580,54 @@ if ! grep -q "intel_idle.max_cstate" "$GRUB_CFG"; then
     sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 intel_idle.max_cstate=0 processor.max_cstate=0 mitigations=off"/' "$GRUB_CFG"
 fi
 
-# Add CPU isolation params for baremetals (8+ CPUs)
-# isolcpus: kernel scheduler won't place tasks on game CPUs
-# nohz_full: suppress timer tick on isolated CPUs when only one task runs
-# rcu_nocbs: offload RCU callbacks to housekeeping CPUs
+# ============================================
+# CPU layout detection (shared by isolation + pinning below)
+# ============================================
+# Detect the real core count so the layout adapts to whatever chip the box
+# actually has — more cores than expected is fine (we use them); fewer than
+# needed triggers a loud alert (see below). Reserve CPUs 0,1 for the OS, IRQs,
+# HLTV and TeamSpeak; everything from CPU 2 up is available to pin game servers.
 NUM_CPUS=$(nproc --all)
+RESERVED_CPUS=2
+[ "$NUM_CPUS" -le 4 ] && RESERVED_CPUS=1          # tiny VPS: reserve only CPU 0
+FIRST_GAME_CPU=$RESERVED_CPUS
+AVAIL_GAME_CPUS=$((NUM_CPUS - RESERVED_CPUS))
+[ "$AVAIL_GAME_CPUS" -lt 1 ] && AVAIL_GAME_CPUS=1
+
+# Pre-flight: alert the installer if there aren't enough dedicated cores for one
+# core per server. Not a hard fail (we still pin round-robin), but the operator
+# MUST know timing will be degraded. Skipped for tiny VPS (<=4), which is
+# intentionally oversubscribed.
+if [ "$NUM_CPUS" -gt 4 ] && [ "$AVAIL_GAME_CPUS" -lt "$NUM_SERVERS" ]; then
+    log_warn "================================================================"
+    log_warn " NOT ENOUGH CORES FOR ONE-CORE-PER-SERVER PINNING"
+    log_warn " Detected $NUM_CPUS CPUs -> $AVAIL_GAME_CPUS usable for game servers,"
+    log_warn " but $NUM_SERVERS servers were requested."
+    log_warn " $((NUM_SERVERS - AVAIL_GAME_CPUS)) server(s) will SHARE a core -> expect timing jitter."
+    log_warn " For $NUM_SERVERS servers, use a CPU with at least $((NUM_SERVERS + RESERVED_CPUS)) cores."
+    log_warn "================================================================"
+    if [ "${YES:-0}" != "1" ]; then
+        read -p "Continue with oversubscribed cores anyway? (y/n) " -n 1 -r; echo
+        [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
+    fi
+elif [ "$NUM_CPUS" -gt 4 ]; then
+    log_info "Detected $NUM_CPUS CPUs — $AVAIL_GAME_CPUS usable for $NUM_SERVERS game servers ($((AVAIL_GAME_CPUS - NUM_SERVERS)) core(s) spare)"
+fi
+
+# Isolation list = exactly the CPUs game servers get pinned to.
+GAME_CPU_COUNT=$NUM_SERVERS
+[ "$GAME_CPU_COUNT" -gt "$AVAIL_GAME_CPUS" ] && GAME_CPU_COUNT=$AVAIL_GAME_CPUS
+if [ "$NUM_CPUS" -eq 8 ] && [ "$NUM_SERVERS" -le 5 ]; then
+    # Preserve the proven cloud-fleet 4c/8t map exactly — no drift on reprovision.
+    ISOLCPUS_LIST="2,3,4,5,6,7"
+else
+    ISOLCPUS_LIST=$(seq -s, "$FIRST_GAME_CPU" "$((FIRST_GAME_CPU + GAME_CPU_COUNT - 1))")
+fi
+
+# isolcpus only makes sense on multi-core hosts (skip tiny VPS).
 if [ "$NUM_CPUS" -gt 4 ] && ! grep -q "isolcpus" "$GRUB_CFG"; then
-    sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 isolcpus=2,3,4,5,6,7 nohz_full=2,3,4,5,6,7 rcu_nocbs=2,3,4,5,6,7"/' "$GRUB_CFG"
-    log_info "Added CPU isolation params (isolcpus, nohz_full, rcu_nocbs)"
+    sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 isolcpus=$ISOLCPUS_LIST nohz_full=$ISOLCPUS_LIST rcu_nocbs=$ISOLCPUS_LIST\"/" "$GRUB_CFG"
+    log_info "Added CPU isolation params (isolcpus=$ISOLCPUS_LIST)"
 fi
 
 update-grub
@@ -688,46 +728,35 @@ chmod 440 /etc/sudoers.d/dodserver
 # even when LinuxGSM monitor restarts them after a crash.
 log_info "Creating CPU pinning + SCHED_FIFO auto-apply service..."
 
-# Detect CPU layout and generate CPU pinning map dynamically
-NUM_CPUS=$(nproc)
-
-# Build CPU map based on server count and available CPUs
+# Build the port->CPU pinning map from the CPU layout detected earlier
+# (NUM_CPUS, FIRST_GAME_CPU, AVAIL_GAME_CPUS).
 if [ "$NUM_CPUS" -le 4 ]; then
-    # KVM VPS (e.g., Chicago): 4 vCPUs
-    # CPUs 1-3 dedicated, overflow shares CPU 0
-    VPS_DEDICATED_CPUS=(1 2 3)
-    CPU_MAP_ENTRIES=""
+    # Tiny VPS (e.g. Chicago 4 vCPU): CPUs 1-3 for games, wrap if more servers.
+    DEDICATED=(1 2 3)
     CPU_COMMENT="# vCPU layout: 0=sys"
-    for i in $(seq 1 $NUM_SERVERS); do
-        port=$((BASE_PORT + i - 1))
-        if [ $((i - 1)) -lt ${#VPS_DEDICATED_CPUS[@]} ]; then
-            cpu=${VPS_DEDICATED_CPUS[$((i - 1))]}
-        else
-            cpu=0
-        fi
-        CPU_MAP_ENTRIES="$CPU_MAP_ENTRIES[$port]=$cpu "
-        CPU_COMMENT="$CPU_COMMENT, $cpu=$port"
-    done
-    CPU_MAP_LINE="declare -A PORT_CPU_MAP=($CPU_MAP_ENTRIES)"
-    log_info "Detected $NUM_CPUS CPUs — using VPS CPU pinning layout ($NUM_SERVERS servers)"
-else
-    # Baremetal: 8 CPUs (4 cores + HT), isolated: 2,3,5,6,7
-    BM_DEDICATED_CPUS=(2 3 5 6 7)
-    CPU_MAP_ENTRIES=""
+elif [ "$NUM_CPUS" -eq 8 ] && [ "$NUM_SERVERS" -le 5 ]; then
+    # Proven cloud-fleet 4c/8t Haswell map — kept identical to avoid drift.
+    DEDICATED=(2 3 5 6 7)
     CPU_COMMENT="# CPU layout: 0,1,4=sys"
-    for i in $(seq 1 $NUM_SERVERS); do
-        port=$((BASE_PORT + i - 1))
-        if [ $((i - 1)) -lt ${#BM_DEDICATED_CPUS[@]} ]; then
-            cpu=${BM_DEDICATED_CPUS[$((i - 1))]}
-        else
-            cpu=4  # Overflow to least-busy housekeeping CPU
-        fi
-        CPU_MAP_ENTRIES="$CPU_MAP_ENTRIES[$port]=$cpu "
-        CPU_COMMENT="$CPU_COMMENT, $cpu=$port"
+else
+    # General / LAN box: one game server per CPU from FIRST_GAME_CPU up.
+    DEDICATED=()
+    for c in $(seq "$FIRST_GAME_CPU" "$((FIRST_GAME_CPU + AVAIL_GAME_CPUS - 1))"); do
+        DEDICATED+=("$c")
     done
-    CPU_MAP_LINE="declare -A PORT_CPU_MAP=($CPU_MAP_ENTRIES)"
-    log_info "Detected $NUM_CPUS CPUs — using baremetal CPU pinning layout ($NUM_SERVERS servers)"
+    CPU_COMMENT="# CPU layout: 0,1=sys/HLTV/TeamSpeak"
 fi
+
+CPU_MAP_ENTRIES=""
+for i in $(seq 1 $NUM_SERVERS); do
+    port=$((BASE_PORT + i - 1))
+    # One dedicated CPU each; if servers outnumber CPUs, wrap round-robin.
+    cpu=${DEDICATED[$(( (i - 1) % ${#DEDICATED[@]} ))]}
+    CPU_MAP_ENTRIES="$CPU_MAP_ENTRIES[$port]=$cpu "
+    CPU_COMMENT="$CPU_COMMENT, $cpu=$port"
+done
+CPU_MAP_LINE="declare -A PORT_CPU_MAP=($CPU_MAP_ENTRIES)"
+log_info "Detected $NUM_CPUS CPUs — pinning $NUM_SERVERS servers to CPUs ${DEDICATED[*]}"
 
 # Create the script that applies CPU pinning + SCHED_FIFO to game servers
 cat > /usr/local/bin/ktp-apply-chrt.sh << CHRTSCRIPT

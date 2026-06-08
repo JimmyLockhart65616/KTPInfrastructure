@@ -68,7 +68,9 @@ SERVER_NAME_PREFIX="${SERVER_NAME_PREFIX:-KTP LAN}"
 SV_PASSWORD="${SV_PASSWORD:-REDACTED}"
 NUM_INSTANCES="${NUM_INSTANCES:-5}"
 BASE_PORT="${BASE_PORT:-27015}"
-HLTV_BASE_PORT="${HLTV_BASE_PORT:-27020}"
+# HLTV starts right after the last game port so it never collides with the game
+# range. For 5 servers this is 27020 (unchanged); for 6 it becomes 27021.
+HLTV_BASE_PORT="${HLTV_BASE_PORT:-$((BASE_PORT + NUM_INSTANCES))}"
 ENABLE_DATASERVER="${ENABLE_DATASERVER:-true}"
 ENABLE_NETDATA="${ENABLE_NETDATA:-false}"
 
@@ -87,6 +89,7 @@ libsteam_api.so:       $LIBSTEAM_API_PATH
 HLTV binaries:         ${HLTV_BINARIES_PATH:-(unset — manual copy required after install)}
 HLStatsX bundle:       ${HLSTATSX_SOURCE_PATH:-(unset — HLStatsX left manual)}
 FastDL files:          ${FASTDL_FILES_PATH:-(unset — manual copy to /var/www/fastdl/dod/)}
+DoD base content:      ${DOD_BASE_PATH:-(unset — STOCK maps only; custom KTP maps/overviews NOT deployed)}
 
 Co-located dataserver: $ENABLE_DATASERVER
 Netdata:               $ENABLE_NETDATA
@@ -121,13 +124,13 @@ PROV_FLAGS=(-y --num-servers "$NUM_INSTANCES")
 TIMEZONE="$TIMEZONE" bash "$SCRIPT_DIR/provision-gameserver.sh" "${PROV_FLAGS[@]}"
 
 # ----------------------------------------------------------------------------
-# Phase 2: install-linuxgsm.sh — LinuxGSM bootstrap + 5 DoD instances
+# Phase 2: install-linuxgsm.sh — LinuxGSM bootstrap + NUM_INSTANCES DoD instances
 # ----------------------------------------------------------------------------
 log_phase "Phase 2: LinuxGSM bootstrap (install-linuxgsm.sh)"
 if [ -d "/home/dodserver/dod-${BASE_PORT}/serverfiles/dod" ]; then
     echo "LinuxGSM already installed at /home/dodserver/dod-${BASE_PORT} — skipping."
 else
-    su -l dodserver -c "YES=1 bash $SCRIPT_DIR/install-linuxgsm.sh $LAN_IP"
+    su -l dodserver -c "YES=1 NUM_INSTANCES=$NUM_INSTANCES bash $SCRIPT_DIR/install-linuxgsm.sh $LAN_IP"
 fi
 
 # ----------------------------------------------------------------------------
@@ -144,6 +147,7 @@ CLONE_FLAGS=(
     --sv-password "$SV_PASSWORD"
     --data-server-ip "$LAN_IP"
 )
+[ -n "${DOD_BASE_PATH:-}" ]        && CLONE_FLAGS+=(--dod-base "$DOD_BASE_PATH")
 [ -n "${DISCORD_RELAY_URL:-}" ]    && CLONE_FLAGS+=(--relay-url "$DISCORD_RELAY_URL")
 [ -n "${DISCORD_RELAY_SECRET:-}" ] && CLONE_FLAGS+=(--relay-secret "$DISCORD_RELAY_SECRET")
 # Quote args safely when crossing the su boundary.

@@ -3,6 +3,16 @@
 End-to-end provisioning of a single all-in-one KTP host for a LAN event.
 One config file, one script invocation.
 
+> **Companion doc:** this covers the *automated install*. For architecture, the
+> day-of runbook, HLTV/stats/**TeamSpeak** setup, and troubleshooting, see
+> [`../docs/LAN_SETUP.md`](../docs/LAN_SETUP.md). Keep the two in sync.
+>
+> **Current plan (July 2026 LAN):** one all-in-one box for up to **72 players
+> (12 teams × 6)** — game servers + HLTV + TeamSpeak. Set `NUM_INSTANCES=6` for
+> the 6 concurrent match servers; the orchestrator creates all 6, auto-places
+> HLTV after them, and pins one CPU core per server (warns if the box has fewer
+> than `NUM_INSTANCES + 2` cores). TeamSpeak is a manual post-install step.
+
 ## TL;DR
 
 ```bash
@@ -65,7 +75,24 @@ empty if you'd rather do it manually post-install.
   `models/`). Stage via `scripts/package-fastdl-bundle.sh` (supports
   `--maps-only` for a much smaller bundle) → `FASTDL_FILES_PATH`. Files
   land at `/var/www/fastdl/dod/` (the mandatory `dod/` subdir — the
-  engine prepends gamedir to download URLs).
+  engine prepends gamedir to download URLs). This is for **client**
+  downloads only — it does not put maps on the game servers.
+- **DoD base content (game-server side)** — the servers' own `dod/` tree:
+  custom maps **and their command-map overviews**, WADs, `ktp_*.cfg`, and
+  any custom models/sprites/sounds. `install-linuxgsm.sh` installs only
+  **stock** DoD from Steam, so without this the custom KTP maps and
+  overviews are missing from the servers themselves. Stage via
+  `scripts/package-dod-base.sh` → `DOD_BASE_PATH`; `clone-ktp-stack.sh`
+  extracts it into every instance. Empty = stock maps only (the script
+  warns). **This is the historical "left out the maps/overviews folder"
+  gap — now wired into the orchestrator via `DOD_BASE_PATH`.**
+- **TeamSpeak voice server** — not installed by the orchestrator. It's a
+  64-bit upstream download (no i386 multilib), runs as its own
+  `ts3server` systemd unit on the OS/housekeeping cores next to HLTV.
+  Full install (download, license, systemd, the free 512-slot key for
+  72 players, UFW 9987/udp + 30033/tcp + 10011/tcp) is in
+  [`../docs/LAN_SETUP.md`](../docs/LAN_SETUP.md) § TeamSpeak Voice Server.
+  Air-gapped LANs must stage the tarball + `licensekey.dat` ahead of time.
 
 Each `_PATH` is optional. Whatever you leave unset becomes a manual
 step listed in the script's post-install output.

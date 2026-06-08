@@ -1,4 +1,5 @@
 """Unit tests for pure bracket slot resolution (single-elim + consolation)."""
+from app import bracket as B
 from app.bracket import resolve_slots
 
 # standings rank -> team id (use 100+rank for clarity)
@@ -68,6 +69,60 @@ def test_consolation_never_touches_the_final():
     # the Final is fed only by the two semifinals; no placement key feeds it
     s = resolve_slots(RANK, _FULL)
     assert s["F"] == (101, 102)
+
+
+# ── dynamic layouts: every count yields a complete 1..N ranking ───────────
+def _play_out(n, upset=None):
+    """Resolve a full bracket for n teams (team id == seed). Favorite (lower
+    seed) wins each match unless its mkey is in `upset`. -> {place: team_id}."""
+    upset = upset or set()
+    matches = B.LAYOUTS[n]["matches"]
+    rank = {i: i for i in range(1, n + 1)}
+    out: dict[str, tuple] = {}
+
+    def side(src):
+        kind, ref = src.split(":")
+        if kind == "seed":
+            return rank.get(int(ref))
+        if ref in out:
+            w, l = out[ref]
+            return w if kind == "W" else l
+        return None
+
+    changed = True
+    while changed:
+        changed = False
+        for m in matches:
+            if m["key"] in out:
+                continue
+            a, b = side(m["a"]), side(m["b"])
+            if a and b:
+                w = max(a, b) if m["key"] in upset else min(a, b)
+                out[m["key"]] = (w, b if w == a else a)
+                changed = True
+    return {pl: side(src) for pl, src in B.LAYOUTS[n]["placement"]}
+
+
+def test_every_layout_produces_full_ranking():
+    for n in (10, 11, 12):
+        places = _play_out(n)
+        assert len(places) == n
+        assert set(places.values()) == set(range(1, n + 1))   # a clean permutation
+        assert places[1] == 1                                  # chalk: seed 1 wins
+
+
+def test_full_ranking_holds_under_upsets():
+    for n in (10, 11, 12):
+        places = _play_out(n, upset={"F", "P34", "SF1", "PI1"})
+        assert set(places.values()) == set(range(1, n + 1))
+
+
+def test_layout_keys_fit_db_column():
+    # lan_bracket.mkey is VARCHAR(8); stage order must cover every stage used.
+    for n, lay in B.LAYOUTS.items():
+        for m in lay["matches"]:
+            assert len(m["key"]) <= 8
+            assert m["stage"] in B.STAGE_ORDER
 
 
 if __name__ == "__main__":

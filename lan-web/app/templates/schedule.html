@@ -30,7 +30,7 @@
       </div>
       {% endif %}
 
-      <p>Ten companies, six rounds, one map each. The pairings are fixed in advance and balanced for
+      <p>{{ n_teams }} companies, six rounds, one map each.{% if n_teams == 11 %} With an odd field, one company rests each round.{% endif %} The pairings are fixed in advance and balanced for
          strength of schedule — no company draws a tougher slate than another. Why it's built this way is below.</p>
 
       <div class="units-grid">
@@ -64,7 +64,7 @@
             <td>{{ '%+d'|format(s.diff) }}</td>
             <td>{{ s.buchholz }}</td>
           </tr>
-          {% if s.rank == 6 %}<tr><td></td><td colspan="4" style="color:var(--wsdod-blue);font-size:12px;letter-spacing:.12em;">— BYE LINE (seeds 1–6 bye to the Quarterfinals · 7–10 play in) —</td></tr>{% endif %}
+          {% if s.rank == bye_seeds %}<tr><td></td><td colspan="4" style="color:var(--wsdod-blue);font-size:12px;letter-spacing:.12em;">— BYE LINE (seeds 1–{{ bye_seeds }} bye to the Quarterfinals · {{ bye_seeds + 1 }}–{{ n_teams }} play in) —</td></tr>{% endif %}
         {% endfor %}
         </tbody>
       </table>
