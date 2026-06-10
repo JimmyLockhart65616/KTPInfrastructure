@@ -39,10 +39,8 @@ def get_rosters() -> list[dict]:
     """All teams with their rosters, ordered by seed then name."""
     teams = db.query_all("SELECT * FROM lan_teams ORDER BY COALESCE(seed, 999), name")
     for t in teams:
-        # discord_id/steam_id are for the admin inline editor; the public view
-        # only renders display_name, so they never reach a non-admin's page.
         t["players"] = db.query_all(
-            "SELECT id, display_name, is_captain, discord_id, steam_id FROM lan_players "
+            "SELECT display_name, is_captain FROM lan_players "
             "WHERE team_id=%s ORDER BY is_captain DESC, display_name",
             (t["id"],),
         )
