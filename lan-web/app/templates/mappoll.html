@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}WSDoD / LAN 2026 / Map-Skip Ballot{% endblock %}
+{% block content %}
+  <section class="chapter">
+    <header class="chapter-head">
+      <div class="chapter-num">&#9733;</div>
+      <h2 class="chapter-title">Map-Skip Ballot</h2>
+      <span class="chapter-stamp">CAPTAIN'S EYES ONLY</span>
+    </header>
+    <div class="chapter-body">
+      {% if not poll_open %}
+        <div class="pending-note">
+          The map-skip poll is currently <strong>closed</strong>. Tally posts on the
+          <a href="{{ url_for('mapskip') }}">map-skip page</a>.
+        </div>
+      {% else %}
+        <p>Saturday runs only <strong>6 matches</strong>, so one map drops from the rotation and
+           becomes the <strong>play-in map</strong>. Submitting <strong>{{ my_team.name }}</strong>'s
+           ballot — gather your squad's read and name the <strong>one map to skip on Saturday</strong>.
+           The most-voted map across all companies wins.</p>
+        <form method="post" action="{{ url_for('mappoll') }}">
+          <table>
+            <tbody>
+            {% for m in pool %}
+              <tr>
+                <td style="width:2.4rem;text-align:center;">
+                  <input type="radio" name="skip_map" value="{{ m }}" id="m_{{ loop.index }}"
+                         required {{ 'checked' if current == m }}>
+                </td>
+                <td style="width:auto;color:var(--ink);">
+                  <label for="m_{{ loop.index }}" style="cursor:pointer;">{{ m }}</label>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <p style="margin-top:18px;">
+            <button type="submit" style="font-family:var(--stencil);letter-spacing:.14em;padding:.6rem 1.4rem;
+                    background:var(--wsdod-blue);color:var(--paper);border:none;cursor:pointer;text-transform:uppercase;">
+              Submit Ballot
+            </button>
+          </p>
+          <p style="font-size:13px;color:var(--ink-faint);">One vote per company. Resubmitting overwrites your previous ballot.</p>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

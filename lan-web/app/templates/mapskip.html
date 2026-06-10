@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}WSDoD / LAN 2026 / Map Skip{% endblock %}
+{% block content %}
+  <section class="chapter">
+    <header class="chapter-head">
+      <div class="chapter-num">&#9733;</div>
+      <h2 class="chapter-title">Saturday Map Skip</h2>
+      <span class="chapter-stamp">CAPTAINS' VOTE</span>
+    </header>
+    <div class="chapter-body">
+
+      <p>Saturday runs only 6 matches, so one map drops from the rotation and becomes the
+         <strong>play-in map</strong>. Every captain votes for the one map to skip; the rest of
+         Saturday's BO3/BO1 matches veto from the remaining {{ ordered|length - 1 }} maps.</p>
+
+      <div class="units-meta">
+        <span>Poll: <strong>{{ 'OPEN' if poll_open else 'CLOSED' }}</strong></span>
+        <span>Ballots in: <strong>{{ submitted|length }}/{{ teams|length }}</strong></span>
+        <span>Pulled: {{ last_updated }}</span>
+      </div>
+
+      {% if ident and ident.is_captain and poll_open %}
+        <p><a href="{{ url_for('mappoll') }}">→ Submit or revise your team's ballot</a></p>
+      {% endif %}
+
+      {% if locked %}
+        <div class="pending-note" style="border-style:solid;border-color:var(--alert);">
+          <strong style="font-family:var(--stencil);letter-spacing:.14em;color:var(--alert);">LOCKED — SKIP / PLAY-IN MAP:</strong>
+          {{ locked }}
+        </div>
+      {% endif %}
+
+      {% if is_admin %}
+      <div class="pending-note" style="border-style:solid;border-color:var(--wsdod-blue);">
+        <strong style="font-family:var(--stencil);letter-spacing:.14em;color:var(--wsdod-blue);display:block;margin-bottom:6px;">STAFF CONTROLS</strong>
+        <form method="post" action="{{ url_for('mappoll_open') }}"    style="display:inline;"><button type="submit">Open poll</button></form>
+        <form method="post" action="{{ url_for('mappoll_close') }}"   style="display:inline;"><button type="submit">Close poll</button></form>
+        <form method="post" action="{{ url_for('mappoll_compute') }}" style="display:inline;"><button type="submit">Compute &amp; lock skip map</button></form>
+        <p style="font-size:13px;color:var(--ink-faint);margin:8px 0 0;">A tie resolves to pool order — break the tie, then re-compute.</p>
+      </div>
+      {% endif %}
+
+      {% if total %}
+        <h3>Tally</h3>
+        <table>
+          <thead><tr><td>Map</td><td>Votes</td><td style="width:auto;">Share</td></tr></thead>
+          <tbody>
+          {% for m in ordered %}
+            <tr>
+              <td style="color:var(--ink);">{{ m }}{% if loop.first and counts[m] > 0 %} <span style="color:var(--alert);font-family:var(--stencil);font-size:12px;letter-spacing:.1em;">LEADING</span>{% endif %}</td>
+              <td>{{ counts[m] }}</td>
+              <td style="width:auto;">
+                <span style="display:inline-block;height:12px;background:var(--wsdod-blue);
+                             width:{{ (counts[m] / total * 220)|round|int if total else 0 }}px;"></span>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <p style="font-size:13px;color:var(--ink-faint);">Most-voted map is skipped on Saturday. Staff lock it with “Compute &amp; lock”.</p>
+      {% else %}
+        <div class="pending-note">No ballots yet — the tally appears once captains submit.</div>
+      {% endif %}
+
+      {% if submitted %}
+        <h3 style="margin-top:28px;">Ballots</h3>
+        <table style="font-size:13px;">
+          <thead><tr><td>Company</td><td style="width:auto;">Voted to skip</td></tr></thead>
+          <tbody>
+          {% for v in submitted %}
+            <tr>
+              <td style="color:var(--ink);">{{ teams[v].name }}{% if teams[v].tag %} · {{ teams[v].tag }}{% endif %}</td>
+              <td style="width:auto;">{{ ballots[v] }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+    </div>
+  </section>
+{% endblock %}

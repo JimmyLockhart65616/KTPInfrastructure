@@ -23,12 +23,12 @@ from app import db
 from app.config import settings
 
 WIPE_TABLES = [
-    "lan_schedule", "lan_bracket", "lan_seed_ballots", "lan_stations",
-    "lan_streams", "lan_award_votes", "lan_awards", "lan_result_audit",
-    "lan_photos", "lan_demos",
+    "lan_schedule", "lan_bracket", "lan_seed_ballots", "lan_map_skip_ballots",
+    "lan_stations", "lan_streams", "lan_award_votes", "lan_awards",
+    "lan_result_audit", "lan_photos", "lan_demos",
 ]
 WIPE_SETTINGS = ["playoff_seeds", "preview_banner", "final_placements",
-                 "announcement", "gf_advantage"]
+                 "announcement", "gf_advantage", "skip_map"]
 
 
 def _counts():
@@ -76,6 +76,8 @@ def main() -> int:
         ph = ",".join(["%s"] * len(WIPE_SETTINGS))
         cur.execute(f"DELETE FROM lan_settings WHERE k IN ({ph})", tuple(WIPE_SETTINGS))
         cur.execute("INSERT INTO lan_settings (k, v) VALUES ('poll_open','0') "
+                    "ON DUPLICATE KEY UPDATE v='0'")
+        cur.execute("INSERT INTO lan_settings (k, v) VALUES ('map_skip_poll_open','0') "
                     "ON DUPLICATE KEY UPDATE v='0'")
 
     removed = 0

@@ -217,6 +217,6 @@ def set_round_map(round_no: int, mapname):
 # LAN 2026 map pool — drives the map-picker datalist (free text still allowed).
 COMP_MAPS = [
     "Harrington", "Lennon", "Anzio", "Saints",
-    "Thunder2", "Railroad2", "Armory", "Halle",
+    "Thunder2", "Railroad2", "Armory",
 ]
 
