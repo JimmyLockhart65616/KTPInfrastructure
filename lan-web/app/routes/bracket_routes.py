@@ -74,11 +74,27 @@ def bracket_page(request: Request):
         return {"title": title, "time": ms[0]["time"] if ms else None,
                 "bo": ms[0]["best_of"] if ms else 3, "matches": ms}
 
-    # Championship — single elim. The Play-in feeds the open QF slots;
-    # QF -> SF -> Final is a clean 4->2->1 tree the connectors line up against.
+    # Championship — single elim, rendered as ONE bracket: a Play-in column
+    # aligned to the QF rows it feeds, then a clean QF -> SF -> Final tree.
     playin = [_match(k) for k in by_stage.get("PI", [])]
-    champ_rounds = [
-        _round("Quarterfinals", by_stage.get("QF", [])),
+    pi_by_key = {k: _match(k) for k in by_stage.get("PI", [])}
+    # For each QF (in order), the play-in match feeding it (via "W:PIx"), or None.
+    # Same-index alignment lets a straight connector line up the PI box with its QF.
+    playin_cells, qf_matches = [], []
+    for k in by_stage.get("QF", []):
+        s = by[k]
+        feeder = next((pi_by_key.get(s[side].split(":", 1)[1])
+                       for side in ("source_a", "source_b")
+                       if s[side].startswith("W:PI")), None)
+        playin_cells.append(feeder)
+        mm = _match(k)
+        mm["fed"] = feeder is not None
+        qf_matches.append(mm)
+    upper_rounds = [
+        {"title": "Play-in", "bo": 1, "playin": True, "cells": playin_cells,
+         "time": playin[0]["time"] if playin else None},
+        {"title": "Quarterfinals", "time": qf_matches[0]["time"] if qf_matches else None,
+         "bo": qf_matches[0]["best_of"] if qf_matches else 3, "matches": qf_matches},
         _round("Semifinals", by_stage.get("SF", [])),
         _round("Final", by_stage.get("F", [])),
     ]
@@ -99,7 +115,7 @@ def bracket_page(request: Request):
         generated=bool(db_rows),
         n_teams=n, bye_seeds=byes, playin_lo=byes + 1, playin_hi=n,
         playin=playin,
-        champ_rounds=champ_rounds,
+        upper_rounds=upper_rounds,
         consolation_rounds=consolation_rounds,
         champion=_champ(by.get("F")),
         runner_up=_runner(by.get("F")),

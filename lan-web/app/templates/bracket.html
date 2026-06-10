@@ -9,46 +9,54 @@
   </div>
 {% endmacro %}
 
-{% macro matchbox(m, is_admin, am_captain, my_team_id) %}
-  <div class="bkt-m">
-    <div class="bkt-card">
-      {{ competitor(m.top) }}
-      {{ competitor(m.bottom) }}
-    </div>
-    {% if m.slot %}
-      {% set s = m.slot %}
-      {% set need = ((m.best_of or 3) // 2 + 1) %}
-      {% if s.station %}<div class="bkt-srv">LAN {{ s.station }}</div>{% endif %}
-      {% if m.map %}<div class="bkt-srv">{{ m.map }}</div>{% endif %}
-      {% if s.team_a_id and s.team_b_id %}<div class="bkt-srv"><a href="{{ url_for('veto', mkey=s.mkey) }}" style="color:var(--wsdod-blue);">{% if m.map %}map veto{% else %}run map veto{% endif %} &rsaquo;</a></div>{% endif %}
-      {% set ready = s.team_a_id and s.team_b_id %}
-      {% set can = is_admin or (am_captain and ready and (my_team_id == s.team_a_id or my_team_id == s.team_b_id)) %}
-      {% if can %}
-      <form class="bkt-rep" method="post" action="{{ url_for('bracket_report') }}">
-        <input type="hidden" name="mkey" value="{{ s.mkey }}">
-        <input type="number" name="score_a" min="0" max="{{ need }}" value="{{ s.score_a if s.score_a is not none else '' }}" required>
-        <input type="number" name="score_b" min="0" max="{{ need }}" value="{{ s.score_b if s.score_b is not none else '' }}" required>
-        <button type="submit">{{ 'Edit' if s.status == 'final' else 'Report' }}</button>
-      </form>
-      {% endif %}
-      {% if is_admin %}
-      <form class="bkt-srv-set" method="post" action="{{ url_for('bracket_set_station') }}">
-        <input type="hidden" name="mkey" value="{{ s.mkey }}">
-        <select name="station" onchange="this.form.submit()" title="Assign server / station">
-          <option value="">—</option>
-          {% for n in range(1, 6) %}<option value="{{ n }}"{{ ' selected' if s.station == n }}>LAN {{ n }}</option>{% endfor %}
-        </select>
-      </form>
-      {% endif %}
-    {% endif %}
+{# inner of a match box — card + server + report/veto controls (no .bkt-m wrapper) #}
+{% macro matchcard(m, is_admin, am_captain, my_team_id) %}
+  <div class="bkt-card">
+    {{ competitor(m.top) }}
+    {{ competitor(m.bottom) }}
   </div>
+  {% if m.slot %}
+    {% set s = m.slot %}
+    {% set need = ((m.best_of or 3) // 2 + 1) %}
+    {% if s.station %}<div class="bkt-srv">LAN {{ s.station }}</div>{% endif %}
+    {% if m.map %}<div class="bkt-srv">{{ m.map }}</div>{% endif %}
+    {% if s.team_a_id and s.team_b_id %}<div class="bkt-srv"><a href="{{ url_for('veto', mkey=s.mkey) }}" style="color:var(--wsdod-blue);">{% if m.map %}map veto{% else %}run map veto{% endif %} &rsaquo;</a></div>{% endif %}
+    {% set ready = s.team_a_id and s.team_b_id %}
+    {% set can = is_admin or (am_captain and ready and (my_team_id == s.team_a_id or my_team_id == s.team_b_id)) %}
+    {% if can %}
+    <form class="bkt-rep" method="post" action="{{ url_for('bracket_report') }}">
+      <input type="hidden" name="mkey" value="{{ s.mkey }}">
+      <input type="number" name="score_a" min="0" max="{{ need }}" value="{{ s.score_a if s.score_a is not none else '' }}" required>
+      <input type="number" name="score_b" min="0" max="{{ need }}" value="{{ s.score_b if s.score_b is not none else '' }}" required>
+      <button type="submit">{{ 'Edit' if s.status == 'final' else 'Report' }}</button>
+    </form>
+    {% endif %}
+    {% if is_admin %}
+    <form class="bkt-srv-set" method="post" action="{{ url_for('bracket_set_station') }}">
+      <input type="hidden" name="mkey" value="{{ s.mkey }}">
+      <select name="station" onchange="this.form.submit()" title="Assign server / station">
+        <option value="">—</option>
+        {% for n in range(1, 6) %}<option value="{{ n }}"{{ ' selected' if s.station == n }}>LAN {{ n }}</option>{% endfor %}
+      </select>
+    </form>
+    {% endif %}
+  {% endif %}
 {% endmacro %}
 
-{% macro tree(rounds, is_admin, am_captain, my_team_id, flow=false) %}
-  <div class="bkt-tree {{ 'bkt-flow' if flow }}">
+{% macro matchbox(m, is_admin, am_captain, my_team_id, cls='') %}
+  <div class="bkt-m {{ cls }}">{{ matchcard(m, is_admin, am_captain, my_team_id) }}</div>
+{% endmacro %}
+
+{% macro roundhead(r) %}
+  <div class="bkt-round-head">{{ r.title }}<span>{% if r.time %}{{ r.time }} · {% endif %}Best of {{ r.bo or 3 }}</span></div>
+{% endmacro %}
+
+{# lower bracket — columns of centered cards in the same style, no merge tree #}
+{% macro coltree(rounds, is_admin, am_captain, my_team_id) %}
+  <div class="bkt-tree bkt-lower">
     {% for rnd in rounds %}
     <div class="bkt-round">
-      <div class="bkt-round-head">{{ rnd.title }}<span>{% if rnd.time %}{{ rnd.time }} · {% endif %}Best of {{ rnd.bo or 3 }}</span></div>
+      {{ roundhead(rnd) }}
       <div class="bkt-body">
         {% for m in rnd.matches %}{{ matchbox(m, is_admin, am_captain, my_team_id) }}{% endfor %}
       </div>
@@ -60,16 +68,16 @@
 {% block content %}
   <section id="bracket" class="chapter">
     <header class="chapter-head">
-      <div class="chapter-num">05</div>
+      <div class="chapter-num">06</div>
       <h2 class="chapter-title">Bracket — Sunday Playoffs</h2>
       <span class="chapter-stamp">ROAD TO THE VERDICT / BO3</span>
     </header>
     <div class="chapter-body">
       {% if preview %}<div class="preview-banner">Preview — sample data · not real results</div>{% endif %}
       <style>
-        .bkt-tree { display:flex; align-items:stretch; overflow-x:auto; padding:4px 0 14px; min-height:520px; }
+        .bkt-tree { display:flex; align-items:stretch; overflow-x:auto; padding:4px 0 14px; min-height:540px; }
         .bkt-round { display:flex; flex-direction:column; min-width:198px; }
-        .bkt-round + .bkt-round { margin-left:36px; }
+        .bkt-round + .bkt-round { margin-left:38px; }
         .bkt-round-head { flex:0 0 auto; text-align:center; font-family:var(--stencil); text-transform:uppercase;
           letter-spacing:.1em; font-size:13px; color:var(--ink-soft); border-bottom:1px solid var(--ink-margin);
           padding-bottom:4px; margin-bottom:6px; }
@@ -85,28 +93,39 @@
         .bkt-score { width:22px; min-width:22px; text-align:center; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
         .bkt-rep { display:flex; gap:4px; margin-top:5px; justify-content:flex-end; align-items:center; }
         .bkt-rep input { width:3rem; height:26px; text-align:center; font-size:14px; padding:2px 4px; }
-        /* elbow connectors — clean 4->2->1 tree */
-        .bkt-round:not(:last-child) .bkt-m::after { content:''; position:absolute; left:100%; width:18px; }
-        .bkt-round:not(:last-child) .bkt-m:nth-child(odd)::after  { top:50%;    height:50%; border-top:2px solid var(--ink-margin);    border-right:2px solid var(--ink-margin); }
-        .bkt-round:not(:last-child) .bkt-m:nth-child(even)::after { bottom:50%; height:50%; border-bottom:2px solid var(--ink-margin); border-right:2px solid var(--ink-margin); }
-        .bkt-round:not(:first-child) .bkt-m::before { content:''; position:absolute; right:100%; top:50%; width:18px; border-top:2px solid var(--ink-margin); }
-        /* lower bracket flows 1:1 with cross-overs + upper-bracket drop-ins, so the
-           clean pair-merge elbows don't apply — drop them; each box names its feeders. */
-        .bkt-flow .bkt-m::before, .bkt-flow .bkt-m::after { display:none !important; }
-        .bkt-flow .bkt-body { justify-content:flex-start; gap:10px; padding-top:2px; }
-        .bkt-flow .bkt-m { flex:0 0 auto; }
-        /* grand final — the headline match */
-        .bkt-grand { max-width:360px; margin:6px 0 6px; }
-        .bkt-grand .bkt-c { height:34px; font-size:15px; }
-        .bkt-grand .bkt-name { font-weight:600; }
-        /* placement matches — settle the tied tiers, off to the side */
-        .bkt-placements { display:flex; flex-wrap:wrap; gap:16px 28px; }
-        .bkt-place { min-width:212px; }
-        .bkt-place-head { font-family:var(--stencil); text-transform:uppercase; letter-spacing:.1em; font-size:12px; color:var(--ink-soft); margin-bottom:4px; }
-        /* per-match server assignment */
+
+        /* ── upper bracket connectors (explicit per column) ─────────────────
+           Play-in feeds specific QF rows (same index → straight line); the
+           QF→SF→F portion is a clean 4→2→1 merge tree. */
+        .bkt-upper .c-qf .bkt-m:nth-child(odd)::after,
+        .bkt-upper .c-sf .bkt-m:nth-child(odd)::after {
+          content:''; position:absolute; left:100%; width:19px; top:50%; height:50%;
+          border-top:2px solid var(--ink-margin); border-right:2px solid var(--ink-margin); }
+        .bkt-upper .c-qf .bkt-m:nth-child(even)::after,
+        .bkt-upper .c-sf .bkt-m:nth-child(even)::after {
+          content:''; position:absolute; left:100%; width:19px; bottom:50%; height:50%;
+          border-bottom:2px solid var(--ink-margin); border-right:2px solid var(--ink-margin); }
+        .bkt-upper .c-sf .bkt-m::before,
+        .bkt-upper .c-final .bkt-m::before {
+          content:''; position:absolute; right:100%; top:50%; width:19px; border-top:2px solid var(--ink-margin); }
+        /* play-in straight feed → only the QF rows that actually take a play-in */
+        .bkt-upper .c-playin .bkt-m.has::after {
+          content:''; position:absolute; left:100%; top:50%; width:19px; border-top:2px solid var(--ink-margin); }
+        .bkt-upper .c-qf .bkt-m.fed::before {
+          content:''; position:absolute; right:100%; top:50%; width:19px; border-top:2px solid var(--ink-margin); }
+        .bkt-upper .c-playin .bkt-m.empty .bkt-card { display:none; }
+
+        /* championship + the title match get a little weight */
+        .bkt-final-pill { font-family:var(--stencil); letter-spacing:.08em; font-size:11px; color:var(--alert); }
+        /* server assignment + placements */
         .bkt-srv { font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--olive); margin-top:4px; text-align:right; }
         .bkt-srv-set { margin-top:4px; text-align:right; }
         .bkt-srv-set select { font-size:11px; padding:1px 3px; color:var(--ink-soft); }
+        .bkt-section-note { font-size:13px; color:var(--ink-faint); }
+        /* lower bracket: same cards/columns, but size to content (uneven round
+           depths) instead of stretching cards across the tall upper-bracket height */
+        .bkt-lower { min-height:0; }
+        .bkt-lower .bkt-body { gap:16px; }
       </style>
 
       {% if champion %}
@@ -126,26 +145,56 @@
       </div>
       {% endif %}
 
-      <p style="font-size:13px;color:var(--ink-faint);">Single elimination — one loss ends your run for the title. The Play-in is best-of-one; the championship rounds are best-of-three:
+      <p class="bkt-section-note">Single elimination — one loss ends your run for the title. The Play-in is best-of-one; the championship rounds are best-of-three:
          <b>Play-in 11:00</b> → <b>Quarterfinals 12:00</b> → <span style="color:var(--alert);">🍔 break</span> → <b>Semifinals 3:30</b> → <span style="color:var(--alert);">🍔 dinner</span> → <b>Placement finals 7:00</b> → <b>Final 8:00</b>, done by <b>~10:30 PM</b>.
-         Eliminated teams keep playing in the consolation bracket below for final standing.</p>
+         Eliminated teams keep playing in the lower bracket below for final standing.</p>
 
-      <h3>Play-in &mdash; Best of 1 · 11:00 AM</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Seeds {{ playin_lo }}–{{ playin_hi }}. The {{ playin|length }} winner{{ '' if playin|length == 1 else 's' }} join seeds 1–{{ bye_seeds }} (byes) in the Quarterfinals; the losers settle the bottom places below.</p>
-      <div class="bkt-placements">
-        {% for m in playin %}
-        <div class="bkt-place"><div class="bkt-place-head">{{ m.label }}</div>{{ matchbox(m, is_admin, am_captain, my_team_id) }}</div>
-        {% endfor %}
+      <h3>Upper bracket &mdash; the title</h3>
+      <p class="bkt-section-note">Seeds {{ playin_lo }}–{{ playin_hi }} open in the Play-in (BO1); the {{ playin|length }} winner{{ '' if playin|length == 1 else 's' }} join seeds 1–{{ bye_seeds }} (byes) in the Quarterfinals. From there it's a clean run: Quarterfinals → Semifinals → Final, all BO3. The Final winner takes it all.</p>
+
+      <div class="bkt-tree bkt-upper">
+        {# play-in column — cells aligned to the QF rows they feed #}
+        {% set pir = upper_rounds[0] %}
+        <div class="bkt-round c-playin">
+          {{ roundhead(pir) }}
+          <div class="bkt-body">
+            {% for cell in pir.cells %}
+              {% if cell %}{{ matchbox(cell, is_admin, am_captain, my_team_id, 'has') }}
+              {% else %}<div class="bkt-m empty"></div>{% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {# quarterfinals #}
+        {% set qf = upper_rounds[1] %}
+        <div class="bkt-round c-qf">
+          {{ roundhead(qf) }}
+          <div class="bkt-body">
+            {% for m in qf.matches %}{{ matchbox(m, is_admin, am_captain, my_team_id, 'fed' if m.fed else '') }}{% endfor %}
+          </div>
+        </div>
+        {# semifinals #}
+        {% set sf = upper_rounds[2] %}
+        <div class="bkt-round c-sf">
+          {{ roundhead(sf) }}
+          <div class="bkt-body">
+            {% for m in sf.matches %}{{ matchbox(m, is_admin, am_captain, my_team_id) }}{% endfor %}
+          </div>
+        </div>
+        {# final #}
+        {% set fin = upper_rounds[3] %}
+        <div class="bkt-round c-final">
+          {{ roundhead(fin) }}
+          <div class="bkt-body">
+            {% for m in fin.matches %}{{ matchbox(m, is_admin, am_captain, my_team_id) }}{% endfor %}
+          </div>
+        </div>
       </div>
 
-      <h3 style="margin-top:32px;">Championship &mdash; for the title</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Quarterfinals → Semifinals → Final. The Final winner takes it all — there's no grand final, and nothing feeds back in.</p>
-      {{ tree(champ_rounds, is_admin, am_captain, my_team_id) }}
-
-      <h3 style="margin-top:32px;">Consolation &mdash; final standings (3rd–{{ n_teams }}th)</h3>
-      <p style="font-size:13px;color:var(--ink-faint);">Runs in parallel on spare servers — never feeds the championship. The play-in losers settle the bottom places; the four QF losers play a lower semifinal then off for 5/6 and 7/8; the two SF losers play for 3/4. The last of these run alongside the Final, so nothing trails it.
-         The <strong>lower semifinals and the lowest-tier matches are best-of-three</strong> (so eliminated teams still get a real series); the <strong>3/4, 5/6 and 7/8 deciders are best-of-one</strong> and play at 7:00 PM, <strong>before</strong> the Final, so the Final stands alone.</p>
-      {{ tree(consolation_rounds, is_admin, am_captain, my_team_id, flow=true) }}
+      <h3 style="margin-top:32px;">Lower bracket &mdash; final standings (3rd–{{ n_teams }}th)</h3>
+      <p class="bkt-section-note">Runs in parallel on spare servers — never feeds the title. Eliminated teams keep playing to settle every place.
+         The play-in losers settle the bottom; the four QF losers play a lower semifinal, then off for 5/6 and 7/8; the two SF losers play for 3/4.
+         The <strong>lower semifinals and lowest-tier matches are best-of-three</strong>; the <strong>3/4, 5/6 and 7/8 deciders are best-of-one</strong> at 7:00 PM, before the Final.</p>
+      {{ coltree(consolation_rounds, is_admin, am_captain, my_team_id) }}
 
       {% set settled = placements | selectattr('name') | list %}
       {% if settled %}
