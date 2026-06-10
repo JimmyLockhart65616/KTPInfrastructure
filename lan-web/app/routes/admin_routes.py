@@ -5,12 +5,23 @@ set captains, link Discord IDs. All routes require_admin."""
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .. import audit, auth, bracket, common, db, seeding
+from .. import audit, auth, bracket, common, db, mapskip, seeding
 from .. import schedule as sched
 from ..config import settings
 from ..templating import templates
 
 router = APIRouter()
+
+# Roster CRUD is reachable from both /admin and the Order of Battle page; a
+# hidden `next` field says where to land. Whitelisted, so it can't open-redirect.
+_BACK_OK = {"admin", "teams"}
+
+
+def _back(request: Request, f) -> RedirectResponse:
+    target = (f.get("next") or "").strip()
+    return RedirectResponse(
+        request.url_for(target if target in _BACK_OK else "admin"), status_code=303
+    )
 
 
 def _staff_view(me: int) -> tuple[list[dict], list[dict]]:
@@ -68,6 +79,8 @@ def admin_home(request: Request):
         teams=teams,
         total_players=sum(len(t["players"]) for t in teams),
         poll_open=seeding.poll_is_open(),
+        map_skip_poll_open=mapskip.poll_is_open(),
+        skip_map=mapskip.locked_skip_map(),
         seeds_locked=sched.seeds_locked(),
         matches_generated=sched.matches_exist(),
         bracket_generated=bracket.bracket_exists(),
@@ -168,7 +181,7 @@ async def team_add(request: Request):
         db.execute("INSERT INTO lan_teams (name, tag) VALUES (%s, %s)", (name, tag))
     except Exception:
         raise HTTPException(400, f"Could not add team (name {name!r} may already exist).")
-    return RedirectResponse(request.url_for("admin"), status_code=303)
+    return _back(request, f)
 
 
 @router.post("/admin/team/edit", name="admin_team_edit")
@@ -184,7 +197,7 @@ async def team_edit(request: Request):
         db.execute("UPDATE lan_teams SET name=%s, tag=%s WHERE id=%s", (name, tag, team_id))
     except Exception:
         raise HTTPException(400, f"Could not rename (name {name!r} may already be taken).")
-    return RedirectResponse(request.url_for("admin"), status_code=303)
+    return _back(request, f)
 
 
 @router.post("/admin/team/delete", name="admin_team_delete")
@@ -192,7 +205,7 @@ async def team_delete(request: Request):
     auth.require_admin(request)
     f = await request.form()
     db.execute("DELETE FROM lan_teams WHERE id=%s", (int(f["team_id"]),))  # players cascade
-    return RedirectResponse(request.url_for("admin"), status_code=303)
+    return _back(request, f)
 
 
 @router.post("/admin/player/add", name="admin_player_add")
@@ -219,7 +232,29 @@ async def player_add(request: Request):
         )
     except Exception:
         raise HTTPException(400, "Could not add player (that Discord ID may already be linked elsewhere).")
-    return RedirectResponse(request.url_for("admin"), status_code=303)
+    return _back(request, f)
+
+
+@router.post("/admin/player/edit", name="admin_player_edit")
+async def player_edit(request: Request):
+    """Edit an existing player's alias / Steam ID / Discord link."""
+    auth.require_admin(request)
+    f = await request.form()
+    pid = int(f["player_id"])
+    display = (f.get("display_name") or "").strip()
+    if not display:
+        raise HTTPException(400, "Player alias required.")
+    steam = (f.get("steam_id") or "").strip() or None
+    raw_discord = (f.get("discord_id") or "").strip()
+    discord = int(raw_discord) if raw_discord.isdigit() else None
+    try:
+        db.execute(
+            "UPDATE lan_players SET display_name=%s, steam_id=%s, discord_id=%s WHERE id=%s",
+            (display, steam, discord, pid),
+        )
+    except Exception:
+        raise HTTPException(400, "Could not save (that Discord ID may already be linked elsewhere).")
+    return _back(request, f)
 
 
 @router.post("/admin/player/delete", name="admin_player_delete")
@@ -227,7 +262,7 @@ async def player_delete(request: Request):
     auth.require_admin(request)
     f = await request.form()
     db.execute("DELETE FROM lan_players WHERE id=%s", (int(f["player_id"]),))
-    return RedirectResponse(request.url_for("admin"), status_code=303)
+    return _back(request, f)
 
 
 @router.post("/admin/player/captain", name="admin_player_captain")
@@ -237,4 +272,4 @@ async def player_captain(request: Request):
     team_id = int(f["team_id"])
     db.execute("UPDATE lan_players SET is_captain=0 WHERE team_id=%s", (team_id,))
     db.execute("UPDATE lan_players SET is_captain=1 WHERE id=%s", (int(f["player_id"]),))
-    return RedirectResponse(request.url_for("admin"), status_code=303)
+    return _back(request, f)

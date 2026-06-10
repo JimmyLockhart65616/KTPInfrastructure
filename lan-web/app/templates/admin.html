@@ -13,6 +13,7 @@
       <table>
         <tbody>
           <tr><td>Companies / operators</td><td>{{ teams|length }} teams · {{ total_players }} players</td></tr>
+          <tr><td>Saturday map-skip poll</td><td>{{ 'OPEN' if map_skip_poll_open else 'closed' }}{% if skip_map %} · skip = <strong>{{ skip_map }}</strong>{% endif %} — <a href="{{ url_for('mapskip') }}">manage</a></td></tr>
           <tr><td>Seeding poll</td><td>{{ 'OPEN' if poll_open else 'closed' }} — <a href="{{ url_for('seeds') }}">manage</a></td></tr>
           <tr><td>Seeds locked</td><td>{{ 'yes' if seeds_locked else 'no' }}</td></tr>
           <tr><td>Saturday matches</td><td>{{ 'generated' if matches_generated else 'not generated' }} — <a href="{{ url_for('schedule') }}">manage</a></td></tr>
@@ -21,7 +22,7 @@
           <tr><td>Final placements</td><td><a href="{{ url_for('placements') }}">publish final standing</a></td></tr>
         </tbody>
       </table>
-      <p style="font-size:13px;color:var(--ink-faint);">Order of operations: build rosters → open poll → captains submit → close + compute seeds → generate Saturday matches → report results → generate bracket.</p>
+      <p style="font-size:13px;color:var(--ink-faint);">Order of operations: build rosters → map-skip poll → seeding poll → close + compute seeds → generate Saturday matches → report results → generate bracket.</p>
 
       <h3 style="margin-top:24px;">Broadcast dispatch <span style="font-size:12px;color:var(--ink-faint);">(shows on every page)</span></h3>
       <form method="post" action="{{ url_for('admin_announce') }}" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
@@ -116,6 +117,16 @@
                 <form method="post" action="{{ url_for('admin_player_delete') }}" style="display:inline;">
                   <input type="hidden" name="player_id" value="{{ p.id }}"><button type="submit">Remove</button>
                 </form>
+                <details style="display:inline;">
+                  <summary style="display:inline;cursor:pointer;font-size:12px;color:var(--wsdod-blue);">edit</summary>
+                  <form method="post" action="{{ url_for('admin_player_edit') }}" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:5px;">
+                    <input type="hidden" name="player_id" value="{{ p.id }}">
+                    <input name="display_name" value="{{ p.display_name }}" required placeholder="alias" style="width:8rem;">
+                    <input name="steam_id" value="{{ p.steam_id or '' }}" placeholder="STEAM_0:1:…" style="width:10rem;">
+                    <input name="discord_id" value="{{ p.discord_id or '' }}" placeholder="discord id" style="width:9rem;">
+                    <button type="submit">Save</button>
+                  </form>
+                </details>
               </td>
             </tr>
           {% endfor %}
