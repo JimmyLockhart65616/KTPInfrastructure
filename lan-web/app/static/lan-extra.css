@@ -106,6 +106,13 @@ table.standings-sheet tbody tr { border-bottom: 1px solid var(--ink-margin); }
 /* Saturday timetable as an ops board — monospace clock column */
 table.ops-timetable td:first-child { font-family: var(--mono); color: var(--wsdod-blue); font-weight: 700; }
 
+/* ── Bracket page — widen the sheet so the full tree fits ────────────────
+   The playoff tree runs four ~198px columns (≈906px) wider than the stock
+   980px sheet's text column, which clipped it behind a horizontal scrollbar.
+   Widen the sheet on this page only; the tree's overflow:auto stays as a
+   small-screen fallback. */
+body.page-bracket .dossier { max-width: 1240px; }
+
 /* ── Narrow-screen / mobile pass ─────────────────────────────────────────
    The dossier is a print-width document; on phones, drop the decorative
    margin furniture, stack the masthead + index, and let wide data tables
