@@ -56,7 +56,7 @@
   --rule-thick:  3px double var(--ink);
   --rule-faded:  1px solid var(--ink-margin);
 
-  --max-doc:     980px;
+  --max-doc:     1240px;
   --margin-rule-x: 60px;
 }
 
