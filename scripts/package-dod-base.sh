@@ -94,6 +94,8 @@ rsync -a --progress \
     --exclude='addons/ktpamx/logs/' \
     --exclude='addons/ktpamx/configs/hltv_recorder.ini' \
     --exclude='addons/ktpamx/configs/discord.ini' \
+    --exclude='addons/ktpamx/configs/sql.cfg' \
+    --exclude='addons/ktpamx/configs/*bak*' \
     --exclude='configs/servernamedefault.cfg' \
     --exclude='*.log' \
     --exclude='*.dem' \

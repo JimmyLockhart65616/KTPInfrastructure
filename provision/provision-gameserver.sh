@@ -122,12 +122,12 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Check for supported Ubuntu versions (22.04 or 24.04)
-if grep -q "Ubuntu 22.04\|Ubuntu 24.04" /etc/os-release 2>/dev/null; then
+# Check for supported Ubuntu versions (22.04, 24.04, 26.04)
+if grep -q "Ubuntu 22.04\|Ubuntu 24.04\|Ubuntu 26.04" /etc/os-release 2>/dev/null; then
     UBUNTU_VERSION=$(grep VERSION_ID /etc/os-release | cut -d'"' -f2)
     log_info "Detected Ubuntu $UBUNTU_VERSION"
 else
-    log_warn "This script is designed for Ubuntu 22.04 or 24.04"
+    log_warn "This script is designed for Ubuntu 22.04, 24.04, or 26.04"
     if [ "$NON_INTERACTIVE" = false ]; then
         read -p "Continue anyway? (y/n) " -n 1 -r
         echo
@@ -186,8 +186,11 @@ fi
 # ============================================
 log_info "Configuring UDP buffers and performance settings..."
 
-cat >> /etc/sysctl.conf << 'EOF'
-
+# Write to a drop-in, NOT /etc/sysctl.conf. On Ubuntu 26.04 systemd-sysctl no
+# longer applies /etc/sysctl.conf at boot (only /etc/sysctl.d/*.conf), so values
+# appended there silently revert to kernel defaults on reboot (rmem_max back to
+# 4MB, busy_poll to 0, etc.). A drop-in is applied on every boot.
+cat > /etc/sysctl.d/98-ktp-network.conf << 'EOF'
 # KTP Game Server UDP buffers (25MB)
 net.core.rmem_max=26214400
 net.core.rmem_default=26214400
@@ -202,7 +205,7 @@ net.core.busy_poll = 100
 net.core.netdev_max_backlog = 5000
 EOF
 
-sysctl -p
+sysctl --system >/dev/null
 
 log_info "UDP buffers set to 25MB, performance sysctls applied"
 
@@ -293,9 +296,19 @@ apt-get install -y \
     netcat-openbsd \
     pigz \
     xz-utils \
-    libcurl4:i386 \
     ethtool \
     iptables
+
+# 32-bit libcurl: Ubuntu's 64-bit time_t transition renamed libcurl4 -> libcurl4t64
+# (24.04+), and the old name has no i386 package on 26.04. Install whichever the
+# release actually provides so 22.04/24.04/26.04 all work.
+CURL_I386_DONE=0
+for pkg in libcurl4t64:i386 libcurl4:i386; do
+    if apt-cache show "$pkg" >/dev/null 2>&1; then
+        apt-get install -y "$pkg" && { CURL_I386_DONE=1; break; }
+    fi
+done
+[ "$CURL_I386_DONE" -eq 1 ] || log_warn "No i386 libcurl package found (libcurl4t64:i386/libcurl4:i386) — amxxcurl may fail to load"
 
 log_info "Dependencies installed"
 
@@ -365,9 +378,39 @@ fi
 # ============================================
 # 10. Install Lowlatency Kernel
 # ============================================
-log_info "Installing lowlatency kernel for better game server performance..."
+log_info "Configuring low-latency kernel..."
 
-apt-get install -y linux-image-lowlatency linux-headers-lowlatency
+# Kernel strategy differs by release:
+#  - 22.04 / 24.04: the generic kernel is 250Hz; the separate `linux-lowlatency`
+#    image (1000Hz, PREEMPT) is worth booting. Install it.
+#  - 26.04+: the GENERIC kernel is already CONFIG_HZ=1000 + NO_HZ_FULL +
+#    PREEMPT_DYNAMIC, and `linux-lowlatency` there is NOT a separate image — it
+#    just pulls a `lowlatency-kernel` settings pkg whose GRUB drop-in forces
+#    `preempt=full rcu_nocbs=all`. preempt=full was rolled back on the fleet
+#    after a p99 regression, and rcu_nocbs=all collides with our rcu_nocbs=2-7.
+#    So on 26.04+ we stay on generic and strip that drop-in.
+UBU_VER=$(. /etc/os-release 2>/dev/null; echo "${VERSION_ID:-unknown}")
+case "$UBU_VER" in
+    22.04|24.04)
+        if apt-cache show linux-lowlatency >/dev/null 2>&1; then
+            apt-get install -y linux-lowlatency || log_warn "linux-lowlatency install failed — staying on current kernel"
+        elif apt-cache show linux-image-lowlatency >/dev/null 2>&1; then
+            apt-get install -y linux-image-lowlatency linux-headers-lowlatency || log_warn "lowlatency kernel install failed"
+        else
+            log_warn "No lowlatency kernel package on this release — staying on generic"
+        fi
+        ;;
+    *)
+        log_info "Ubuntu $UBU_VER generic kernel is already 1000Hz/NO_HZ_FULL/PREEMPT_DYNAMIC — staying on generic"
+        ;;
+esac
+
+# Never boot preempt=full (p99 regression on the fleet). If the lowlatency-kernel
+# settings package slipped a drop-in in, remove it before update-grub below.
+if [ -f /etc/default/grub.d/99-lowlatency.cfg ]; then
+    rm -f /etc/default/grub.d/99-lowlatency.cfg
+    log_info "Removed /etc/default/grub.d/99-lowlatency.cfg (avoids preempt=full/rcu_nocbs=all)"
+fi
 
 # Get the installed lowlatency kernel version
 LOWLATENCY_KERNEL=$(ls /boot/vmlinuz-*-lowlatency 2>/dev/null | sort -V | tail -1 | sed 's|/boot/vmlinuz-||')
@@ -650,6 +693,22 @@ vm.dirty_background_ratio = 5
 # Higher values allow more packets per softirq cycle, reducing latency spikes
 net.core.netdev_budget = 1200
 net.core.netdev_budget_usecs = 8000
+
+# KTP Game Server - Phase 2 performance tuning (fleet-wide since 2026-04-13).
+# These were historically applied by hand and were missing from this script.
+# sched_rt_runtime_us=-1 is the important one: the default 950000 RT-throttles
+# SCHED_FIFO to 95%, which would starve the chrt-pinned game servers.
+kernel.sched_rt_runtime_us = -1
+kernel.timer_migration = 0
+kernel.sched_autogroup_enabled = 0
+vm.swappiness = 1
+vm.stat_interval = 120
+net.core.netdev_tstamp_prequeue = 0
+net.core.netdev_max_backlog = 5000
+
+# Core dump path for KTPCrashReporter (apport is masked above so it can't
+# re-clobber this at boot).
+kernel.core_pattern = /tmp/core.%e.%p.%t
 EOF
 
 sysctl -p /etc/sysctl.d/99-ktp-gameserver.conf
@@ -700,6 +759,29 @@ systemctl enable fail2ban
 systemctl restart fail2ban
 
 log_info "fail2ban installed and configured"
+
+# ============================================
+# 12b. Mask Apport Units (prevent core_pattern override)
+# ============================================
+# Apport (still present/enabled on 26.04) rewrites /proc/sys/kernel/core_pattern
+# at boot even with enabled=0, clobbering KTPCrashReporter's core harvesting.
+# Mask here in the root provisioning context — clone-ktp-stack.sh also tries this
+# but runs as the dodserver user whose sudoers only allows renice/chrt/taskset,
+# so its `sudo systemctl mask` fails silently. Idempotent; safe if apport absent.
+log_info "Masking apport units (prevents core_pattern override at next reboot)..."
+systemctl mask apport.service apport-autoreport.timer apport-autoreport.service \
+    apport-autoreport.path apport-forward.socket >/dev/null 2>&1 \
+    && log_info "apport units masked" \
+    || log_warn "apport mask returned non-zero (verify: systemctl is-enabled apport.service)"
+
+# ============================================
+# 12c. Disable thermald (conflicts with performance governor)
+# ============================================
+# thermald can throttle/rescale CPUs out from under the performance governor.
+log_info "Disabling thermald..."
+systemctl disable --now thermald >/dev/null 2>&1 \
+    && log_info "thermald disabled" \
+    || log_info "thermald not present/already disabled"
 
 # ============================================
 # 13. Create Server Directories
@@ -767,6 +849,14 @@ cat > /usr/local/bin/ktp-apply-chrt.sh << CHRTSCRIPT
 # Primary setting is done by ktp-scheduled-restart.sh at boot
 $CPU_COMMENT
 $CPU_MAP_LINE
+
+# Re-assert the performance governor every run. intel_pstate boots in powersave,
+# and rc.local's early set can be reset before cpufreq init finishes, so the
+# governor must be re-asserted after boot (this runs at OnBootSec=60 + every 5m).
+# Done before the no-servers early-exit so it holds even with servers stopped.
+for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+    [ "\$(cat "\$g" 2>/dev/null)" != performance ] && echo performance > "\$g" 2>/dev/null
+done
 
 pids=\$(pgrep -f hlds_linux 2>/dev/null)
 [ -z "\$pids" ] && exit 0

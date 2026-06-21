@@ -38,17 +38,28 @@ fi
 
 echo "Packaging HLTV bundle from $HLTV_DIR ..."
 echo "  Output:   $OUT"
-echo "  Excludes: dod/*.dem, dod/auto_*, cstrike/, demos/, configs/*.bak-*"
+echo "  Excludes: *.dem (anywhere), demos/ dirs, cstrike/, configs/*.bak-*"
 echo
 
+# Exclude ALL demo files anywhere in the tree, not just dod/*.dem one level deep.
+# The recorder drops recordings both in dod/demos/ (was 179G on prod) and loose
+# in dod/ as auto_*/12man_* .dem (was ~25G), so a path-narrow exclude let tens of
+# GB of demos into the "binaries" bundle. A global *.dem + demos-dir prune keeps
+# the bundle to just binaries + game content (~4G).
+HLTV_EXCLUDES=(
+    --exclude='*.dem'
+    --exclude='demos'
+    --exclude='*/demos'
+    --exclude='cstrike'
+    --exclude='configs/*.bak-*'
+    # Per-instance proxy configs are cluster-specific (prod ships 25 for
+    # 27020-27044); the LAN provisioner regenerates the right set, so don't
+    # ship them — they'd start stray proxies on the LAN box.
+    --exclude='configs/hltv-*.cfg'
+)
+
 # Estimate size before tarring (rough — ignores compression).
-RAW_SIZE=$(du -sh \
-    --exclude='dod/*.dem' \
-    --exclude='dod/auto_*' \
-    --exclude='cstrike' \
-    --exclude='demos' \
-    --exclude='configs/*.bak-*' \
-    "$HLTV_DIR" 2>/dev/null | awk '{print $1}')
+RAW_SIZE=$(du -sh "${HLTV_EXCLUDES[@]}" "$HLTV_DIR" 2>/dev/null | awk '{print $1}')
 echo "Estimated raw bundle size (pre-compression): $RAW_SIZE"
 echo
 
@@ -56,11 +67,7 @@ echo
 # rather than "/home/hltvserver/hlds/hlds_linux") — makes the bundle
 # trivially extractable into any HLTV_BINARIES_PATH target dir.
 tar -C "$HLTV_DIR" \
-    --exclude='dod/*.dem' \
-    --exclude='dod/auto_*' \
-    --exclude='cstrike' \
-    --exclude='demos' \
-    --exclude='configs/*.bak-*' \
+    "${HLTV_EXCLUDES[@]}" \
     -czf "$OUT" \
     .
 

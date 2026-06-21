@@ -30,9 +30,12 @@ HLSTATSX_DB_PASSWORD="${HLSTATSX_DB_PASSWORD:-$(gen_pw)}"
 HLTV_ADMIN_PASSWORD="${HLTV_ADMIN_PASSWORD:-$(gen_pw)}"
 HLTV_PROXY_PASSWORD="${HLTV_PROXY_PASSWORD:-$(gen_pw)}"
 
-# Number of HLTV instances (one per game server you want to record)
-NUM_HLTV_INSTANCES=5
-HLTV_BASE_PORT=27020
+# Number of HLTV instances (one per game server) + base port. Env-overridable so
+# the LAN orchestrator can match the game-server count/ports — e.g. 6 servers on
+# 27015-27020 need HLTV at 27021-27026, NOT the old 5/27020 default which both
+# undercounts and collides with game port 27020.
+NUM_HLTV_INSTANCES="${NUM_HLTV_INSTANCES:-5}"
+HLTV_BASE_PORT="${HLTV_BASE_PORT:-27020}"
 
 # Colors
 RED='\033[0;31m'
@@ -77,6 +80,21 @@ if [ "${YES:-0}" != "1" ]; then
     [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
 fi
 
+# Persist credentials NOW, before any DB/service work. The root MySQL password
+# gets applied early (ALTER USER), so if a later step fails mid-run the operator
+# would otherwise be locked out with no record of it. Written again at the end
+# with the same values (idempotent); this early copy is the safety net.
+CREDS_FILE=/root/ktp-dataserver-credentials.txt
+umask 077
+cat > "$CREDS_FILE" <<CREDS
+KTP LAN dataserver credentials (generated $(date -Iseconds))
+MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+HLSTATSX_DB_PASSWORD=$HLSTATSX_DB_PASSWORD
+HLTV_ADMIN_PASSWORD=$HLTV_ADMIN_PASSWORD
+HLTV_PROXY_PASSWORD=$HLTV_PROXY_PASSWORD
+CREDS
+chmod 600 "$CREDS_FILE"
+
 # ============================================
 # 1. System Setup
 # ============================================
@@ -99,6 +117,7 @@ apt-get install -y \
     libdbi-perl \
     libdbd-mysql-perl \
     libgeo-ip-perl \
+    libsyntax-keyword-try-perl \
     wget \
     curl \
     unzip \
@@ -118,13 +137,22 @@ fi
 # ============================================
 log_info "Configuring MySQL..."
 
-# Secure MySQL installation
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';"
+# Use the server's default authentication plugin (caching_sha2_password on
+# MySQL 8.x). It works for root over the local socket and for HLStatsX's Perl
+# DBD::mysql over the unix socket (verified). We deliberately do NOT use
+# mysql_native_password: 8.4 ships it DISABLED (and re-enabling it via my.cnf is
+# unreliable), and 9.x removes it entirely. Default auth is portable across the
+# cloud data server (8.0) and this LAN box (8.4).
+# Fresh installs authenticate root via auth_socket, so this first ALTER runs as
+# the OS root over the socket with no password; everything after uses -p.
+mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';"
 
-# Create HLStatsX database and user
+# Create HLStatsX database and user. ALTER after CREATE makes a re-run reset the
+# password to the current generated value (idempotent).
 mysql -u root -p"$MYSQL_ROOT_PASSWORD" << EOF
 CREATE DATABASE IF NOT EXISTS hlstatsx;
 CREATE USER IF NOT EXISTS 'hlstatsx'@'localhost' IDENTIFIED BY '$HLSTATSX_DB_PASSWORD';
+ALTER USER 'hlstatsx'@'localhost' IDENTIFIED BY '$HLSTATSX_DB_PASSWORD';
 GRANT ALL PRIVILEGES ON hlstatsx.* TO 'hlstatsx'@'localhost';
 FLUSH PRIVILEGES;
 EOF
@@ -217,6 +245,11 @@ done
 SCRIPT
 chmod +x "$HLTV_HOME/generate-hltv-configs.sh"
 chown hltvserver:hltvserver "$HLTV_HOME/generate-hltv-configs.sh"
+
+# Clear any per-instance configs the binaries bundle dragged in from the source
+# data server (it ships 25 prod hltv-*.cfg for 27020-27044). We regenerate the
+# exact LAN set below; leaving the prod ones would start extra/duplicate proxies.
+rm -f "$HLTV_DIR/configs"/hltv-*.cfg "$HLTV_DIR/configs"/hltv-*.cfg.bak
 
 # Generate default configs
 su - hltvserver -c "./generate-hltv-configs.sh $NUM_HLTV_INSTANCES $HLTV_BASE_PORT '$HLTV_ADMIN_PASSWORD' '$HLTV_PROXY_PASSWORD'"
@@ -512,6 +545,17 @@ if [ -n "${HLSTATSX_SOURCE_PATH:-}" ]; then
     cp -r "$HLSTATSX_SOURCE_PATH/scripts/." /opt/hlstatsx/scripts/
     cp -r "$HLSTATSX_SOURCE_PATH/sql/." /opt/hlstatsx/sql/
 
+    # The KTP schema + migrations are authored with MariaDB-only idempotency DDL
+    # (ADD COLUMN/CREATE INDEX/ADD INDEX ... IF NOT EXISTS), which MySQL (both 8.0
+    # on the cloud data server and 8.4 here) rejects with a 1064 syntax error.
+    # Strip those IF NOT EXISTS clauses on import so the same bundle works against
+    # MySQL. The base install.sql is upstream HLStatsX and already MySQL-clean, so
+    # it imports verbatim. Fresh-DB-only (canary-gated), so non-idempotent DDL is
+    # safe here.
+    mysql_compat() {  # sed a MariaDB-flavored .sql to MySQL on stdout
+        sed -E 's/ADD COLUMN IF NOT EXISTS/ADD COLUMN/Ig; s/CREATE INDEX IF NOT EXISTS/CREATE INDEX/Ig; s/ADD INDEX IF NOT EXISTS/ADD INDEX/Ig' "$1"
+    }
+
     # Schema import. install.sql is the upstream HLStatsX base; ktp_schema.sql
     # + any migrate_*.sql are KTP additions on top. Skip if the canary
     # hlstats_Actions table already exists (idempotent re-run).
@@ -521,16 +565,22 @@ if [ -n "${HLSTATSX_SOURCE_PATH:-}" ]; then
         log_info "Importing base schema (install.sql)..."
         mysql -u root -p"$MYSQL_ROOT_PASSWORD" hlstatsx < /opt/hlstatsx/sql/install.sql
 
+        # The KTP additions are optional on top of a working base HLStatsX. Don't
+        # let a bug in one of them abort the whole dataserver provision (which
+        # would skip the service/creds/firewall below) — warn and continue so
+        # base stats still come up. Re-run after fixing to apply the rest.
         if [ -f /opt/hlstatsx/sql/ktp_schema.sql ]; then
             log_info "Importing KTP schema additions (ktp_schema.sql)..."
-            mysql -u root -p"$MYSQL_ROOT_PASSWORD" hlstatsx < /opt/hlstatsx/sql/ktp_schema.sql
+            mysql_compat /opt/hlstatsx/sql/ktp_schema.sql | mysql -u root -p"$MYSQL_ROOT_PASSWORD" hlstatsx \
+                || log_warn "ktp_schema.sql import failed — base HLStatsX still configured; fix + re-import"
         fi
         # Apply migrate_*.sql in lexicographic order (matches numbered prefix
         # convention: migrate_001_*, migrate_002_*, ...).
         for migration in /opt/hlstatsx/sql/migrate_*.sql; do
             [ -f "$migration" ] || continue
             log_info "  applying $(basename "$migration")"
-            mysql -u root -p"$MYSQL_ROOT_PASSWORD" hlstatsx < "$migration"
+            mysql_compat "$migration" | mysql -u root -p"$MYSQL_ROOT_PASSWORD" hlstatsx \
+                || log_warn "$(basename "$migration") failed — continuing"
         done
     else
         log_info "HLStatsX base schema already present — skipping import"
