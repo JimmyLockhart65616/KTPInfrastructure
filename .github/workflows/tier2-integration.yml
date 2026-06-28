@@ -146,12 +146,15 @@ jobs:
         # existing test_hud_observer_contract.py had the same staleness). Recompile
         # from master every run so the suite always exercises current code.
         #
-        # Mirrors the DoD-hud-observer pre-push / CLAUDE.md compile: jives/hlds:dod
-        # + this repo's artifacts/latest/ktpamx scripting toolchain + a generated
-        # build_info.inc. ASSUMES the self-hosted runner has Docker, the
-        # jives/hlds:dod image, and a populated artifacts/latest/ktpamx (run
-        # `make build-amxx` once if absent). Hard-fails if the plugin can't be
-        # rebuilt — better than silently testing a stale binary. See PR notes.
+        # Compiles natively with an amxxpc toolchain staged once on the runner at
+        # $TOOLCHAIN (amxxpc + amxxpc32.so + include/), the same pattern as the
+        # pre-staged serverfiles/ tree. No Docker: amxxpc is 32-bit, so the runner
+        # needs i386 multiarch (libc6:i386 + lib32stdc++6) — already present on the
+        # data server. Refresh the toolchain when KTPAMXX's compiler or includes
+        # change. Hard-fails if the plugin can't be rebuilt — better than silently
+        # testing a stale binary. See PR notes.
+        env:
+          TOOLCHAIN: /opt/ktp-tier2-runner/toolchain
         run: |
           set -euo pipefail
           SF="$KTP_HLDS_SERVERFILES"
@@ -160,22 +163,14 @@ jobs:
           git clone --depth 1 https://github.com/JimmyLockhart65616/DoD-hud-observer.git "$SRC"
           GIT_SHA="$(git -C "$SRC" rev-parse --short HEAD)"
           BUILD_TIME="$(date -u +%Y-%m-%dT%H:%MZ)"
-          docker run --rm --entrypoint sh \
-            -e KTP_BUILD_SHA="$GIT_SHA" -e KTP_BUILD_TIME="$BUILD_TIME" \
-            -v "$SRC:/src" -v "$GITHUB_WORKSPACE:/infra" \
-            jives/hlds:dod -c '
-              set -e
-              mkdir -p /tmp/c/include
-              cp /infra/artifacts/latest/ktpamx/scripting/include/*.inc /tmp/c/include/
-              cp /infra/artifacts/latest/ktpamx/scripting/amxxpc /tmp/c/
-              cp /infra/artifacts/latest/ktpamx/scripting/amxxpc32.so /tmp/c/
-              printf "#define KTP_BUILD_SHA \"%s\"\n#define KTP_BUILD_TIME \"%s\"\n" "$KTP_BUILD_SHA" "$KTP_BUILD_TIME" > /tmp/c/include/build_info.inc
-              cat /src/KTPHudObserver.sma | tr -d "\r" > /tmp/c/KTPHudObserver.sma
-              cd /tmp/c && chmod +x amxxpc && ./amxxpc KTPHudObserver.sma -oKTPHudObserver.amxx
-              cp KTPHudObserver.amxx /infra/.tier2-hud.amxx
-            '
-          install -D "$GITHUB_WORKSPACE/.tier2-hud.amxx" "$SF/dod/addons/ktpamx/plugins/KTPHudObserver.amxx"
-          rm -f "$GITHUB_WORKSPACE/.tier2-hud.amxx"
+          WORK="$(mktemp -d)"
+          mkdir -p "$WORK/include"
+          cp "$TOOLCHAIN"/include/*.inc "$WORK/include/"
+          printf '#define KTP_BUILD_SHA "%s"\n#define KTP_BUILD_TIME "%s"\n' "$GIT_SHA" "$BUILD_TIME" > "$WORK/include/build_info.inc"
+          tr -d '\r' < "$SRC/KTPHudObserver.sma" > "$WORK/KTPHudObserver.sma"
+          ( cd "$WORK" && LD_LIBRARY_PATH="$TOOLCHAIN" "$TOOLCHAIN/amxxpc" KTPHudObserver.sma -i"$WORK/include" -oKTPHudObserver.amxx )
+          install -D "$WORK/KTPHudObserver.amxx" "$SF/dod/addons/ktpamx/plugins/KTPHudObserver.amxx"
+          rm -rf "$WORK"
           echo "Staged KTPHudObserver.amxx ($(stat -c%s "$SF/dod/addons/ktpamx/plugins/KTPHudObserver.amxx") bytes, sha $GIT_SHA)"
 
       - name: Verify test artifacts present in serverfiles
