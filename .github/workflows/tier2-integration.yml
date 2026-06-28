@@ -48,6 +48,14 @@ on:
         required: false
         type: string
         default: '1.0'
+  schedule:
+    # Tier 2 is otherwise dormant — on PRs it only runs when tests/integration/
+    # changes (see "Detect relevant changes"), so the suite can go weeks without
+    # exercising the live plugin. This nightly closes that gap; the "Refresh +
+    # stage" step below pulls KTPHudObserver from master each run so the suite
+    # tests current code. 09:00 UTC (~04-05 ET) — after the 03:00 ET game
+    # restart + perf rollups so the runner is idle.
+    - cron: '0 9 * * *'
   pull_request:
     branches: [main]
 
@@ -131,6 +139,45 @@ jobs:
           # (operators run `allure serve <downloaded-results>` locally).
           pip install pytest==9.0.3 pytest-rerunfailures==15.0 allure-pytest==2.13.5
 
+      - name: Refresh + stage KTPHudObserver.amxx from DoD-hud-observer master
+        if: steps.changes.outputs.run == '1'
+        # Without this, Tier 2 tested whatever KTPHudObserver.amxx was MANUALLY
+        # staged on the runner — drifting silently from the live plugin (the
+        # existing test_hud_observer_contract.py had the same staleness). Recompile
+        # from master every run so the suite always exercises current code.
+        #
+        # Mirrors the DoD-hud-observer pre-push / CLAUDE.md compile: jives/hlds:dod
+        # + this repo's artifacts/latest/ktpamx scripting toolchain + a generated
+        # build_info.inc. ASSUMES the self-hosted runner has Docker, the
+        # jives/hlds:dod image, and a populated artifacts/latest/ktpamx (run
+        # `make build-amxx` once if absent). Hard-fails if the plugin can't be
+        # rebuilt — better than silently testing a stale binary. See PR notes.
+        run: |
+          set -euo pipefail
+          SF="$KTP_HLDS_SERVERFILES"
+          SRC="${RUNNER_TEMP:-/tmp}/dod-hud-src"
+          rm -rf "$SRC"
+          git clone --depth 1 https://github.com/JimmyLockhart65616/DoD-hud-observer.git "$SRC"
+          GIT_SHA="$(git -C "$SRC" rev-parse --short HEAD)"
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%MZ)"
+          docker run --rm --entrypoint sh \
+            -e KTP_BUILD_SHA="$GIT_SHA" -e KTP_BUILD_TIME="$BUILD_TIME" \
+            -v "$SRC:/src" -v "$GITHUB_WORKSPACE:/infra" \
+            jives/hlds:dod -c '
+              set -e
+              mkdir -p /tmp/c/include
+              cp /infra/artifacts/latest/ktpamx/scripting/include/*.inc /tmp/c/include/
+              cp /infra/artifacts/latest/ktpamx/scripting/amxxpc /tmp/c/
+              cp /infra/artifacts/latest/ktpamx/scripting/amxxpc32.so /tmp/c/
+              printf "#define KTP_BUILD_SHA \"%s\"\n#define KTP_BUILD_TIME \"%s\"\n" "$KTP_BUILD_SHA" "$KTP_BUILD_TIME" > /tmp/c/include/build_info.inc
+              cat /src/KTPHudObserver.sma | tr -d "\r" > /tmp/c/KTPHudObserver.sma
+              cd /tmp/c && chmod +x amxxpc && ./amxxpc KTPHudObserver.sma -oKTPHudObserver.amxx
+              cp KTPHudObserver.amxx /infra/.tier2-hud.amxx
+            '
+          install -D "$GITHUB_WORKSPACE/.tier2-hud.amxx" "$SF/dod/addons/ktpamx/plugins/KTPHudObserver.amxx"
+          rm -f "$GITHUB_WORKSPACE/.tier2-hud.amxx"
+          echo "Staged KTPHudObserver.amxx ($(stat -c%s "$SF/dod/addons/ktpamx/plugins/KTPHudObserver.amxx") bytes, sha $GIT_SHA)"
+
       - name: Verify test artifacts present in serverfiles
         if: steps.changes.outputs.run == '1'
         run: |
@@ -142,9 +189,11 @@ jobs:
           test -f "$SF/dod/addons/ktpamx/modules/dodx_ktp_i386.so" || { echo "MISSING: dodx_ktp_i386.so"; exit 1; }
           test -f "$SF/dod/addons/ktpamx/plugins/KTPMatchHandler.amxx" || { echo "MISSING: KTPMatchHandler.amxx (must be test-mode build)"; exit 1; }
           test -f "$SF/dod/addons/ktpamx/plugins/KTPWitness.amxx" || { echo "MISSING: KTPWitness.amxx"; exit 1; }
+          test -f "$SF/dod/addons/ktpamx/plugins/KTPHudObserver.amxx" || { echo "MISSING: KTPHudObserver.amxx (should have been staged by the refresh step)"; exit 1; }
           echo "All required artifacts present."
 
       - name: Run Tier 2 integration suite
+        id: pytest
         if: steps.changes.outputs.run == '1'
         run: |
           # --reruns 2: retry transient failures up to 2 times before
@@ -231,3 +280,17 @@ jobs:
           name: tier2-failure-artifacts-${{ github.run_id }}
           path: ci-artifacts/
           retention-days: 14
+
+      - name: Record Tier 2 last-run marker (heartbeat input)
+        if: always() && steps.changes.outputs.run == '1'
+        # scripts/ktp-tier2-heartbeat.sh (cron) reads this marker and alerts to
+        # Discord if Tier 2 hasn't run within its window or the last run failed —
+        # so a dead self-hosted runner / broken schedule is VISIBLE instead of
+        # looking identical to "all green". Written to a runner-writable path
+        # next to the serverfiles tree; the cron (root) reads it.
+        run: |
+          MARKER="$(dirname "$KTP_HLDS_SERVERFILES")/tier2-last-run.json"
+          printf '{"ts": %s, "outcome": "%s", "run_id": "%s", "event": "%s"}\n' \
+            "$(date +%s)" "${{ steps.pytest.outcome }}" "${{ github.run_id }}" "${{ github.event_name }}" \
+            > "$MARKER"
+          echo "Wrote $MARKER ($(cat "$MARKER"))"
