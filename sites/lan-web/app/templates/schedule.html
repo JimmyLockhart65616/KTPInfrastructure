@@ -56,8 +56,8 @@
           </div>
           <ol class="unit-roster">
             {% for m in rnd %}
-            <li style="display:flex;align-items:baseline;gap:8px;"><span class="num">{{ loop.index }}.</span>
-              <span class="player" style="flex:1;display:flex;justify-content:space-between;align-items:baseline;gap:10px;"><span>{{ slot(m.a_seed, m.a_team) }}</span><span style="color:var(--ink-faint);flex:none;">v</span><span style="text-align:right;">{{ slot(m.b_seed, m.b_team) }}</span></span></li>
+            <li><span class="num">{{ loop.index }}.</span>
+              <span class="player">{{ slot(m.a_seed, m.a_team) }} &nbsp;v&nbsp; {{ slot(m.b_seed, m.b_team) }}</span></li>
             {% endfor %}
           </ol>
         </article>
@@ -122,11 +122,9 @@
             {% set can = is_admin or (am_captain and (my_team_id == m.team_a_id or my_team_id == m.team_b_id)) %}
             <tr>
               <td style="width:auto;color:var(--ink);">
-                <span style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;min-width:14rem;">
                 <span style="{{ 'font-weight:bold;' if m.winner_team_id == m.team_a_id }}">{{ m.a_name }}</span>
-                <span style="color:var(--ink-faint);flex:none;">v</span>
-                <span style="{{ 'font-weight:bold;' if m.winner_team_id == m.team_b_id }}text-align:right;">{{ m.b_name }}</span>
-                </span>
+                <span style="color:var(--ink-faint);">v</span>
+                <span style="{{ 'font-weight:bold;' if m.winner_team_id == m.team_b_id }}">{{ m.b_name }}</span>
               </td>
               <td style="width:5rem;text-align:center;">
                 {% if m.status == 'final' %}{{ m.score_a }}–{{ m.score_b }}{% else %}<span style="color:var(--ink-faint);">pending</span>{% endif %}
