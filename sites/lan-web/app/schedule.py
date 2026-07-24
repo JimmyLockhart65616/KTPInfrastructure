@@ -70,12 +70,11 @@ SATURDAY_TIMETABLE = [
     ("11:00 AM – 11:30 AM", "Player Check In / Setup", "setup"),
     ("11:30 AM – 12:30 PM", "Round 1", "round"),
     ("12:30 PM – 1:30 PM",  "Round 2", "round"),
-    ("1:30 PM – 3:00 PM",   "Food Break 1", "break"),
-    ("3:00 PM – 4:00 PM",   "Round 3", "round"),
+    ("1:30 PM – 2:30 PM",   "Round 3", "round"),
+    ("2:30 PM – 4:00 PM",   "Food Break", "break"),
     ("4:00 PM – 5:00 PM",   "Round 4", "round"),
-    ("5:00 PM – 6:30 PM",   "Food Break 2", "break"),
-    ("6:30 PM – 7:30 PM",   "Round 5", "round"),
-    ("7:30 PM – 8:30 PM",   "Round 6", "round"),
+    ("5:00 PM – 6:00 PM",   "Round 5", "round"),
+    ("6:00 PM – 7:00 PM",   "Round 6", "round"),
 ]
 
 
