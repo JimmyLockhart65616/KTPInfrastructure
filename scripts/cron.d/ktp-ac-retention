@@ -4,8 +4,15 @@
 # 04:40 ET daily — after ktp-backup so the nightly dump still contains the day
 # about to age out.
 #
-# STAGED DISABLED: uncomment the job line to activate (first activation deletes
-# bundles back to the retention horizon — verify DRY_RUN=1 output first).
+# ACTIVE on the data server. Was staged-disabled when first written; activating it
+# there never made it back here, so this file claimed retention was off while it had
+# been pruning nightly for weeks. Verified 2026-07-24 against the box: job line live
+# in /etc/cron.d/ktp-ac-retention, /var/log/ktp-ac-retention.log running daily, and
+# the data agrees — oldest weapon row sits exactly on the 30d horizon, oldest upload
+# day-dir exactly on 60d.
+#
+# On a FRESH install, comment the job line out and check DRY_RUN=1 output first:
+# the first run deletes everything back to the retention horizon in one go.
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-#40 4 * * * root /usr/local/bin/ktp-ac-retention.sh >> /var/log/ktp-ac-retention.log 2>&1
+40 4 * * * root /usr/local/bin/ktp-ac-retention.sh >> /var/log/ktp-ac-retention.log 2>&1
