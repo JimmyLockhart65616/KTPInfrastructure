@@ -1,6 +1,7 @@
-"""Best-effort Discord DMs to team captains (e.g. "you're up on Server 3").
+"""Best-effort Discord notifications: DMs to team captains (e.g. "you're up on
+Server 3") and announcement cross-posts to a channel webhook.
 
-Uses a bot token (LAN_DISCORD_BOT_TOKEN) — the bot must share a guild with the
+DMs use a bot token (LAN_DISCORD_BOT_TOKEN) — the bot must share a guild with the
 captain, which KTPAdminBot already does. No token set → silently no-ops. Network
 or API failures are swallowed: a notification must never break a staff action."""
 from __future__ import annotations
@@ -11,6 +12,7 @@ import urllib.request
 from .config import settings
 
 _API = "https://discord.com/api/v10"
+_UA = "KTP-LAN/1.0 (+https://wsdod)"
 
 
 def _post(path: str, token: str, payload: dict) -> dict:
@@ -20,7 +22,7 @@ def _post(path: str, token: str, payload: dict) -> dict:
         headers={
             "Authorization": f"Bot {token}",
             "Content-Type": "application/json",
-            "User-Agent": "KTP-LAN/1.0 (+https://wsdod)",
+            "User-Agent": _UA,
         },
         method="POST",
     )
@@ -31,6 +33,38 @@ def _post(path: str, token: str, payload: dict) -> dict:
 def _dm(discord_id, content: str, token: str) -> None:
     chan = _post("/users/@me/channels", token, {"recipient_id": str(discord_id)})
     _post(f"/channels/{chan['id']}/messages", token, {"content": content})
+
+
+def post_announcement(text: str) -> bool:
+    """Cross-post the site-wide announcement to the Discord webhook. Returns True
+    on delivery, False if unconfigured or the post failed. Never raises.
+
+    allowed_mentions is pinned to the announce role alone, so staff text can never
+    ping @everyone/@here by accident — the role ping is the only one that fires."""
+    url = settings.discord_webhook_url
+    if not url or not text:
+        return False
+    # A non-numeric id would 400 the whole post; degrade to no ping instead, so
+    # "ROLE_ID=none" behaves like the documented empty off-switch.
+    role = (settings.discord_announce_role_id or "").strip()
+    if not role.isdigit():
+        role = ""
+    prefix = f"<@&{role}> " if role else ""
+    payload = {
+        "content": f"{prefix}\U0001f4e3 **ANNOUNCEMENT** — {text}",
+        "allowed_mentions": {"parse": [], "roles": [role] if role else []},
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json", "User-Agent": _UA},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=6):
+            return True
+    except Exception:
+        return False
 
 
 def notify_captains(team_ids, content: str) -> int:

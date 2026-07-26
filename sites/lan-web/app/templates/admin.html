@@ -34,13 +34,25 @@
       <p style="font-size:13px;color:var(--ink-faint);">Order of operations: build rosters → map-skip poll → seeding poll → close + compute seeds → generate Saturday matches → report results → generate bracket.</p>
 
       <h3 style="margin-top:24px;">Site-wide announcement <span style="font-size:12px;color:var(--ink-faint);">(shows on every page)</span></h3>
-      <form method="post" action="{{ url_for('admin_announce') }}" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <form method="post" action="{{ url_for('admin_announce') }}" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"
+            onsubmit="for (const b of this.querySelectorAll('button')) b.disabled = true;">
         <input name="announcement" value="{{ announcement }}" maxlength="240"
                placeholder="e.g. Round 2 begins in 10 minutes — report to your station" style="flex:1;min-width:22rem;">
         <button type="submit">{{ 'Update' if announcement else 'Post' }}</button>
         {% if announcement %}<button type="submit" onclick="this.form.announcement.value='';">Clear</button>{% endif %}
+        <label style="font-size:12px;white-space:nowrap;{{ '' if crosspost_configured else 'color:var(--ink-faint);' }}">
+          <input type="checkbox" name="crosspost" value="1" checked{{ '' if crosspost_configured else ' disabled' }}>
+          Also post to Discord</label>
       </form>
-      <p style="font-size:12px;color:var(--ink-faint);">Leave empty and submit to take the strip down. Keep it short — it sits above the index on every page.</p>
+      {% if crosspost_result == 'ok' %}
+      <p style="font-size:12px;color:var(--wsdod-blue);">Posted to Discord.</p>
+      {% elif crosspost_result == 'fail' %}
+      <p style="font-size:12px;color:var(--alert);">Saved to the site, but the Discord post <strong>failed</strong> — check the webhook and repost if it matters.</p>
+      {% elif crosspost_result == 'skip' %}
+      <p style="font-size:12px;color:var(--alert);">Text unchanged — <strong>nothing was posted</strong> to Discord. Edit the wording to repost.</p>
+      {% endif %}
+      <p style="font-size:12px;color:var(--ink-faint);">Leave empty and submit to take the strip down. Keep it short — it sits above the index on every page.
+        {% if crosspost_configured %}Cross-posting pings the announce role; re-saving unchanged text won't post again.{% else %}Discord cross-posting is off — set <code>LAN_DISCORD_WEBHOOK_URL</code> to enable it.{% endif %}</p>
 
       <h3 style="margin-top:24px;">More controls</h3>
       <table>

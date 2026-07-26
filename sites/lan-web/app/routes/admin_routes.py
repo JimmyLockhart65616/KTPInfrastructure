@@ -4,8 +4,9 @@ Browser equivalent of tools/lan_admin.py — create teams, add/remove players,
 set captains, link Discord IDs. All routes require_admin."""
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from starlette.concurrency import run_in_threadpool
 
-from .. import audit, auth, bracket, common, db, mapskip, seeding
+from .. import audit, auth, bracket, common, db, mapskip, notify, seeding
 from .. import schedule as sched
 from ..config import settings
 from ..templating import templates
@@ -76,6 +77,8 @@ def admin_home(request: Request):
         admins=admins,
         admin_candidates=admin_candidates,
         announcement=seeding.get_setting("announcement") or "",
+        crosspost_configured=bool(settings.discord_webhook_url),
+        crosspost_result=request.query_params.get("dw"),
         seeding_published=seeding.is_published("seeding_results_published"),
         map_skip_published=seeding.is_published("map_skip_results_published"),
         schedule_sat_published=seeding.is_published("schedule_sat_published"),
@@ -102,11 +105,28 @@ async def admin_publish(request: Request):
 
 @router.post("/admin/announce", name="admin_announce")
 async def admin_announce(request: Request):
-    """Set or clear the site-wide broadcast strip shown on every page."""
+    """Set or clear the site-wide broadcast strip shown on every page, and
+    cross-post it to Discord unless staff untick the box.
+
+    Only new or edited text posts — staff re-save this form routinely, and a
+    live event is the worst place to double-ping a role. Clearing never posts.
+    The skip is reported back, never silent: staff must be able to tell a ping
+    from a no-op. Read-then-compare is not atomic, so a genuine double-submit
+    can still double-post; the form disables its buttons to make that unlikely."""
     auth.require_admin(request)
     f = await request.form()
-    seeding.set_setting("announcement", (f.get("announcement") or "").strip()[:240])
-    return RedirectResponse(request.url_for("admin"), status_code=303)
+    text = (f.get("announcement") or "").strip()[:240].strip()
+    previous = (seeding.get_setting("announcement") or "").strip()
+    seeding.set_setting("announcement", text)
+    target = str(request.url_for("admin"))
+    if text and f.get("crosspost"):
+        if text == previous:
+            target += "?dw=skip"
+        else:
+            # post_announcement does blocking urllib I/O — keep it off the event loop.
+            ok = await run_in_threadpool(notify.post_announcement, text)
+            target += "?dw=ok" if ok else "?dw=fail"
+    return RedirectResponse(target, status_code=303)
 
 
 @router.get("/admin/audit", name="audit_log")

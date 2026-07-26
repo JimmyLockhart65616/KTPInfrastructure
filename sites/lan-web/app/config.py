@@ -18,6 +18,8 @@ class Settings:
     discord_client_secret: str
     discord_redirect_uri: str
     discord_bot_token: str
+    discord_webhook_url: str
+    discord_announce_role_id: str
     admin_discord_ids: frozenset
     db_host: str
     db_port: int
@@ -50,6 +52,8 @@ def load() -> Settings:
         discord_client_secret=os.getenv("DISCORD_CLIENT_SECRET", ""),
         discord_redirect_uri=os.getenv("DISCORD_REDIRECT_URI", ""),
         discord_bot_token=os.getenv("LAN_DISCORD_BOT_TOKEN", ""),
+        discord_webhook_url=os.getenv("LAN_DISCORD_WEBHOOK_URL", ""),
+        discord_announce_role_id=os.getenv("LAN_DISCORD_ANNOUNCE_ROLE_ID", "1343215543175352392"),
         admin_discord_ids=_parse_ids(os.getenv("LAN_ADMIN_DISCORD_IDS", "")),
         db_host=os.getenv("LAN_DB_HOST", "127.0.0.1"),
         db_port=int(os.getenv("LAN_DB_PORT", "3306")),
