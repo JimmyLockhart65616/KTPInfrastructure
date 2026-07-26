@@ -26,12 +26,25 @@
       {% endif %}
 
       <h3 style="margin-top:24px;">Check-in board</h3>
+      <style>
+        .ci-names { font-size:12.5px; color:var(--ink-soft); margin-top:5px; line-height:1.7; font-weight:normal; }
+        .ci-names .cpt { font-family:var(--stencil); font-size:9.5px; letter-spacing:.16em; color:var(--alert); }
+        .ci-names .sep { color:var(--ink-faint); padding:0 5px; }
+      </style>
       <table>
         <thead><tr><td>Team</td><td>Present</td><td>Team status</td></tr></thead>
         <tbody>
         {% for t in teams %}
           <tr>
-            <td style="width:auto;color:var(--ink);">{{ t.name }}{% if t.tag %} · {{ t.tag }}{% endif %}</td>
+            <td style="width:auto;color:var(--ink);">{{ t.name }}{% if t.tag %} · {{ t.tag }}{% endif %}
+              {%- if t.checked_in %}
+              <div class="ci-names">
+                {%- for p in t.checked_in -%}
+                  {%- if not loop.first %}<span class="sep">·</span>{% endif -%}
+                  {% if p.is_captain %}<span class="cpt">CPT</span> {% endif %}{{ p.display_name }}
+                {%- endfor -%}
+              </div>
+              {%- endif %}</td>
             <td>{{ t.present }}/{{ t.total }}</td>
             <td style="color:{{ 'var(--wsdod-blue)' if t.checked_in_at else 'var(--ink-faint)' }};">
               {{ 'CHECKED IN' if t.checked_in_at else 'not yet' }}</td>
@@ -42,6 +55,41 @@
       <p style="font-size:13px;color:var(--ink-faint);">Each player checks themselves in from their own Discord login; captains confirm the team once the roster is present.</p>
 
       {% if is_admin %}
+      <div class="pending-note" style="margin-top:24px;">
+        <strong style="font-family:var(--stencil);letter-spacing:.14em;display:block;margin-bottom:4px;">STAFF — DRAFT POOL</strong>
+        {% if draft_pool %}
+        Every checked-in player, one name per line — copy and paste straight into the draft sheet.
+        <textarea id="ci-pool" readonly aria-hidden="true" tabindex="-1"
+                  style="position:absolute;left:-9999px;width:1px;height:1px;">{{ draft_pool|join('\n') }}</textarea>
+        <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <button type="button" onclick="ciCopy()">Copy {{ draft_pool|length }} name{{ '' if draft_pool|length == 1 else 's' }}</button>
+          <a href="{{ url_for('checkin_export') }}">Download .csv</a>
+          <span id="ci-copied" style="font-size:12px;"></span>
+        </div>
+        <script>
+          function ciCopy() {
+            var ta = document.getElementById('ci-pool'), note = document.getElementById('ci-copied');
+            function done(ok) {
+              note.textContent = ok ? 'Copied — paste into Sheets with Ctrl+V.' : 'Copy failed — use Download .csv.';
+              note.style.color = ok ? 'var(--wsdod-blue)' : 'var(--alert)';
+            }
+            // clipboard API needs a secure context; the venue box may serve plain
+            // HTTP, so execCommand stays as the fallback rather than the reverse.
+            if (navigator.clipboard && window.isSecureContext) {
+              navigator.clipboard.writeText(ta.value).then(function () { done(true); }, function () { done(false); });
+              return;
+            }
+            ta.select();
+            var ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+            done(ok);
+          }
+        </script>
+        {% else %}
+        <span style="color:var(--ink-faint);">Nobody has checked in yet — the draft pool fills as players arrive.</span>
+        {% endif %}
+      </div>
+
       {% set present_total = teams|sum(attribute='present') %}
       {% set teams_in = teams|selectattr('checked_in_at')|list|length %}
       <div class="pending-note" style="margin-top:24px;border-style:solid;border-color:var(--alert);">
