@@ -78,6 +78,28 @@ ALTERNATE_HASHES = {
     ],
     "sound/ambience/axisscore.wav": [
         "e775a4d4623b018da969d29148764b0c82be2c27d0a57e8640c86a85ee20cbe3",
+        # Second score-jingle pack on the same path (jarrod / twist / 7735372).
+        # Distinct hash, same file, both community content.
+        "3f85263a0c68b3f2bdccb3bfe3ec4663c615b87370664a5b55454d9e0f35a1a3",
+    ],
+    # 2026-07-26: these three were in the AC client's KnownBenignFileVariants but NOT
+    # here, and the two viewmodels only came into manifest scope on 2026-07-07. The
+    # manifest gate runs FIRST, so without them every bundle carrying these files
+    # recorded a Violation that scoring then quietly rescued — the verdict read clean
+    # while the evidence file said the player was modified. Corpus prevalence:
+    # v_grenade 19 bundles, v_stick 19, dod_siena.wad 24.
+    #
+    # KEEP IN SYNC with SummaryGenerator.KnownBenignFileVariants. The AC repo has a
+    # trait-gated guard (BenignVariantManifestSyncTests) that fails naming any entry
+    # present in one and missing from the other.
+    "models/v_grenade.mdl": [
+        "bb8ac11263e3a9b70e342cf9210c6e2fbd36c071b2ffb985479186f28e122634",
+    ],
+    "models/v_stick.mdl": [
+        "e70850d6e491793e7c89c315dc97d9d4155cf04949ddfa9beae180a3996cd956",
+    ],
+    "dod_siena.wad": [
+        "249f620741e27edcb84df33510b794798d972d81acd197b6eaa4db1aafb0c60f",
     ],
 }
 
