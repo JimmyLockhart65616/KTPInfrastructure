@@ -428,6 +428,15 @@ def assemble_manifest(entries, source_server_label, dod_path):
                 "gfx/env/* (skybox — cosmetic, allowed)",
                 "models/{w_aflag,w_gflag,w_wflag}.mdl (flag — cosmetic, allowed)",
                 "overviews/* (top-down map BMPs — cosmetic, allowed)",
+                # maps/*.bsp: NOT cosmetic, and this is a stated gap rather than a ruling.
+                # A client-side BSP edit that removes cover is a real wallhack — the server
+                # stays authoritative for collision, so the player is still blocked, but
+                # they SEE through what they deleted. The reason maps are out of scope is
+                # cost, not harmlessness: the current 213-entry set hashes ~147MB, and the
+                # competitive rotation would add roughly 10-15 files at 10-50MB each, on
+                # every scan, twice a session. Revisit with a cheaper design (hash only the
+                # loaded map, or sample) rather than by silently bolting the rotation on.
+                "maps/*.bsp (NOT cosmetic — real wallhack vector; excluded on hashing cost, see comment)",
             ],
         },
         "files": entries,
