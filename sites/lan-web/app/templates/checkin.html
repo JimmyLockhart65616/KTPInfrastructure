@@ -58,11 +58,15 @@
       <div class="pending-note" style="margin-top:24px;">
         <strong style="font-family:var(--stencil);letter-spacing:.14em;display:block;margin-bottom:4px;">STAFF — DRAFT POOL</strong>
         {% if draft_pool %}
-        Every checked-in player, one name per line — copy and paste straight into the draft sheet.
+        Every checked-in player, formatted for the draft sheet's <strong>Pool</strong> tab
+        (PLAYER · HERE · STATUS · ROLE · STEAM ID · WEAPONS · SRC).
+        Copy, then in the sheet click <strong>Pool!B4</strong> and paste with
+        <strong>Ctrl+Shift+V</strong> (values only — a plain paste drags this page's
+        formatting in and wipes the tab's colour rules).
         <textarea id="ci-pool" readonly aria-hidden="true" tabindex="-1"
-                  style="position:absolute;left:-9999px;width:1px;height:1px;">{{ draft_pool|join('\n') }}</textarea>
+                  style="position:absolute;left:-9999px;width:1px;height:1px;">{{ draft_pool_tsv }}</textarea>
         <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-          <button type="button" onclick="ciCopy()">Copy {{ draft_pool|length }} name{{ '' if draft_pool|length == 1 else 's' }}</button>
+          <button type="button" onclick="ciCopy()">Copy {{ draft_pool|length }} player{{ '' if draft_pool|length == 1 else 's' }}</button>
           <a href="{{ url_for('checkin_export') }}">Download .csv</a>
           <span id="ci-copied" style="font-size:12px;"></span>
         </div>
@@ -70,7 +74,7 @@
           function ciCopy() {
             var ta = document.getElementById('ci-pool'), note = document.getElementById('ci-copied');
             function done(ok) {
-              note.textContent = ok ? 'Copied — paste into Sheets with Ctrl+V.' : 'Copy failed — use Download .csv.';
+              note.textContent = ok ? 'Copied — paste at Pool!B4 with Ctrl+Shift+V.' : 'Copy failed — use Download .csv.';
               note.style.color = ok ? 'var(--wsdod-blue)' : 'var(--alert)';
             }
             // clipboard API needs a secure context; the venue box may serve plain
