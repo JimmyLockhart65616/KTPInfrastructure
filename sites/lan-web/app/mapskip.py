@@ -1,9 +1,13 @@
 """Captain map-skip poll — tally + ballot storage.
 
-Saturday plays only 6 matches, so one map is dropped from Saturday and used as
-the play-in map. Each captain casts a single ballot naming the map their team
-wants skipped; the most-voted map wins. Plain plurality — no weighting (unlike
-the seeding poll), since this is a single-choice vote, not a ranking."""
+Saturday plays only 6 matches over a 7-map pool, so one map sits out. Each
+captain casts a single ballot naming the map their team wants skipped; the
+most-voted map wins. Plain plurality — no weighting (unlike the seeding poll),
+since this is a single-choice vote, not a ranking.
+
+The skipped map is NOT the play-in map. Sunday's play-in is a BO1 live veto over
+the full 7-map pool like every other bracket match, so a map voted out of
+Saturday can still be vetoed back in on Sunday."""
 from __future__ import annotations
 
 # db/settings are imported lazily inside the helpers so the pure tally below is

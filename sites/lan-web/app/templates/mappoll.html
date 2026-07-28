@@ -14,10 +14,11 @@
           <a href="{{ url_for('mapskip') }}">map-skip page</a>.
         </div>
       {% else %}
-        <p>Saturday runs only <strong>6 matches</strong>, so one map drops from the rotation and
-           becomes the <strong>play-in map</strong>. Submitting <strong>{{ my_team.name }}</strong>'s
-           ballot — gather your squad's read and name the <strong>one map to skip on Saturday</strong>.
-           The most-voted map across all teams wins.</p>
+        <p>Saturday runs only <strong>6 matches</strong>, so one map drops from the rotation.
+           Submitting <strong>{{ my_team.name }}</strong>'s ballot — gather your squad's read and name
+           the <strong>one map to skip on Saturday</strong>. The most-voted map across all teams wins.
+           This only affects Saturday: Sunday's play-in is a best-of-one veto from the full pool, so
+           the skipped map can still come back.</p>
         <form method="post" action="{{ url_for('mappoll') }}">
           <table>
             <tbody>

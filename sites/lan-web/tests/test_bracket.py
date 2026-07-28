@@ -125,6 +125,33 @@ def test_layout_keys_fit_db_column():
             assert m["stage"] in B.STAGE_ORDER
 
 
+def test_playin_is_bo1_in_every_layout():
+    """The play-in is best-of-one and gets a live veto like any other match.
+
+    It used to be pinned to the one map Saturday skipped (railroad2), which is why
+    this is worth pinning: re-hardcoding a map would show up as a best_of change or
+    a preset map here first."""
+    for layout in (B._L10, B._L11, B._L12):
+        pi = [m for m in layout["matches"] if m["stage"] == "PI"]
+        assert pi, "every layout must have play-in matches"
+        for m in pi:
+            assert m["best_of"] == 1, f"{m['key']} should be BO1, got {m['best_of']}"
+            assert "map" not in m, f"{m['key']} must not carry a preset map"
+
+
+def test_playin_veto_uses_the_whole_pool_and_yields_one_map():
+    """BO1 veto bans down to a single map over the full pool — no separate play-in
+    pool, so a map skipped on Saturday is still eligible on Sunday."""
+    from app import veto, schedule
+    pool = len(schedule.COMP_MAPS)
+    seq = veto.sequence(pool, 1)
+    bans = [s for s in seq if s["action"] == "ban"]
+    assert len(bans) == pool - 1                     # exactly one map survives
+    assert seq[0]["actor"] == "TS"                   # top seed bans first
+    assert seq[-1] == {"actor": "LS", "action": "decider"}   # lower seed picks the side
+    assert not any(s["action"] == "pick" for s in seq)       # picks are BO3-only
+
+
 if __name__ == "__main__":
     import sys
     funcs = [v for k, v in sorted(globals().items()) if k.startswith("test_")]

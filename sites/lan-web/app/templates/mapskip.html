@@ -9,9 +9,10 @@
     </header>
     <div class="chapter-body">
 
-      <p>Saturday runs only 6 matches, so one map is voted out of the regular rotation and becomes the
-         <strong>play-in map</strong>. Every captain votes for the one map to skip; the play-in map stays in
-         the pool, so Saturday's BO3/BO1 matches still veto from all {{ ordered|length }} maps.</p>
+      <p>Saturday runs only 6 matches over a {{ ordered|length }}-map pool, so one map sits out.
+         Every captain votes for the one map to skip. The skipped map is <strong>not</strong> the
+         play-in map — Sunday's play-in is a <strong>best-of-one live veto from all
+         {{ ordered|length }} maps</strong>, so a map skipped on Saturday can still be played on Sunday.</p>
 
       <div class="units-meta">
         <span>Poll: <strong>{{ 'OPEN' if poll_open else 'CLOSED' }}</strong></span>
@@ -25,7 +26,7 @@
 
       {% if locked and show_results %}
         <div class="pending-note" style="border-style:solid;border-color:var(--alert);">
-          <strong style="font-family:var(--stencil);letter-spacing:.14em;color:var(--alert);">LOCKED — SKIP / PLAY-IN MAP:</strong>
+          <strong style="font-family:var(--stencil);letter-spacing:.14em;color:var(--alert);">LOCKED — SATURDAY SKIP MAP:</strong>
           {{ locked }}
         </div>
       {% endif %}

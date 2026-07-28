@@ -1,7 +1,8 @@
 """Captain map-skip poll + public results + admin controls.
 
 Each captain casts one ballot naming the map to skip on Saturday; the most-voted
-map is dropped from the Saturday rotation and used as the play-in map."""
+map is dropped from the Saturday rotation. It is not the play-in map — Sunday's
+play-in vetoes BO1 from the full pool."""
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
