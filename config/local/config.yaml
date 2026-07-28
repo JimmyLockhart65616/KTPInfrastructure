@@ -23,7 +23,11 @@ storage:
   matches_dir: ./matches
 
 frontend:
-  origin: "http://localhost:3000"
+  # Single-origin: the overlay is served origin-relative behind the in-container
+  # nginx reverse proxy at https://localhost (:443, no hosts file needed), so
+  # Socket.IO's credentials CORS origin must match the serving origin. Prod runs
+  # the same setup at https://hud.ktpdod.com.
+  origin: "https://localhost"
 
 auth:
   steam_api_key: ""
