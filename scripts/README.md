@@ -111,8 +111,29 @@ cp ktp-scheduled-restart.sh.example ktp-scheduled-restart.sh
 0 3 * * * /home/dodserver/ktp-scheduled-restart.sh >> /home/dodserver/log/scheduled-restart.log 2>&1
 ```
 
+### stage-wave.py
+**The standard way to push a wave to the fleet — prefer this over calling `deploy-to-fleet.py` directly.**
+It wraps that script (single source of truth for the 24-instance topology and the password-from-env rule)
+and adds the two gates the manual process relied on people remembering:
+
+- **Pre-stage attribution gate** — refuses to stage if any `.new` already sits in the swap globs. That is
+  the one-wave-per-nightly rule made mechanical: if a 03:00 activation produces a core, exactly one new
+  variable tells you what did it. `--allow-existing-new` overrides.
+- **`--expect NAME=MD5` pin** — refuses to ship a binary whose md5 isn't the one you reviewed. KTPAMXX
+  bakes a per-minute build timestamp, so an accidental rebuild silently produces a *different* artifact;
+  this catches it. Verify by md5, never by the console banner.
+
+Then stages `<file>.new` to all 24 instances, mode-matches perms to the live file, re-verifies md5 24/24,
+and prints the morning-after `ktp-verify-deploy.py` command (plus a runner-resync reminder for
+module/engine waves). Never restarts a server.
+
+```bash
+python3 stage-wave.py --preflight-only        # is the fleet clean to stage into?
+python3 stage-wave.py -f path/to/KTPMatchHandler.amxx --expect KTPMatchHandler.amxx=<md5>
+```
+
 ### deploy-to-fleet.py
-Local-to-fleet artifact push as `.new` files; nightly `ktp-scheduled-restart.sh` (above) auto-swaps them in. Closes the local-build → fleet-SCP gap discovered 2026-05-20. No `.example` template needed — the SSH password is resolved from `$KTP_FLEET_SSH_PASSWORD` or `~/.ktp_fleet_ssh_password` (never hardcoded; the pre-2026-05-31 `ktp` value was leaked in this public repo and rotated — do not document credential values here).
+Raw push, no gates — `stage-wave.py` (above) is the normal entry point. Local-to-fleet artifact push as `.new` files; nightly `ktp-scheduled-restart.sh` (above) auto-swaps them in. Closes the local-build → fleet-SCP gap discovered 2026-05-20. No `.example` template needed — the SSH password is resolved from `$KTP_FLEET_SSH_PASSWORD` or `~/.ktp_fleet_ssh_password` (never hardcoded; the pre-2026-05-31 `ktp` value was leaked in this public repo and rotated — do not document credential values here).
 
 **Features:**
 - `-f <path>` repeatable for multi-artifact pushes
