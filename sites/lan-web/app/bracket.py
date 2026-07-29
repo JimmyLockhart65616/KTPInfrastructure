@@ -65,8 +65,8 @@ _L10 = {
         "PI1": "11:00 AM", "PI2": "11:00 AM",
         "QF1": "12:00 PM", "QF2": "12:00 PM", "QF3": "12:00 PM", "QF4": "12:00 PM", "P910": "12:00 PM",
         "SF1": "3:30 PM", "SF2": "3:30 PM", "LS1": "3:30 PM", "LS2": "3:30 PM",
-        "P34": "7:00 PM", "P56": "7:00 PM", "P78": "7:00 PM",
-        "F": "8:00 PM",
+        "P34": "7:30 PM", "P56": "7:30 PM", "P78": "7:30 PM",
+        "F": "8:30 PM",
     },
 }
 
@@ -105,8 +105,8 @@ _L11 = {
         "PI1": "11:00 AM", "PI2": "11:00 AM", "PI3": "11:00 AM",
         "QF1": "12:00 PM", "QF2": "12:00 PM", "QF3": "12:00 PM", "QF4": "12:00 PM", "P11": "12:00 PM",
         "SF1": "3:30 PM", "SF2": "3:30 PM", "LS1": "3:30 PM", "LS2": "3:30 PM", "P910": "3:30 PM",
-        "P34": "7:00 PM", "P56": "7:00 PM", "P78": "7:00 PM",
-        "F": "8:00 PM",
+        "P34": "7:30 PM", "P56": "7:30 PM", "P78": "7:30 PM",
+        "F": "8:30 PM",
     },
 }
 
@@ -150,12 +150,26 @@ _L12 = {
         "LPI1": "12:00 PM", "LPI2": "12:00 PM",
         "SF1": "3:30 PM", "SF2": "3:30 PM", "LS1": "3:30 PM", "LS2": "3:30 PM",
         "P910": "3:30 PM", "P1112": "3:30 PM",
-        "P34": "7:00 PM", "P56": "7:00 PM", "P78": "7:00 PM",
-        "F": "8:00 PM",
+        "P34": "7:30 PM", "P56": "7:30 PM", "P78": "7:30 PM",
+        "F": "8:30 PM",
     },
 }
 
 LAYOUTS = {10: _L10, 11: _L11, 12: _L12}
+
+# Sunday block timetable — the published Sunday clock. The .ics feed derives from
+# here, so a block time changes in ONE place; each layout's per-match 'times' must
+# agree with it (drift here is what put the old schedule in the calendar feed).
+# ⚠ Keep slots in "H:MM AM/PM – H:MM AM/PM" form: ics.py parses them.
+SUNDAY_TIMETABLE = [
+    ("11:00 AM – 12:00 PM", "Play-in (BO1)", "round"),
+    ("12:00 PM – 3:00 PM",  "Quarterfinals (BO3)", "round"),
+    ("3:00 PM – 3:30 PM",   "Buffer", "break"),
+    ("3:30 PM – 6:30 PM",   "Semifinals (BO3)", "round"),
+    ("6:30 PM – 7:30 PM",   "Food break", "break"),
+    ("7:30 PM – 8:30 PM",   "Placement finals (3/4, 5/6, 7/8)", "round"),
+    ("8:30 PM – 11:30 PM",  "Final (BO3)", "round"),
+]
 
 # get_bracket() orders rows by this stage sequence (covers every layout).
 STAGE_ORDER = ["PI", "QF", "SF", "F", "P34", "LS", "P56", "P78", "LPI", "P11", "P910", "P1112"]

@@ -53,31 +53,25 @@ def _wrap(name: str, events: list[str]) -> str:
     return "\r\n".join(head + events + ["END:VCALENDAR"]) + "\r\n"
 
 
+def _range(slot: str) -> tuple[str, str]:
+    """'12:00 PM – 3:00 PM' -> ('12:00', '15:00')."""
+    a, b = slot.replace("–", "-").split("-")
+    return _to24(a), _to24(b)
+
+
 def _sat_round_times() -> dict[int, tuple[str, str]]:
     """Group round -> (start24, end24) parsed from the Saturday timetable."""
     out, n = {}, 0
     for slot, _label, kind in sched.SATURDAY_TIMETABLE:
         if kind == "round":
             n += 1
-            a, b = [_to24(p) for p in slot.replace("–", "-").split("-")]
-            out[n] = (a, b)
+            out[n] = _range(slot)
     return out
 
 
 def _sun_dur(best_of: int) -> float:
-    return 3.0 if best_of and best_of >= 5 else 2.5
-
-
-# Sunday playoff milestones for the overview feed: (start, hours, label).
-SUN_BLOCKS = [
-    ("11:00 AM", 1.0, "Play-in (BO1)"),
-    ("12:00 PM", 2.5, "Quarterfinals"),
-    ("2:30 PM", 1.0, "Break"),
-    ("3:30 PM", 2.5, "Semifinals"),
-    ("6:00 PM", 1.0, "Dinner break"),
-    ("7:00 PM", 1.0, "Placement finals (3/4, 5/6, 7/8)"),
-    ("8:00 PM", 2.5, "Final"),
-]
+    """A full hour per map — a best-of-three books three hours."""
+    return float(best_of or 1)
 
 
 def schedule_feed() -> str:
@@ -87,9 +81,9 @@ def schedule_feed() -> str:
     for n, (a, b) in sat.items():
         ev += _event(f"sat-r{n}", _dt(SAT_DATE, a), _dt(SAT_DATE, b),
                      f"LAN Saturday — Round {n} (group)")
-    for i, (start_label, dur, name) in enumerate(SUN_BLOCKS, 1):
-        start = _to24(start_label)
-        ev += _event(f"sun-b{i}", _dt(SUN_DATE, start), _dt(SUN_DATE, _plus(start, dur)),
+    for i, (slot, name, _kind) in enumerate(bkt.SUNDAY_TIMETABLE, 1):
+        a, b = _range(slot)
+        ev += _event(f"sun-b{i}", _dt(SUN_DATE, a), _dt(SUN_DATE, b),
                      f"LAN Sunday — {name}")
     return _wrap("WSDoD LAN 2026 — Schedule", ev)
 

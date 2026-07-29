@@ -172,8 +172,13 @@
       {% if show_bracket or not generated %}
 
       <p class="bkt-section-note">Single elimination — one loss ends your run for the title. The Play-in is best-of-one; the championship rounds are best-of-three:
-         <b>Play-in 11:00</b> → <b>Quarterfinals 12:00</b> → <span style="color:var(--alert);">🍔 break</span> → <b>Semifinals 3:30</b> → <span style="color:var(--alert);">🍔 dinner</span> → <b>Placement finals 7:00</b> → <b>Final 8:00</b>, done by <b>~10:30 PM</b>.
+         <b>Play-in 11:00–12:00</b> → <b>Quarterfinals 12:00–3:00</b> → <span style="color:var(--alert);">buffer 3:00–3:30</span> → <b>Semifinals 3:30–6:30</b> → <span style="color:var(--alert);">🍔 food break 6:30–7:30</span> → <b>Placement finals 7:30–8:30</b> → <b>Final 8:30–11:30</b>.
+         Every match is allotted a <b>full hour per map</b>, so a best-of-three books three hours and finishes early if it ends in two.
          Eliminated teams keep playing in the placement bracket below for final standing.</p>
+
+      <p class="bkt-section-note"><span style="color:var(--alert);"><b>These are allotted times, not guaranteed start times.</b></span>
+         If the best-of-threes in a round all end 2–0, we start the next round <b>early</b> — but only once every team in it is in the building.
+         Keep <b>Discord on your phone with notifications on</b> and check it if you step out; a round moving up is announced there and nowhere else.</p>
 
       <h3>Championship bracket</h3>
       <p class="bkt-section-note">Seeds {{ playin_lo }}–{{ playin_hi }} open in the Play-in — <strong>best-of-one, map decided by live veto from the full pool</strong> (alternating bans, top seed bans first, lower seed picks the side of the map that survives). The {{ playin|length }} winner{{ '' if playin|length == 1 else 's' }} join seeds 1–{{ bye_seeds }} (byes) in the Quarterfinals. From there it's a clean run: Quarterfinals → Semifinals → Final, all BO3. The Final winner takes it all.</p>
@@ -219,7 +224,7 @@
       <h3 style="margin-top:32px;">Placement bracket (3rd–{{ n_teams }}th)</h3>
       <p class="bkt-section-note">Runs in parallel on spare servers — never feeds the title. Eliminated teams keep playing to settle every place.
          The play-in losers settle the bottom; the four QF losers play a lower semifinal, then off for 5/6 and 7/8; the two SF losers play for 3/4.
-         The <strong>lower semifinals and lowest-tier matches are best-of-three</strong>; the <strong>3/4, 5/6 and 7/8 deciders are best-of-one</strong> at 7:00 PM, before the Final.</p>
+         The <strong>lower semifinals and lowest-tier matches are best-of-three</strong>; the <strong>3/4, 5/6 and 7/8 deciders are best-of-one</strong> at 7:30 PM, before the Final.</p>
       {{ coltree(consolation_rounds, is_admin, am_captain, my_team_id) }}
 
       {% set settled = placements | selectattr('name') | list %}
