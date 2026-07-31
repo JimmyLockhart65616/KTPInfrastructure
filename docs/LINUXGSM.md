@@ -149,16 +149,58 @@ done
 ~/dod-27015/dodserver monitor
 ```
 
-If step 1 reports `BROKEN`, find the orphaned `elif` and restore it to `if` (do **not** re-comment more lines):
+> 🔴🔴 **DO NOT "repair" it by turning the orphaned `elif` back into an `if`.** That makes
+> the file parse, which re-arms the very checks this patch exists to disable — and an armed
+> old-type check **pkills live servers mid-match**. On 2026-07-31 exactly that was done on the
+> LAN box: monitor started working, then killed instance 27015 **seven times** during matches
+> over four hours (`Checking session: PIDS with old type tmux session are running` →
+> `Killing session with the session name dodserver`). A monitor that never runs is bad. A
+> monitor that runs with these checks armed is worse.
+
+**Correct repair — disable the CONDITIONS, keep the file valid.** Replace each check's test
+with `false` so the `if/elif/else` chain stays syntactically whole and the genuine
+dead-server branch (`Monitor is restarting …` → `command_restart.sh`) still works:
 
 ```bash
-grep -n 'KTP-DISABLED' ~/dod-27015/lgsm/modules/command_monitor.sh | tail -1   # last disabled line
-# the first live `elif` AFTER that line must be an `if` -- fix just that token:
-sed -i '<N>s/^\([[:space:]]*\)elif /\1if /' ~/dod-27015/lgsm/modules/command_monitor.sh
+python3 - ~/dod-27015/lgsm/modules/command_monitor.sh <<'EOF'
+import re, sys
+path = sys.argv[1]
+lines = open(path).read().split('\n')
+checks = (
+    ('tmux -L ${socketname} new-session',  'duplicate-PID check'),
+    ('tmux -L ${sessionname} new-session', 'same socket+session check'),
+    ('"tmux new-session',                  'old-type check, kills live matches'),
+)
+for i, line in enumerate(lines):
+    # skip lines an older comment-style patch already disabled -- rewriting one
+    # injects a live 'if' with no matching 'fi' and the file stops parsing
+    if 'pgrep -f' not in line or line.lstrip().startswith('#'):
+        continue
+    for needle, why in checks:
+        if needle in line:
+            indent = re.match(r'[ \t]*', line).group(0)
+            keyword = 'elif' if line.lstrip().startswith('elif') else 'if'
+            lines[i] = '%s%s false; then   # KTP-DISABLED: %s' % (indent, keyword, why)
+            break
+open(path, 'w').write('\n'.join(lines))
+EOF
 bash -n ~/dod-27015/lgsm/modules/command_monitor.sh && echo repaired
 ```
 
-The line is tab-indented — anchoring `elif` to column 0 matches nothing and the `sed` silently no-ops.
+This is content-anchored, so it survives LinuxGSM renumbering the file. Afterwards you should
+see the three conditions dead and the recovery branch intact:
+
+```bash
+grep -n 'KTP-DISABLED\|Monitor is restarting' ~/dod-27015/lgsm/modules/command_monitor.sh
+```
+
+**Confirm no kills after patching** — this is the check that would have caught the 07-31
+incident on the day. Note LinuxGSM rotates script logs per restart, so grep them **all**;
+looking only at `*-script.log` finds nothing and reads as innocence:
+
+```bash
+grep -h 'old type\|Killing' ~/dod-*/log/script/*.log | tail
+```
 
 **Servers patched:** Atlanta Baremetal (74.91.121.9), Dallas (74.91.126.55), Denver (66.163.114.109), New York (74.91.123.64), Chicago (172.238.176.101) - All 5 instances each.
 

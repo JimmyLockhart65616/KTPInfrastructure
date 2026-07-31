@@ -321,22 +321,43 @@ for i in $(seq 1 $NUM_INSTANCES); do
             log_info "  Port $port: monitor patch already applied"
         else
             cp -p "$MONITOR_SCRIPT" "$MONITOR_SCRIPT.prepatch"
-            sed -i '203,212s/^/# KTP-DISABLED: /' "$MONITOR_SCRIPT"
-            # 203,212 is version-specific. On LinuxGSM v26.2.0 it swallows the
-            # opening `if`, orphaning the next `elif` — the file stops parsing and
-            # monitor silently dies (nine days undetected on the LAN box, 2026-07).
-            if ! bash -n "$MONITOR_SCRIPT" 2>/dev/null; then
-                orphan=$(grep -nE '^[[:space:]]*elif \[ "\$\(pgrep' "$MONITOR_SCRIPT" | head -1 | cut -d: -f1)
-                [ -n "$orphan" ] && sed -i "${orphan}s/^\([[:space:]]*\)elif /\1if /" "$MONITOR_SCRIPT"
-            fi
-            if bash -n "$MONITOR_SCRIPT" 2>/dev/null; then
+            # Neutralise each tmux check's CONDITION instead of commenting out lines.
+            # Commenting by line range is version-specific: on v26.2.0 it swallowed an
+            # opening `if`, leaving the file unparseable so monitor never ran at all.
+            # Repairing only the syntax is worse — it re-arms the old-type check, which
+            # false-positives on our hashed socket names and pkills live matches
+            # (7 kills on one instance, 2026-07-31). Disable the checks, keep the file valid.
+            python3 - "$MONITOR_SCRIPT" <<'KTP_MONITOR_PATCH'
+import re, sys
+path = sys.argv[1]
+lines = open(path).read().split('\n')
+checks = (
+    ('tmux -L ${socketname} new-session',  'duplicate-PID check'),
+    ('tmux -L ${sessionname} new-session', 'same socket+session check'),
+    ('"tmux new-session',                  'old-type check, kills live matches'),
+)
+for i, line in enumerate(lines):
+    # skip lines an older comment-style patch already disabled -- rewriting one
+    # injects a live 'if' with no matching 'fi' and the file stops parsing
+    if 'pgrep -f' not in line or line.lstrip().startswith('#'):
+        continue
+    for needle, why in checks:
+        if needle in line:
+            indent = re.match(r'[ \t]*', line).group(0)
+            keyword = 'elif' if line.lstrip().startswith('elif') else 'if'
+            lines[i] = '%s%s false; then   # KTP-DISABLED: %s' % (indent, keyword, why)
+            break
+open(path, 'w').write('\n'.join(lines))
+KTP_MONITOR_PATCH
+            if bash -n "$MONITOR_SCRIPT" 2>/dev/null && grep -q 'KTP-DISABLED' "$MONITOR_SCRIPT" 2>/dev/null; then
                 rm -f "$MONITOR_SCRIPT.prepatch"
-                log_info "  Port $port: monitor patch applied (parses clean)"
+                log_info "  Port $port: monitor patch applied (parses clean, checks disabled)"
             else
                 mv "$MONITOR_SCRIPT.prepatch" "$MONITOR_SCRIPT"
-                log_warn "  Port $port: monitor patch REVERTED — it broke the syntax."
-                log_warn "  An unparseable monitor never restarts anything. Patch by hand"
-                log_warn "  before arming the cron — see docs/LINUXGSM.md."
+                log_warn "  Port $port: monitor patch REVERTED — result did not parse or"
+                log_warn "  no check was found to disable. Patch by hand before arming the"
+                log_warn "  cron; an armed old-type check restarts servers mid-match."
+                log_warn "  See docs/LINUXGSM.md."
             fi
         fi
     else
