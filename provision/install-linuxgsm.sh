@@ -320,8 +320,24 @@ for i in $(seq 1 $NUM_INSTANCES); do
         if grep -q "KTP-DISABLED" "$MONITOR_SCRIPT" 2>/dev/null; then
             log_info "  Port $port: monitor patch already applied"
         else
+            cp -p "$MONITOR_SCRIPT" "$MONITOR_SCRIPT.prepatch"
             sed -i '203,212s/^/# KTP-DISABLED: /' "$MONITOR_SCRIPT"
-            log_info "  Port $port: monitor patch applied"
+            # 203,212 is version-specific. On LinuxGSM v26.2.0 it swallows the
+            # opening `if`, orphaning the next `elif` — the file stops parsing and
+            # monitor silently dies (nine days undetected on the LAN box, 2026-07).
+            if ! bash -n "$MONITOR_SCRIPT" 2>/dev/null; then
+                orphan=$(grep -nE '^[[:space:]]*elif \[ "\$\(pgrep' "$MONITOR_SCRIPT" | head -1 | cut -d: -f1)
+                [ -n "$orphan" ] && sed -i "${orphan}s/^\([[:space:]]*\)elif /\1if /" "$MONITOR_SCRIPT"
+            fi
+            if bash -n "$MONITOR_SCRIPT" 2>/dev/null; then
+                rm -f "$MONITOR_SCRIPT.prepatch"
+                log_info "  Port $port: monitor patch applied (parses clean)"
+            else
+                mv "$MONITOR_SCRIPT.prepatch" "$MONITOR_SCRIPT"
+                log_warn "  Port $port: monitor patch REVERTED — it broke the syntax."
+                log_warn "  An unparseable monitor never restarts anything. Patch by hand"
+                log_warn "  before arming the cron — see docs/LINUXGSM.md."
+            fi
         fi
     else
         log_warn "  Port $port: command_monitor.sh STILL not found after a monitor run —"

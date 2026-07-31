@@ -875,12 +875,25 @@ for i in $(seq 1 $NUM_INSTANCES); do
             log_info "  Port $PORT: Fix already applied"
         else
             # Apply the fix - comment out lines 203-212
+            cp -p "$MONITOR_SCRIPT" "$MONITOR_SCRIPT.prepatch"
             sed -i '203,212s/^/# KTP-DISABLED: /' "$MONITOR_SCRIPT"
-            if grep -q "KTP-DISABLED" "$MONITOR_SCRIPT" 2>/dev/null; then
-                log_info "  Port $PORT: Fix applied successfully"
+            # 203,212 is version-specific. On LinuxGSM v26.2.0 it swallows the
+            # opening `if`, orphaning the next `elif` — the file stops parsing and
+            # monitor silently dies (nine days undetected on the LAN box, 2026-07).
+            if ! bash -n "$MONITOR_SCRIPT" 2>/dev/null; then
+                ORPHAN=$(grep -nE '^[[:space:]]*elif \[ "\$\(pgrep' "$MONITOR_SCRIPT" | head -1 | cut -d: -f1)
+                [ -n "$ORPHAN" ] && sed -i "${ORPHAN}s/^\([[:space:]]*\)elif /\1if /" "$MONITOR_SCRIPT"
+            fi
+            # grep'ing for the marker only proves sed wrote something, not that the
+            # result is valid bash — parse it, or the breakage ships silently.
+            if bash -n "$MONITOR_SCRIPT" 2>/dev/null && grep -q "KTP-DISABLED" "$MONITOR_SCRIPT" 2>/dev/null; then
+                rm -f "$MONITOR_SCRIPT.prepatch"
+                log_info "  Port $PORT: Fix applied successfully (parses clean)"
                 TMUX_FIX_APPLIED=$((TMUX_FIX_APPLIED + 1))
             else
-                log_warn "  Port $PORT: Fix may not have applied correctly"
+                mv "$MONITOR_SCRIPT.prepatch" "$MONITOR_SCRIPT"
+                log_warn "  Port $PORT: Fix REVERTED — it left command_monitor.sh unparseable."
+                log_warn "  An unparseable monitor never restarts anything. See docs/LINUXGSM.md."
             fi
         fi
     else

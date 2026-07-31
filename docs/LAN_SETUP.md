@@ -548,11 +548,145 @@ channels keeps per-channel voice relay tiny (a few Mbps) instead of one big
    sudo -u teamspeak /home/teamspeak/teamspeak3-server_linux_amd64/ts3server_startscript.sh stop
    grep -i "token=" /home/teamspeak/teamspeak3-server_linux_amd64/logs/*.log   # or use ServerQuery: tokenadd
    ```
+   ⚠️ **Admin is bound to the client IDENTITY, not the name.** An admin who moves to a
+   second PC (or reinstalls the client) arrives with a fresh identity and no permissions,
+   even though the nickname is identical. Check for duplicate nicknames with different
+   `client_unique_id`s before minting a key:
+   ```bash
+   python3 -c "import sqlite3;print([r for r in sqlite3.connect('file:<TS_DIR>/ts3server.sqlitedb?mode=ro',uri=True).execute(\"SELECT client_id,client_unique_id,client_nickname,client_lastip FROM clients\")])"
+   ```
+   The cheap fix is **Tools → Identities → Export** on the original machine and Import on
+   the new one — no restart, no key. `tokenadd` needs a ServerQuery login, and the
+   `serveradmin` password is printed **once** at first launch and stored only as a hash:
+   if it wasn't captured, the only way to set a new one is restarting with
+   `serveradmin_password=…`, which drops everyone off voice. Capture it at build time.
 4. Players can't connect — check the service and the voice port:
    ```bash
    systemctl status ts3server
    sudo ufw status | grep 9987
    ```
+5. **Server shuts itself down after ~2 hours, "max users" / limited functionality.** An
+   Activation Licence phones home; if it can't, TS3 **deliberately exits**:
+   ```
+   ERROR |Accounting| Error contacting accounting2.teamspeak.com: RESOLVE_ERROR
+   ERROR |Accounting| Could not connect to accounting server after multiple attempts, shutting down server
+   ```
+   systemd restarts it seconds later, so the only trace is everyone dropping off voice at
+   once. Root cause at Philly 2026-07-31 was **DNS**, not the licence — see below.
+
+### DNS: pin it, or TeamSpeak dies and remote access with it
+
+A venue resolver that resolves *most* things is still fatal here. `systemd-resolved` will
+prefer the venue DNS handed out by DHCP even when public resolvers are also listed:
+
+```bash
+resolvectl status eno1 | grep -E 'Current DNS|DNS Servers'
+#   Current DNS Server: 10.70.10.10          <- venue, intermittent
+#   DNS Servers: 8.8.8.8 8.8.4.4 10.70.10.10
+```
+
+Take the venue resolver out of the path. Runtime (immediate, no link bounce, reverts on reboot):
+
+```bash
+sudo resolvectl dns eno1 8.8.8.8 8.8.4.4 && sudo resolvectl flush-caches
+```
+
+Persist it (writes stored config only — takes effect next activation, so it is safe to run
+mid-event):
+
+```bash
+sudo nmcli con mod "<CONNECTION>" ipv4.dns "8.8.8.8 8.8.4.4" ipv4.ignore-auto-dns yes
+```
+
+Verify by fetching, not by resolving — a name can resolve while the endpoint is unreachable:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://accounting2.teamspeak.com   # 404 is a PASS
+```
+
+> `backupaccounting2.teamspeak.com` has **no A record anywhere** — confirmed from an
+> unrelated network. Its `RESOLVE_ERROR` in the log is noise; only `accounting2` matters.
+
+Tailscale rides the same resolver. When venue DNS failed the box also dropped off the
+tailnet, so **remote access and TeamSpeak fail together** — if you lose one, suspect DNS.
+
+### Grenade counts are wrong (usually one extra)
+
+Symptom: players spawn with their configured loadout **+1**, and the AMXX log fills with
+
+```
+[KTPGrenadeLoadout] dodx_give_grenade failed (ret=-1) player=N class=N type=13
+```
+
+on classes that already carry grenades. Cause is DODX's pdata offset. `dodx_get_grenade_ammo`
+reads a dead field, returns 0, so the plugin thinks the class has none, calls
+`dodx_give_grenade` (which hands over a real grenade), then writes the intended count into
+the same dead field where it does nothing.
+
+```bash
+grep -h 'Pdata offset' ~/dod-*/log/console/*.log | tail -1
+#   [DODX] Auto-detected pdata offset +5 (score +5=2 vs +4=0 out of 6)   <- healthy
+#   [DODX] Pdata offset forced to +4 via config file                     <- wrong
+```
+
+**The production fleet ships no `dodx.ini` and auto-detects `+5` correctly.** Only pin the
+offset if you know why you're doing it:
+
+```bash
+grep -r pdata_offset ~/dod-*/serverfiles/dod/addons/ktpamx/configs/dodx.ini
+# fix: set pdata_offset = 5, or delete dodx.ini to match the fleet
+```
+
+The value is latched at plugin load and never re-read — **a map change will not pick it up,
+only a server restart will.** Verify from the running process, not the file, since the
+console log retains the previous run's line:
+
+```bash
+tmux -L <socket> capture-pane -p -S -900 | grep 'Pdata offset' | tail -1
+```
+
+### A crashed server never comes back
+
+If an instance dies and stays dead while the monitor cron ticks every minute, the monitor is
+almost certainly not running at all. See **docs/LINUXGSM.md** — the `command_monitor.sh`
+patch is applied by hardcoded line range and silently breaks the file's syntax on newer
+LinuxGSM. Confirm before trusting it:
+
+```bash
+for d in ~/dod-2701*; do bash -n "$d/lgsm/modules/command_monitor.sh" \
+  && echo "OK $(basename $d)" || echo "BROKEN $(basename $d)"; done
+```
+
+Crash cores land in `/tmp`, **not** the game tree — a `find` under `serverfiles` matches only
+`core.so`/`core.ini`/`core.wav` and looks clean whether or not anything crashed:
+
+```bash
+find /tmp -maxdepth 1 -name 'core.*' -mtime -1
+```
+
+### Clients 404 on custom content (WADs, models, overviews)
+
+FastDL commonly ends up serving **only `maps/`**, so a `.bsp` downloads but everything its
+`.res` manifest lists 404s. Clients then fall back to slow UDP or render missing textures:
+
+```bash
+for d in maps models sprites sound overviews; do
+  echo "$d $(find /srv/ktpdata/fastdl/dod/$d -type f 2>/dev/null | wc -l)"
+done
+```
+
+Most released custom maps embed their textures and need no WAD, but not all — check before
+assuming. A BSP whose texture lump has zero embedded entries needs its WAD present on every
+client:
+
+```bash
+# 'from-WAD' > 0 means the map cannot render without the listed .wad files
+grep -ao '"wad" "[^"]*"' <map>.bsp | head -1
+```
+
+At Philly 2026, `dod_anjou_a5` drew 189 of 190 textures from `anjou2.wad`, which was absent
+from both the servers and FastDL. `dod_harrington` referenced six WADs but embeds all 71 of
+its textures, so those were inert — reference count alone is not evidence of a gap.
 
 ## Offline Artifact Preparation
 
@@ -624,12 +758,18 @@ on the USB — neither can be fetched on the day without internet.
 
 - [ ] Power on all servers
 - [ ] Verify network connectivity
+- [ ] **Pin DNS off the venue resolver** (`resolvectl status eno1`) — TeamSpeak and Tailscale both die with it
+- [ ] **Verify the monitor actually parses** — `bash -n ~/dod-*/lgsm/modules/command_monitor.sh` on every instance
 - [ ] Start data server services (HLTV, HLStatsX, Nginx)
 - [ ] Start game servers
 - [ ] Connect HLTV to game servers
 - [ ] Start TeamSpeak (`systemctl status ts3server`); confirm slot license is active (72-capable, not 32)
 - [ ] Test a TeamSpeak client connects and admin claims the privilege key
+- [ ] **Confirm the admin is on the identity they'll use all weekend** — permissions do not follow them to a second PC
+- [ ] **Capture the `serveradmin` query password** — printed once at first launch, unrecoverable afterwards
 - [ ] Test match workflow on warmup server
+- [ ] **Spawn one class and count grenades** — an off pdata offset shows as loadout +1 (see Troubleshooting)
+- [ ] **Fetch one non-map asset over FastDL** (`curl -sI <url>/dod/<some>.wad`) — maps-only FastDL 404s everything else
 - [ ] Verify HLTV recording works
 - [ ] Verify stats are tracking
 - [ ] Brief admins on `.forcereset` command

@@ -82,3 +82,5 @@ wsdod-lan-2026/index.rendered.html
 
 # machine-local Claude permissions
 .claude/settings.local.json
+# LAN prep staging - 3.5GB of engine/plugin binaries, never belongs in git
+/scripts/lan-prep-2026-07-22/
