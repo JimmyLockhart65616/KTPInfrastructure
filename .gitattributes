@@ -19,3 +19,4 @@
 *.ini.example text eol=lf
 *.j2         text eol=lf
 *.cron       text eol=lf
+*.logrotate       text eol=lf
