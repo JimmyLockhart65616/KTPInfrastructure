@@ -59,7 +59,10 @@ def compute_standings(teams: list[dict], matches: list[dict]) -> list[dict]:
     for _pct, grp in groupby(ids_by_pct, key=win_pct):
         g = list(grp)
         if len(g) > 1:
-            def h2h(tid, group=g):  # wins against others in this tied group
+            # g reads as EMPTY inside its own .sort() (CPython's mutation guard),
+            # so the tied group must be snapshotted or head-to-head always scores 0.
+            members = list(g)
+            def h2h(tid, group=members):  # wins against others in this tied group
                 return sum(1 for o in group if o != tid and stat[tid]["results"].get(o) == "W")
             g.sort(key=lambda tid: (-h2h(tid), -stat[tid]["buchholz"], -stat[tid]["diff"], seed_key(tid)))
         ordered.extend(g)
