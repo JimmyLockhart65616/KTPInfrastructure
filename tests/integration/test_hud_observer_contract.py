@@ -79,8 +79,12 @@ from .match_flow import MatchDriver, MatchType
 # actually runs, and it goes stale silently. Corrected 2026-08-03 after the same
 # false premise let the runner's KTPMatchHandler sit two versions behind.
 # Bump the literal deliberately; use the env var for a pre-activation gate run.
-EXPECTED_KTPHUDOBSERVER_VERSION = os.environ.get(
-    "KTP_EXPECTED_HUDOBSERVER_VERSION", "2.0.0"
+# `or`, not a get() default: get(k, default) returns '' for a set-but-empty var,
+# so the moment this is wired to a workflow input (which passes '' when blank)
+# the pin would become the empty string on every non-gate run. Normalized to
+# match the MatchHandler and PracticeMode pins.
+EXPECTED_KTPHUDOBSERVER_VERSION = (
+    os.environ.get("KTP_EXPECTED_HUDOBSERVER_VERSION") or "2.0.0"
 )
 
 

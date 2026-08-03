@@ -43,7 +43,14 @@ import pytest
 from ._timing import WITNESS_TIMEOUT, scaled
 from .log_tail import current_log_size, wait_for_log_substring
 
-EXPECTED_KTPPRACTICEMODE_VERSION = "1.4.6"
+# Literal tracks the FLEET; bump only after a wave's post-activation verify.
+# Env override exists for the pre-activation gate (runner deliberately leading
+# the fleet with a reviewed build). `or`, not a get() default — the workflow
+# always sets the var, to '' on scheduled and PR runs, and get(k, default)
+# returns '' for a set-but-empty var. Mirrors the MatchHandler pin.
+EXPECTED_KTPPRACTICEMODE_VERSION = (
+    os.environ.get("KTP_EXPECTED_PRACTICEMODE_VERSION") or "1.4.6"
+)
 
 # Grenade ids from KTPPracticeMode.sma / dodx weapon table
 DODW_HANDGRENADE = 13
