@@ -73,7 +73,8 @@ _L10 = {
 }
 
 # N=11 — seeds 1-5 bye, 6-11 play in (3 matches). The three play-in losers
-# settle 9/10/11 via a 3-team mini-bracket (L:PI1 byes the 11th-place match).
+# settle 9/10/11 via a 3-team mini-bracket. The BEST of them (L:PI3, off the
+# 8v9 play-in) takes the bye; byeing L:PI1 would strand a 9 or 10 seed in 11th.
 _L11 = {
     "matches": [
         _m("PI1", "upper", "PI", 1, "seed:6", "seed:11", 1, "Play-in 1"),
@@ -91,8 +92,8 @@ _L11 = {
         _m("LS2",  "placement", "LS",   2, "L:QF3", "L:QF4", 3, "Lower Semifinal 2"),
         _m("P56",  "placement", "P56",  1, "W:LS1", "W:LS2", 1, "5th / 6th place"),
         _m("P78",  "placement", "P78",  1, "L:LS1", "L:LS2", 1, "7th / 8th place"),
-        _m("P11",  "placement", "P11",  1, "L:PI2", "L:PI3", 1, "11th-place match"),
-        _m("P910", "placement", "P910", 1, "L:PI1", "W:P11", 3, "9th / 10th place"),
+        _m("P11",  "placement", "P11",  1, "L:PI1", "L:PI2", 1, "11th-place match"),
+        _m("P910", "placement", "P910", 1, "L:PI3", "W:P11", 3, "9th / 10th place"),
     ],
     "placement": [(1, "W:F"), (2, "L:F"), (3, "W:P34"), (4, "L:P34"),
                   (5, "W:P56"), (6, "L:P56"), (7, "W:P78"), (8, "L:P78"),
