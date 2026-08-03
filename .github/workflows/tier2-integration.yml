@@ -52,6 +52,11 @@ on:
         required: false
         type: string
         default: '1.0'
+      matchhandler_version:
+        description: 'Pre-activation gate: KTPMatchHandler version to assert (e.g. 0.10.149). Blank = the committed pin, which tracks the FLEET.'
+        required: false
+        type: string
+        default: ''
   schedule:
     # Nightly at 09:00 UTC (≈04-05 ET) — after the 03:00 ET fleet restart +
     # perf rollups. Tier 2 otherwise only fires on PRs that touch
@@ -96,6 +101,13 @@ jobs:
       # a Discord embed via the relay. Unset in dev to preserve the
       # "no extra files written" loop.
       KTP_TIER2_REPORT_PATH: tier2-report.json
+      # Pre-activation gate override. The committed pin in
+      # tests/integration/test_match_flow_spine.py tracks the FLEET and is bumped
+      # only after post-activation verify. When the runner deliberately leads the
+      # fleet — a reviewed build being smoked before a wave — that pin would
+      # otherwise hard-fail the run, which is the one state the gate exists for.
+      # Empty on scheduled/PR runs, so those still assert against the fleet pin.
+      KTP_EXPECTED_MATCHHANDLER_VERSION: ${{ inputs.matchhandler_version || '' }}
 
     steps:
       - name: Checkout

@@ -68,10 +68,17 @@ from .fake_ingest import FakeIngest
 from .match_flow import MatchDriver, MatchType
 
 
-# Expected version: the HUD refresh step in tier2-integration.yml compiles the
-# plugin from current source each run and exports its VERSION here, so the suite
-# asserts loaded==built with no hardcoded pin to maintain. The literal is only a
-# fallback for local/external-server runs where the refresh step didn't set it.
+# Expected version for the staged KTPHudObserver build.
+#
+# ⚠️ This comment used to say "the HUD refresh step in tier2-integration.yml
+# compiles the plugin from current source each run and exports its VERSION here,
+# so the suite asserts loaded==built with no hardcoded pin to maintain."
+# There is no such step. tier2-integration.yml only `test -f`s pre-staged
+# artifacts (the repo's sole amxxpc call is in smoke-callable.yml, the per-repo
+# Tier-1 smoke), so the literal below is not a fallback — it is the value that
+# actually runs, and it goes stale silently. Corrected 2026-08-03 after the same
+# false premise let the runner's KTPMatchHandler sit two versions behind.
+# Bump the literal deliberately; use the env var for a pre-activation gate run.
 EXPECTED_KTPHUDOBSERVER_VERSION = os.environ.get(
     "KTP_EXPECTED_HUDOBSERVER_VERSION", "2.0.0"
 )

@@ -37,12 +37,25 @@ from .match_flow import MatchDriver, MatchType
 
 
 # Pinned version: KTPMatchHandler 0.10.122 added the test-mode build flag;
-# 0.10.123 routed test rcons through the production deferred-fwd path. When
-# the source PLUGIN_VERSION bumps, this test pin updates in lockstep
-# (memory `feedback_commit_hygiene.md`). 0.10.147 = the fleet build activated
-# 2026-07-21 (post-activation verify passed 24/24); the runner's test-mode build
-# was restaged to match — test_1 fails loudly on mismatch by design.
-EXPECTED_KTPMATCHHANDLER_VERSION = "0.10.147"
+# 0.10.123 routed test rcons through the production deferred-fwd path.
+#
+# The literal tracks the FLEET, and is bumped only after a wave's post-activation
+# verify passes — never at stage time, or the runner claims a version the fleet
+# doesn't run. 0.10.147 = the build activated 2026-07-21 (verified 24/24).
+#
+# The env override exists for the pre-activation gate: the runner is deliberately
+# allowed to lead the fleet while a reviewed build is smoke-tested before a wave,
+# and without an override this test hard-fails in exactly that state — which is
+# one of the runner's stated purposes. Set KTP_EXPECTED_MATCHHANDLER_VERSION (or
+# pass `matchhandler_version` to the workflow_dispatch) to assert against the
+# build under test. Mirrors the KTPHudObserver pin's convention.
+# `or` not a get() default: the workflow always SETS this var, to '' on scheduled
+# and PR runs. os.environ.get(k, default) returns '' for a set-but-empty var, so
+# a get() default would pin every non-gate run to the empty string and fail all
+# of them.
+EXPECTED_KTPMATCHHANDLER_VERSION = (
+    os.environ.get("KTP_EXPECTED_MATCHHANDLER_VERSION") or "0.10.147"
+)
 
 
 def _serverfiles() -> Path | None:
