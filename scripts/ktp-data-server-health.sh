@@ -104,6 +104,92 @@ if [ "$active_hltv" -lt "$expected_hltv" ]; then
     done
 fi
 
+# ---- Disk usage + growth ----
+# No df history existed anywhere on this box (sysstat is installed but its
+# collector never ran), so the 2026-07-30 syslog runaway was reconstructed from
+# file mtimes. 49% used trips no ceiling — the 24h rate is what catches it.
+DISK_HISTORY="${DISK_HISTORY:-/var/log/ktp-disk-history.log}"
+DISK_PCT_WARN="${DISK_PCT_WARN:-75}"
+DISK_GROWTH_WARN_GIB="${DISK_GROWTH_WARN_GIB:-3}"
+# Extrapolating GiB/day from a 1h window turns every transient into an alert.
+DISK_GROWTH_MIN_HOURS="${DISK_GROWTH_MIN_HOURS:-12}"
+
+now_epoch=$(date +%s)
+now_ts=$(ts)
+
+if [ ! -e "$DISK_HISTORY" ]; then
+    install -m 0640 -o root -g root /dev/null "$DISK_HISTORY" 2>/dev/null || true
+fi
+
+# delaycompress in the rotate stanza keeps .1 plain text, so the 24h lookback
+# still resolves on the day after a rotation.
+disk_history() { cat "$DISK_HISTORY" "$DISK_HISTORY.1" 2>/dev/null || true; }
+
+# Bucket reported values — an unbucketed "78%" ticking to "79%" reads to the
+# set comparison below as one recovery plus one new failure, i.e. hourly spam.
+bucket5() { echo $(( ${1:-0} / 5 * 5 )); }
+bucket_gib() {
+    local b=0 t
+    for t in 3 5 10 20 40 80 160 320; do
+        if [ "${1:-0}" -ge "$t" ]; then b=$t; fi
+    done
+    echo "$b"
+}
+
+growth_cutoff=$(( now_epoch - DISK_GROWTH_MIN_HOURS * 3600 ))
+# -k so the arithmetic stays integer KiB; pseudo-filesystems carry no trend.
+inode_rows=$(df -P -i -x tmpfs -x devtmpfs -x squashfs -x overlay 2>/dev/null | tail -n +2 || true)
+disk_rows=$(df -P -k -x tmpfs -x devtmpfs -x squashfs -x overlay 2>/dev/null | tail -n +2 || true)
+
+while read -r fs size used avail pct mount; do
+    if [ -z "${mount:-}" ]; then continue; fi
+    pct=${pct%\%}
+    ipct=$(printf '%s\n' "$inode_rows" | awk -v m="$mount" '$6==m {gsub(/%/,"",$5); print $5; exit}')
+    printf '%s|%s|DF|%s|%s|%s|%s|%s|%s|%s\n' \
+        "$now_ts" "$now_epoch" "$fs" "$mount" "$size" "$used" "$avail" "$pct" "${ipct:-0}" \
+        >> "$DISK_HISTORY" || true
+
+    rate=""
+    base=$(disk_history | awk -F'|' -v m="$mount" -v c="$growth_cutoff" \
+        '$3=="DF" && $5==m && ($2+0)<=c && ($2+0)>best {best=$2+0; u=$7+0}
+         END {if (best>0) print best" "u}' || true)
+    if [ -n "$base" ]; then
+        base_epoch=${base% *}
+        base_used=${base#* }
+        span=$(( now_epoch - base_epoch ))
+        if [ "$span" -gt 0 ]; then
+            rate=$(( (used - base_used) * 86400 / span / 1048576 ))
+        fi
+    fi
+
+    echo "[$now_ts] disk $mount ${pct}% used, inodes ${ipct:-?}%, 24h rate ${rate:-n/a} GiB/day"
+
+    case "$pct" in
+        ''|*[!0-9]*) ;;
+        *) if [ "$pct" -ge "$DISK_PCT_WARN" ]; then
+               down+=("disk-usage:${mount}=$(bucket5 "$pct")%+")
+           fi ;;
+    esac
+    case "${ipct:-}" in
+        ''|*[!0-9]*) ;;
+        *) if [ "$ipct" -ge "$DISK_PCT_WARN" ]; then
+               down+=("disk-inodes:${mount}=$(bucket5 "$ipct")%+")
+           fi ;;
+    esac
+    if [ -n "$rate" ] && [ "$rate" -ge "$DISK_GROWTH_WARN_GIB" ]; then
+        down+=("disk-growth:${mount}=$(bucket_gib "$rate")GiB/day+")
+    fi
+done <<< "$disk_rows"
+
+# Largest entries directly under /var/log. -a so single runaway FILES are
+# caught (the incident was syslog itself, which no directory listing shows);
+# timeout so a slow walk can never wedge the service checks above.
+log_top=$(timeout 60 du -kax --max-depth=1 /var/log 2>/dev/null | sort -rn | head -6 || true)
+while read -r kb path; do
+    if [ -z "${path:-}" ]; then continue; fi
+    printf '%s|%s|LOG|%s|%s\n' "$now_ts" "$now_epoch" "$path" "$kb" >> "$DISK_HISTORY" || true
+done <<< "$log_top"
+
 # ---- Build sorted lists for set comparison ----
 # curr.list: sorted, deduplicated set of currently-down items
 # prev.list: same from the previous run's state file

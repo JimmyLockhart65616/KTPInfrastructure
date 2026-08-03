@@ -4,6 +4,51 @@ All notable changes to KTP Infrastructure will be documented in this file.
 
 ## [Unreleased]
 
+### `ops`: disk-usage trend sampling in ktp-data-server-health (2026-08-02)
+
+Three misconfigured systemd units wrote `/var/log/syslog` at 14.8 GiB/day from
+2026-07-30 and reached 46 GiB before anyone noticed on 08-02 — at 49% used, which
+trips no absolute ceiling. Worse, the box kept **no `df` history at all**
+(`/var/log/sysstat` is empty; its collector was never enabled), so the growth rate
+had to be reconstructed from file mtimes after the fact.
+
+- **`scripts/ktp-data-server-health.sh`** — samples every real filesystem each
+  hourly run and appends to `/var/log/ktp-disk-history.log`: timestamp, epoch,
+  device, mount, size/used/avail KiB, use%, inode use%, plus the six largest
+  entries directly under `/var/log`. `du -a` on that last one is deliberate — the
+  incident was a single runaway *file*, which no directory listing surfaces.
+- Two new conditions join the existing `down[]` set, so they inherit the
+  transition-only alerting, the recovery edge and the embed for free:
+  `disk-usage:<mount>` at ≥75% (also `disk-inodes:`), and
+  `disk-growth:<mount>` at ≥3 GiB/day measured over ≥12 h of history. The rate
+  trigger is the one that would have caught 07-30 on day one.
+- Reported values are bucketed (5% steps; 3/5/10/20/40/80 GiB/day bands) because
+  the set comparison reads an unbucketed "78%"→"79%" tick as one recovery plus one
+  new failure — i.e. an hourly Discord post.
+- Overridable for testing: `DISK_HISTORY`, `DISK_PCT_WARN`,
+  `DISK_GROWTH_WARN_GIB`, `DISK_GROWTH_MIN_HOURS`.
+- Every added command is `|| true`-guarded and the `/var/log` walk is
+  `timeout`-bounded: disk sampling must never abort the service checks it rides on.
+- **`scripts/ktp-disk-history.logrotate`** → `/etc/logrotate.d/ktp-disk-history`.
+  Monthly, `rotate 12`, `maxsize 32M`, `delaycompress` (keeps `.1` plain text so
+  the 24h lookback still resolves the day after a rotation). Also adopts
+  `/var/log/ktp-data-server-health.log`, which was previously unrotated at 155 KiB
+  and growing. Separate stanza on purpose — the `maxsize 1G` syslog cap in
+  `/etc/logrotate.d/rsyslog` is owned elsewhere and was not touched.
+
+Verified on `neindataatl`: alert path exercised against a loopback sink (never the
+real relay) — rate trigger fires at the production 3 GiB/day threshold when fed the
+real incident's 14.8 GiB/day; absolute trigger fires under a forced 5% ceiling;
+recovery edge posts green; 2 GiB/day stays silent; a repeat run in the same bucket
+stays silent; baseline still resolves out of a rotated `.1`. Clean run under cron's
+own empty environment. Backup at
+`/usr/local/bin/ktp-data-server-health.sh.bak-20260802-200233-pre-disk-sampling`;
+new live md5 `870fc9e3…`.
+
+Deploying this also closed pre-existing drift: the box was still running the dead
+`<:ktp:1105490705188659272>` emoji token in its embed title (repo had been correct
+since `a6b47cc`). Deployed file is now byte-identical to the repo copy.
+
 ### GitHub Sponsors funding integration (2026-07-21 / 22)
 
 Stood up community funding for the fleet: a GitHub Sponsors profile

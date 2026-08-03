@@ -1,0 +1,25 @@
+# /etc/logrotate.d/ktp-disk-history
+#
+# Deployed alongside scripts/ktp-data-server-health.sh, which appends a df +
+# /var/log-breakdown sample every hour. Separate stanza on purpose: the syslog
+# caps live in /etc/logrotate.d/rsyslog and are owned by someone else.
+#
+# Both files are opened per run (the script appends, cron reopens its redirect
+# each hour), so neither needs copytruncate.
+
+/var/log/ktp-disk-history.log
+/var/log/ktp-data-server-health.log
+{
+        monthly
+        # ~450 bytes/run x 24 = ~11 KiB/day, so 12 months is ~4 MiB of trend.
+        rotate 12
+        # A disk-usage recorder that eats the disk would be its own punchline.
+        maxsize 32M
+        missingok
+        notifempty
+        compress
+        # Keeps .1 plain text so the script's 24h lookback still resolves on
+        # the day after a rotation.
+        delaycompress
+        create 0640 root root
+}
