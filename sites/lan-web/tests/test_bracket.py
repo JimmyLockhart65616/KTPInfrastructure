@@ -33,8 +33,8 @@ def test_qf_losers_into_lower_semis():
     s = resolve_slots(RANK, outcomes)
     assert s["SF1"] == (101, 104)   # W:QF1 v W:QF2
     assert s["SF2"] == (103, 102)   # W:QF3 v W:QF4
-    assert s["LS1"] == (108, 107)   # L:QF1 v L:QF4
-    assert s["LS2"] == (105, 106)   # L:QF2 v L:QF3
+    assert s["LS1"] == (108, 105)   # L:QF1 v L:QF2
+    assert s["LS2"] == (106, 107)   # L:QF3 v L:QF4
 
 
 def test_sf_losers_play_each_other_for_third():
@@ -54,14 +54,14 @@ _FULL = {
     "SF1": (101, 104), "SF2": (102, 103),
     "F":   (101, 102),
     "P34": (104, 103),
-    "LS1": (108, 107), "LS2": (105, 106),
+    "LS1": (108, 105), "LS2": (106, 107),
 }
 
 
 def test_placement_tiers_resolve():
     s = resolve_slots(RANK, _FULL)
-    assert s["P56"]  == (108, 105)   # W:LS1 v W:LS2 → 5th/6th
-    assert s["P78"]  == (107, 106)   # L:LS1 v L:LS2 → 7th/8th
+    assert s["P56"]  == (108, 106)   # W:LS1 v W:LS2 → 5th/6th
+    assert s["P78"]  == (105, 107)   # L:LS1 v L:LS2 → 7th/8th
     assert s["P910"] == (110, 109)   # L:PI1 v L:PI2 → 9th/10th
 
 
@@ -163,3 +163,60 @@ if __name__ == "__main__":
             failed += 1; print(f"FAIL {fn.__name__}: {e}")
     print(f"\n{len(funcs) - failed}/{len(funcs)} passed")
     sys.exit(1 if failed else 0)
+
+def _chalk_participants(n):
+    """Play every match chalk (better seed wins); return {mkey: (seed_a, seed_b)}
+    of who CONTESTED it. Team id == seed here, so sums are seed sums."""
+    matches = B.LAYOUTS[n]["matches"]
+    out, parts = {}, {}
+
+    def side(src):
+        kind, ref = src.split(":")
+        if kind == "seed":
+            return int(ref) if int(ref) <= n else None
+        if ref in out:
+            w, l = out[ref]
+            return w if kind == "W" else l
+        return None
+
+    changed = True
+    while changed:
+        changed = False
+        for m in matches:
+            if m["key"] in out:
+                continue
+            a, b = side(m["a"]), side(m["b"])
+            if a and b:
+                parts[m["key"]] = (a, b)
+                out[m["key"]] = (min(a, b), max(a, b))
+                changed = True
+    return parts
+
+
+def test_consolation_pairings_are_reseeded_not_concentrated():
+    """Each consolation semi must draw one strong and one weak loser.
+
+    Pairing both top-half QF losers into the same semi guarantees a higher seed
+    contests 7/8 while a weaker one contests 5/6 — decided by the pairing rather
+    than by results. N=10 sat at 15/11 and N=11/N=12 at 14/12 until 2026-08-02.
+    The rule is re-seed best-vs-worst; N=12's lower play-in already did this with
+    PI1+PI4 / PI2+PI3, which is why "mirror the upper bracket" is the wrong
+    generalisation to reach for here.
+    """
+    for n in (10, 11, 12):
+        p = _chalk_participants(n)
+        a, b = sum(p["LS1"]), sum(p["LS2"])
+        assert a == b, f"N={n} lower semis unbalanced: LS1={p['LS1']}={a} LS2={p['LS2']}={b}"
+
+
+def test_playin_loser_bracket_byes_the_strongest():
+    """N=11 byes one play-in loser straight into 9/10 — it must be the best of
+    them. It used to be L:PI1 (the 6v11 loser, expected seed 11), which guaranteed
+    a 9 or 10 seed finished 11th."""
+    p = _chalk_participants(11)
+    losers = {max(p[k]) for k in ("PI1", "PI2", "PI3")}
+    bye = (losers - set(p["P11"])).pop()
+    assert bye == min(losers), f"bye went to seed {bye}, strongest loser is {min(losers)}"
+
+    q = _chalk_participants(12)   # N=12 has no bye; its lower play-in re-seeds
+    assert sum(q["LPI1"]) == sum(q["LPI2"]), f"LPI1={q['LPI1']} LPI2={q['LPI2']}"

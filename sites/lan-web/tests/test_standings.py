@@ -18,14 +18,24 @@ def test_wins_order():
 
 
 def test_head_to_head_breaks_equal_wins():
-    # 2 and 3 both finish 1-1; head-to-head: 3 beat 2 -> 3 ranks above 2
+    """Only head-to-head can produce this order.
+
+    The previous version had 2 finishing 1-2 and 3 finishing 2-1, so they never
+    tied and the tiebreak never ran — it passed on win count alone, and kept
+    passing while h2h was silently scoring 0 for every team. Here Buchholz ties
+    and differential favours 2, so this fails unless h2h actually fires.
+    """
     matches = [_m(1, 2, 5, 0), _m(1, 3, 5, 0),   # 1 wins both
-               _m(2, 3, 0, 5),                    # 3 beats 2
-               _m(2, 4, 5, 0), _m(3, 4, 5, 0)]    # 2 and 3 both beat 4
+               _m(3, 2, 1, 0),                    # 3 beats 2, narrowly
+               _m(2, 4, 50, 0),                   # 2 crushes 4  -> diff +44
+               _m(4, 3, 50, 0)]                   # 4 crushes 3  -> diff -54
     s = compute_standings(TEAMS, matches)
+    by = {r["team"]["id"]: r for r in s}
     ids = [r["team"]["id"] for r in s]
-    assert ids[0] == 1
-    assert ids.index(3) < ids.index(2)  # head-to-head winner ranks higher
+    assert by[2]["wins"] == by[3]["wins"] == 1          # genuinely tied on record
+    assert by[2]["buchholz"] == by[3]["buchholz"]       # and on Buchholz
+    assert by[2]["diff"] > by[3]["diff"]                # differential favours 2
+    assert ids.index(3) < ids.index(2)                  # so only h2h explains this
 
 
 def test_pending_matches_ignored():
