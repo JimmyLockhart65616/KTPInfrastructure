@@ -34,7 +34,9 @@ def _m(key, brk, stage, slot, a, b, best_of, label):
 # championship and the lower-bracket rounds that give eliminated teams a real
 # series are BO3; the 3/4·5/6·7/8 deciders are BO1 so the Final stands alone.
 
-# N=10 — seeds 1-6 bye, 7-10 play in. (Verified design; do not reshuffle.)
+# Lower semis mirror the upper bracket (LS1=QF1+QF2, LS2=QF3+QF4) so each draws
+# one loser per half; pairing QF1+QF4 instead strands a higher seed in the 7/8.
+# N=10 — seeds 1-6 bye, 7-10 play in.
 _L10 = {
     "matches": [
         _m("PI1", "upper", "PI", 1, "seed:7", "seed:10", 1, "Play-in 1"),
@@ -47,8 +49,8 @@ _L10 = {
         _m("SF2", "upper", "SF", 2, "W:QF3", "W:QF4", 3, "Semifinal 2"),
         _m("F",   "upper", "F",  1, "W:SF1", "W:SF2", 3, "Final"),
         _m("P34",  "placement", "P34",  1, "L:SF1", "L:SF2", 1, "3rd / 4th place"),
-        _m("LS1",  "placement", "LS",   1, "L:QF1", "L:QF4", 3, "Lower Semifinal 1"),
-        _m("LS2",  "placement", "LS",   2, "L:QF2", "L:QF3", 3, "Lower Semifinal 2"),
+        _m("LS1",  "placement", "LS",   1, "L:QF1", "L:QF2", 3, "Lower Semifinal 1"),
+        _m("LS2",  "placement", "LS",   2, "L:QF3", "L:QF4", 3, "Lower Semifinal 2"),
         _m("P56",  "placement", "P56",  1, "W:LS1", "W:LS2", 1, "5th / 6th place"),
         _m("P78",  "placement", "P78",  1, "L:LS1", "L:LS2", 1, "7th / 8th place"),
         _m("P910", "placement", "P910", 1, "L:PI1", "L:PI2", 3, "9th / 10th place"),
@@ -85,8 +87,8 @@ _L11 = {
         _m("SF2", "upper", "SF", 2, "W:QF3", "W:QF4", 3, "Semifinal 2"),
         _m("F",   "upper", "F",  1, "W:SF1", "W:SF2", 3, "Final"),
         _m("P34",  "placement", "P34",  1, "L:SF1", "L:SF2", 1, "3rd / 4th place"),
-        _m("LS1",  "placement", "LS",   1, "L:QF1", "L:QF4", 3, "Lower Semifinal 1"),
-        _m("LS2",  "placement", "LS",   2, "L:QF2", "L:QF3", 3, "Lower Semifinal 2"),
+        _m("LS1",  "placement", "LS",   1, "L:QF1", "L:QF2", 3, "Lower Semifinal 1"),
+        _m("LS2",  "placement", "LS",   2, "L:QF3", "L:QF4", 3, "Lower Semifinal 2"),
         _m("P56",  "placement", "P56",  1, "W:LS1", "W:LS2", 1, "5th / 6th place"),
         _m("P78",  "placement", "P78",  1, "L:LS1", "L:LS2", 1, "7th / 8th place"),
         _m("P11",  "placement", "P11",  1, "L:PI2", "L:PI3", 1, "11th-place match"),
@@ -126,8 +128,8 @@ _L12 = {
         _m("SF2", "upper", "SF", 2, "W:QF3", "W:QF4", 3, "Semifinal 2"),
         _m("F",   "upper", "F",  1, "W:SF1", "W:SF2", 3, "Final"),
         _m("P34",   "placement", "P34",   1, "L:SF1", "L:SF2", 1, "3rd / 4th place"),
-        _m("LS1",   "placement", "LS",    1, "L:QF1", "L:QF4", 3, "Lower Semifinal 1"),
-        _m("LS2",   "placement", "LS",    2, "L:QF2", "L:QF3", 3, "Lower Semifinal 2"),
+        _m("LS1",   "placement", "LS",    1, "L:QF1", "L:QF2", 3, "Lower Semifinal 1"),
+        _m("LS2",   "placement", "LS",    2, "L:QF3", "L:QF4", 3, "Lower Semifinal 2"),
         _m("P56",   "placement", "P56",   1, "W:LS1", "W:LS2", 1, "5th / 6th place"),
         _m("P78",   "placement", "P78",   1, "L:LS1", "L:LS2", 1, "7th / 8th place"),
         _m("LPI1",  "placement", "LPI",   1, "L:PI1", "L:PI4", 3, "Lower Play-in 1"),
