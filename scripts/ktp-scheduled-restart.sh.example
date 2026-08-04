@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # .EXAMPLE PROVENANCE: regenerated verbatim from the deployed fleet canonical
-# (gitignored scripts/ktp-scheduled-restart.sh) on 2026-07-07 with only the
+# (gitignored scripts/ktp-scheduled-restart.sh) on 2026-08-04 with only the
 # relay AUTH_SECRET + channel IDs blanked. The prior .example had structurally
 # REGRESSED from the canonical (static 5-port loops with no .ktp-disabled
 # handling, a fixed sleep-10 stop wait instead of the 30s poll, no CPU-pinning
@@ -40,6 +40,24 @@ if [ "$NUM_SERVERS" -eq 0 ]; then
     echo "ERROR: No dod-* directories found (or all are .ktp-disabled)"
     exit 1
 fi
+
+# The warmup instance lives outside ~/dod-*, so the glob above cannot see it and
+# every leg below has to name it explicitly. Absent on the fleet, where the -d
+# test fails and all warmup legs are skipped.
+#
+# Being invisible here is not cosmetic: the stop wait counts ALL hlds_linux, so
+# an unmanaged warmup keeps the count above zero until the 30s timeout, and the
+# force-kill that follows takes warmup down with `pkill -9` and never starts it
+# again. That orphaned warmup 27050 on the LAN box from 2026-07-22.
+WARMUP_DIR="${KTP_WARMUP_DIR:-/srv/ktpdata/warmup}"
+WARMUP_EXEC="${KTP_WARMUP_EXEC:-dodserver}"
+WARMUP_PRESENT=0
+if [ -d "$WARMUP_DIR" ] && [ -x "$WARMUP_DIR/$WARMUP_EXEC" ] && [ ! -f "$WARMUP_DIR/.ktp-disabled" ]; then
+    WARMUP_PRESENT=1
+fi
+# hlds_linux count to expect after the restart; the verify step compares against
+# this, not NUM_SERVERS, or a healthy warmup reads as a failed instance.
+EXPECTED_RUNNING=$((NUM_SERVERS + WARMUP_PRESENT))
 
 # Discord channels (same as HLTV status)
 CHANNEL_KTP="YOUR_KTP_CHANNEL_ID"          # KTP Discord
@@ -196,6 +214,11 @@ for port in "${PORTS[@]}"; do
     ./$SERVER_EXEC stop >/dev/null 2>&1 &
 done
 
+if [ "$WARMUP_PRESENT" -eq 1 ]; then
+    log "Stopping warmup instance ($WARMUP_DIR)..."
+    ( cd "$WARMUP_DIR" && ./"$WARMUP_EXEC" stop >/dev/null 2>&1 ) &
+fi
+
 # Wait for stops to complete — poll until BOTH hlds_linux processes and
 # dodserver tmux sessions are gone. The previous implementation slept for a
 # fixed 10 seconds, which wasn't enough for the worst case: LinuxGSM's STOP
@@ -247,8 +270,15 @@ log "All servers stopped"
 log "Checking for staged .new files..."
 SWAP_COUNT=0
 SWAP_FAILED=0
+SWAP_BASES=()
 for port in "${PORTS[@]}"; do
-    BASE=~/dod-$port/serverfiles
+    SWAP_BASES+=(~/dod-$port/serverfiles)
+done
+# Warmup runs the same stack, so a wave staged there must activate the same way.
+[ "$WARMUP_PRESENT" -eq 1 ] && SWAP_BASES+=("$WARMUP_DIR/serverfiles")
+for BASE in "${SWAP_BASES[@]}"; do
+    # Log label only: keeps the existing "[27015]" form, warmup reads "[warmup]".
+    port=$(basename "$(dirname "$BASE")"); port=${port#dod-}
     for new_file in "$BASE"/*.new \
                     "$BASE"/dod/addons/ktpamx/dlls/*.new \
                     "$BASE"/dod/addons/ktpamx/modules/*.new \
@@ -312,12 +342,32 @@ for port in "${PORTS[@]}"; do
     sleep 3
 done
 
+if [ "$WARMUP_PRESENT" -eq 1 ]; then
+    if ( cd "$WARMUP_DIR" && ./"$WARMUP_EXEC" start >/dev/null 2>&1 ); then
+        log "Started warmup ($WARMUP_DIR)"
+        # Same lockfile gap as the instances above: without it the monitor cron
+        # reads warmup as intentionally stopped and never revives it.
+        WARMUP_LOCK="$WARMUP_DIR/lgsm/lock/$WARMUP_EXEC-monitoring.lock"
+        if [ ! -f "$WARMUP_LOCK" ]; then
+            date +%s > "$WARMUP_LOCK" 2>/dev/null \
+                && log "  [warmup] created missing $WARMUP_EXEC-monitoring.lock"
+        fi
+    else
+        log "FAILED to start warmup ($WARMUP_DIR)"
+    fi
+    sleep 3
+fi
+
 # Verify servers are running
 sleep 5
 RUNNING=$(pgrep -c hlds_linux 2>/dev/null || echo "0")
 RUNNING=${RUNNING//[^0-9]/}  # Strip non-numeric chars
 RUNNING=${RUNNING:-0}
-log "Verification: $RUNNING/$NUM_SERVERS servers running"
+if [ "$WARMUP_PRESENT" -eq 1 ]; then
+    log "Verification: $RUNNING/$EXPECTED_RUNNING running (${NUM_SERVERS} match + 1 warmup)"
+else
+    log "Verification: $RUNNING/$EXPECTED_RUNNING servers running"
+fi
 
 # ============================================================================
 # Apply CPU Pinning + Real-Time Scheduling
@@ -403,12 +453,18 @@ done
 
 # Identify any failed ports
 FAILED_PORTS=""
-if [ "$RUNNING" -ne "$NUM_SERVERS" ]; then
+if [ "$RUNNING" -ne "$EXPECTED_RUNNING" ]; then
     for port in "${PORTS[@]}"; do
         if ! pgrep -f "\-port $port " >/dev/null 2>&1; then
             FAILED_PORTS="$FAILED_PORTS $port"
         fi
     done
+    # Warmup has no entry in PORTS, so without this a warmup-only failure
+    # reports as "partial" with an empty failed list — the least actionable
+    # possible alert.
+    if [ "$WARMUP_PRESENT" -eq 1 ] && ! pgrep -f "\-port ${KTP_WARMUP_PORT:-27050} " >/dev/null 2>&1; then
+        FAILED_PORTS="$FAILED_PORTS warmup"
+    fi
 fi
 
 # ============================================================================
@@ -416,13 +472,13 @@ fi
 # ============================================================================
 FOOTER_TIMESTAMP=$(TZ='America/New_York' date '+%m/%d/%Y %I:%M %p EST')
 
-if [ "$RUNNING" -eq "$NUM_SERVERS" ]; then
+if [ "$RUNNING" -eq "$EXPECTED_RUNNING" ]; then
     FINAL_TITLE="$KTP_EMOJI Server Restart Complete"
-    FINAL_DESC="All $NUM_SERVERS game servers restarted successfully."
+    FINAL_DESC="All $EXPECTED_RUNNING game servers restarted successfully."
     FINAL_COLOR=$COLOR_GREEN
 elif [ "$RUNNING" -gt 0 ]; then
     FINAL_TITLE="$KTP_EMOJI Server Restart - Partial"
-    FINAL_DESC="$RUNNING/$NUM_SERVERS servers restarted.\\n**Failed ports:**$FAILED_PORTS"
+    FINAL_DESC="$RUNNING/$EXPECTED_RUNNING servers restarted.\\n**Failed ports:**$FAILED_PORTS"
     FINAL_COLOR=$COLOR_ORANGE
 else
     FINAL_TITLE="$KTP_EMOJI Server Restart Failed"
@@ -446,6 +502,6 @@ if [ -n "$MSG_ID_EXT" ]; then
     edit_discord_embed "$CHANNEL_EXTERNAL" "$MSG_ID_EXT" "$FINAL_TITLE" "$FINAL_DESC" "$FINAL_COLOR" "$SERVER_NAME - $FOOTER_TIMESTAMP"
 fi
 
-log "Scheduled restart complete. $RUNNING/$NUM_SERVERS servers running."
+log "Scheduled restart complete. $RUNNING/$EXPECTED_RUNNING servers running."
 
 # Cron will be restored by trap on EXIT
