@@ -19,6 +19,15 @@ staging safe:
      silently changes the shipped md5 -- this catches it before it reaches 24
      instances. ("Verify by md5, not banner.")
 
+  3. WAVE-TIME RUNNER GATE. `--expect-runner <basename>=<md5>` refuses to stage
+     unless the Tier-2 runner already holds the matching KTP_TEST_MODE build.
+     That is a different binary from the one being staged, so its md5 must be
+     supplied -- the version cannot be read back out of a compiled `.amxx`
+     (XXMA+zlib). This answers a question the drift checker structurally cannot:
+     it compares the runner against the FLEET, so on 2026-08-03 it saw a runner
+     that was newer than the fleet by mtime and still two versions behind the
+     artifact being waved. Staging a test-mode plugin without this flag warns.
+
 Then it stages every artifact as `<name>.new` to all active instances,
 mode-matches each `.new` to the live file it will replace (so the post-swap
 permissions are correct), re-verifies md5 24/24, and prints the exact
@@ -39,8 +48,15 @@ Usage:
   stage-wave.py --preflight-only
   # inspect intent without connecting
   stage-wave.py -f foo.amxx --dry-run
+  # a plugin wave gated on the runner holding the matching TEST-mode build
+  stage-wave.py -f compiled/KTPMatchHandler.amxx \
+                --expect        KTPMatchHandler.amxx=<production md5> \
+                --expect-runner KTPMatchHandler.amxx=<TEST-mode md5>
 
 Env: KTP_FLEET_SSH_PASSWORD (or ~/.ktp_fleet_ssh_password), same as deploy-to-fleet.py.
+     KTP_TIER2_SSH_HOST / _USER / _PASSWORD / KTP_TIER2_TREE for --expect-runner.
+     No default host: an --expect-runner that cannot reach the runner is FATAL,
+     never skipped -- an unverifiable gate is not a passed gate.
 """
 
 import argparse
@@ -107,6 +123,44 @@ def preflight_attribution(host_keys):
         for hk, found, err in pool.map(scan, host_keys):
             out[hk] = {"found": found, "err": err}
     return out
+
+
+# Plugins the Tier-2 runner holds as KTP_TEST_MODE builds. Staging one of these
+# to the fleet without the runner holding the matching test build means the next
+# suite run certifies a build nobody is about to ship. Mirrors PLUGINS_TESTMODE
+# in ktp-tier2-stack-drift.py -- keep the two in step.
+RUNNER_TESTMODE_PLUGINS = {
+    "KTPMatchHandler.amxx",
+    "KTPPracticeMode.amxx",
+    "KTPHudObserver.amxx",
+}
+
+# Runner location. No default host: this tool deliberately holds no IPs, and a
+# gate that silently skips when unconfigured is worse than no gate, so an
+# --expect-runner with no host configured is fatal rather than skipped.
+RUNNER_HOST = os.environ.get("KTP_TIER2_SSH_HOST", "")
+RUNNER_USER = os.environ.get("KTP_TIER2_SSH_USER", "root")
+RUNNER_TREE = os.environ.get("KTP_TIER2_TREE", "/opt/ktp-tier2-runner/serverfiles")
+RUNNER_PLUGIN_DIR = "dod/addons/ktpamx/plugins"
+
+
+def runner_md5s(basenames):
+    """{basename: md5-or-None} for the runner's copy of each plugin. Raises on connect failure."""
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    pw = os.environ.get("KTP_TIER2_SSH_PASSWORD") or None
+    ssh.connect(RUNNER_HOST, username=RUNNER_USER, password=pw, timeout=30)
+    try:
+        paths = " ".join(f"'{RUNNER_TREE}/{RUNNER_PLUGIN_DIR}/{b}'" for b in basenames)
+        _, so, _ = ssh.exec_command(f"md5sum {paths} 2>/dev/null", timeout=60)
+        got = {}
+        for ln in so.read().decode().splitlines():
+            parts = ln.split()
+            if len(parts) == 2:
+                got[os.path.basename(parts[1])] = parts[0].lower()
+        return {b: got.get(b) for b in basenames}
+    finally:
+        ssh.close()
 
 
 def mode_match(host_keys, artifacts):
@@ -178,6 +232,12 @@ def main():
                     help=f'Comma-separated (or "all"). Choices: {",".join(d2f.SERVERS)}')
     ap.add_argument("--allow-existing-new", action="store_true",
                     help="Skip the attribution gate (deliberate stacked activation only).")
+    ap.add_argument("--expect-runner", action="append", default=[], metavar="BASENAME=MD5",
+                    help="Assert the Tier-2 runner holds this md5 (the TEST-mode build, which is a "
+                         "different binary from the one being staged). Repeatable.")
+    ap.add_argument("--no-runner-check", action="store_true",
+                    help="Silence the missing --expect-runner warning (you have decided the runner "
+                         "does not need to match this wave).")
     ap.add_argument("--preflight-only", action="store_true", help="Run the attribution gate and exit.")
     ap.add_argument("--dry-run", action="store_true", help="Print intent, do not connect to stage.")
     ap.add_argument("--parallel", type=int, default=5)
@@ -243,6 +303,60 @@ def main():
         print(f"  {a.basename} -> dod-*/{a.remote_dir}/  ({a.size}B, md5 {a.md5}){pin}")
     targets = _target_instances(host_keys)
     print(f"Targets: {len(targets)} active instances across {len(host_keys)} host(s).\n")
+
+    # ---- Wave-time runner gate ----
+    # The drift checker answers "has the runner fallen behind the FLEET". It
+    # cannot answer "is the runner holding the build I am about to wave" -- on
+    # 2026-08-03 the runner was newer than the fleet by mtime and still two
+    # versions behind the reviewed artifact. That question only exists here.
+    expect_runner = {}
+    for e in args.expect_runner:
+        if "=" not in e:
+            sys.exit(f"FATAL: --expect-runner must be BASENAME=MD5, got '{e}'")
+        k, v = e.split("=", 1)
+        expect_runner[k.strip()] = v.strip().lower()
+
+    staged_testmode = [a.basename for a in artifacts if a.basename in RUNNER_TESTMODE_PLUGINS]
+    unchecked = [b for b in staged_testmode if b not in expect_runner]
+
+    if expect_runner and args.dry_run:
+        print("Runner gate: WOULD check the Tier-2 runner for:")
+        for name, want in sorted(expect_runner.items()):
+            print(f"  {name} == {want}")
+        print(f"  (host {RUNNER_USER}@{RUNNER_HOST or '<KTP_TIER2_SSH_HOST unset -- would be FATAL>'})\n")
+    elif expect_runner:
+        if not RUNNER_HOST:
+            sys.exit("FATAL: --expect-runner given but KTP_TIER2_SSH_HOST is unset -- the gate "
+                     "cannot run. Set it, or drop --expect-runner. (Nothing staged.)")
+        print("Runner gate: checking the Tier-2 runner holds the matching TEST-mode build(s)...")
+        try:
+            got = runner_md5s(sorted(expect_runner))
+        except Exception as ex:
+            sys.exit(f"FATAL: could not read the Tier-2 runner ({RUNNER_USER}@{RUNNER_HOST}): {ex!r}\n"
+                     "Aborting -- an unverifiable gate is not a passed gate. (Nothing staged.)")
+        bad = []
+        for name, want in sorted(expect_runner.items()):
+            have = got.get(name)
+            if have is None:
+                bad.append((name, "ABSENT", want))
+            elif have != want:
+                bad.append((name, have, want))
+            else:
+                print(f"  {name}: {have} OK")
+        if bad:
+            print("FATAL: the Tier-2 runner does not hold the expected TEST-mode build:", file=sys.stderr)
+            for name, have, want in bad:
+                print(f"  {name}: runner has {have}, expected {want}", file=sys.stderr)
+            sys.exit("Restage the runner's test build first, then re-run. (Nothing staged.)")
+        print("  runner matches.\n")
+    elif staged_testmode and not args.no_runner_check:
+        print("WARNING: staging a plugin with a KTP_TEST_MODE runner build and no --expect-runner:")
+        for b in staged_testmode:
+            print(f"  {b}")
+        print("  The next Tier-2 run would certify a build that is not the one being waved.")
+        print("  Pass --expect-runner NAME=<test-mode md5>, or --no-runner-check to accept.\n")
+    if unchecked and expect_runner and not args.no_runner_check:
+        print(f"WARNING: staged but not runner-checked: {', '.join(unchecked)}\n")
 
     if args.dry_run:
         print("DRY-RUN: no connection made. Above is what would stage.")

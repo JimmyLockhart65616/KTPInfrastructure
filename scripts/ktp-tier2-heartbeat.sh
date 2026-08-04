@@ -80,13 +80,37 @@ if [ "$state" = "ok" ] && [ -x "$AGG_PY" ] && [ -f "$DRIFT_CHECKER" ]; then
     fi
 fi
 
-prev="$(cat "$STATE" 2>/dev/null || echo "")"
-echo "$state" > "$STATE" 2>/dev/null || true
+# State file is "<state>|<epoch of last alert>". Older files hold a bare state;
+# treat those as never-alerted so the first run after an upgrade re-alerts if
+# we are currently down.
+raw="$(cat "$STATE" 2>/dev/null || echo "")"
+prev="${raw%%|*}"
+prev_alert="${raw#*|}"
+case "$prev_alert" in (*[!0-9]*|"") prev_alert=0 ;; esac
+now="$(date +%s)"
 
+# Transition-only alerting meant a persistent outage was announced exactly once.
+# The runner was dead 126h; the alert fired correctly on day one, during LAN
+# week, and was never repeated — so it read as background chatter and was missed.
+# Re-alert on a slow cadence while still down. `ok` is excluded: there is nothing
+# to nag about once recovered.
+REALERT_SECONDS="${KTP_TIER2_REALERT_SECONDS:-86400}"
+repeat=0
 if [ "$state" = "$prev" ]; then
-    echo "tier2-heartbeat: state=$state (unchanged) — no alert"
-    exit 0
+    if [ "$state" = "ok" ]; then
+        echo "tier2-heartbeat: state=ok (unchanged) — no alert"
+        exit 0
+    fi
+    if [ "$((now - prev_alert))" -lt "$REALERT_SECONDS" ]; then
+        echo "tier2-heartbeat: state=$state (unchanged, last alert $(( (now - prev_alert) / 3600 ))h ago) — no alert"
+        exit 0
+    fi
+    repeat=1
 fi
+
+# Stamp the alert time only when we are actually about to alert, so a failed
+# relay post does not start the re-alert clock.
+echo "$state|$now" > "$STATE" 2>/dev/null || true
 
 # ── Build + post the transition embed ────────────────────────────────────────
 case "$state" in
@@ -95,6 +119,11 @@ case "$state" in
     drift)  title="⚠️ KTP Tier 2 — runner stack drifted from fleet"; desc="$detail"; color=16763904 ;;
     *)      title="⚠️ KTP Tier 2 — not running"; desc="$detail"; color=16763904 ;;
 esac
+if [ "$repeat" = "1" ]; then
+    down_h=$(( (now - prev_alert) / 3600 ))
+    title="$title — STILL DOWN"
+    desc="$desc"$'\n\n'"Still in this state; last alerted ${down_h}h ago. This is a repeat, not a new failure."
+fi
 footer="ktp-tier2-heartbeat @ $(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z')"
 
 if [ -z "$RELAY_URL" ] || [ -z "$AUTH_SECRET" ]; then
