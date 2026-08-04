@@ -165,6 +165,55 @@ jobs:
           # (operators run `allure serve <downloaded-results>` locally).
           pip install pytest==9.0.3 pytest-rerunfailures==15.0 allure-pytest==2.13.5
 
+      # Re-landed 2026-08-04 from the closed-unmerged PR #33. The runner's copy
+      # had drifted a MONTH (staged Jul 3) because it was hand-staged and nothing
+      # refreshed it -- and the belief that this workflow already recompiled was
+      # the false premise the 2026-08-03 drift fix had to debunk. It was true of
+      # PR #33's design and false of main, because the PR never merged.
+      #
+      # NOTE the deliberate asymmetry: KTPHudObserver is an EXTERNAL plugin we do
+      # not review or stage, so 'always current' is right. KTPMatchHandler and
+      # KTPPracticeMode are the opposite -- the runner must hold the exact reviewed
+      # artifact (see stage-runner.py + the stage manifest), so they are staged and
+      # pinned, never rebuilt here. PR #33 rebuilt both; only this half is wanted.
+      - name: Refresh + stage KTPHudObserver.amxx from DoD-hud-observer master
+        if: steps.changes.outputs.run == '1'
+        # Without this, Tier 2 tested whatever KTPHudObserver.amxx was MANUALLY
+        # staged on the runner — drifting silently from the live plugin (the
+        # existing test_hud_observer_contract.py had the same staleness). Recompile
+        # from master every run so the suite always exercises current code.
+        #
+        # Compiles natively with an amxxpc toolchain staged once on the runner at
+        # $TOOLCHAIN (amxxpc + amxxpc32.so + include/), the same pattern as the
+        # pre-staged serverfiles/ tree. No Docker: amxxpc is 32-bit, so the runner
+        # needs i386 multiarch (libc6:i386 + lib32stdc++6) — already present on the
+        # data server. Refresh the toolchain when KTPAMXX's compiler or includes
+        # change. Hard-fails if the plugin can't be rebuilt — better than silently
+        # testing a stale binary. See PR notes.
+        env:
+          TOOLCHAIN: /opt/ktp-tier2-runner/toolchain
+        run: |
+          set -euo pipefail
+          SF="$KTP_HLDS_SERVERFILES"
+          SRC="${RUNNER_TEMP:-/tmp}/dod-hud-src"
+          rm -rf "$SRC"
+          git clone --depth 1 https://github.com/JimmyLockhart65616/DoD-hud-observer.git "$SRC"
+          GIT_SHA="$(git -C "$SRC" rev-parse --short HEAD)"
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%MZ)"
+          WORK="$(mktemp -d)"
+          mkdir -p "$WORK/include"
+          cp "$TOOLCHAIN"/include/*.inc "$WORK/include/"
+          printf '#define KTP_BUILD_SHA "%s"\n#define KTP_BUILD_TIME "%s"\n' "$GIT_SHA" "$BUILD_TIME" > "$WORK/include/build_info.inc"
+          tr -d '\r' < "$SRC/KTPHudObserver.sma" > "$WORK/KTPHudObserver.sma"
+          VER="$(grep -oE '#define VERSION "[^"]+"' "$SRC/KTPHudObserver.sma" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
+          ( cd "$WORK" && LD_LIBRARY_PATH="$TOOLCHAIN" "$TOOLCHAIN/amxxpc" KTPHudObserver.sma -i"$WORK/include" -oKTPHudObserver.amxx )
+          install -D "$WORK/KTPHudObserver.amxx" "$SF/dod/addons/ktpamx/plugins/KTPHudObserver.amxx"
+          rm -rf "$WORK"
+          # Export the just-built version so the contract test asserts against it
+          # instead of a hardcoded pin (no lockstep edits, no silent staleness).
+          echo "KTP_EXPECTED_HUDOBSERVER_VERSION=$VER" >> "$GITHUB_ENV"
+          echo "Staged KTPHudObserver.amxx ($(stat -c%s "$SF/dod/addons/ktpamx/plugins/KTPHudObserver.amxx") bytes, v$VER, sha $GIT_SHA)"
+
       - name: Verify test artifacts present in serverfiles
         if: steps.changes.outputs.run == '1'
         run: |
