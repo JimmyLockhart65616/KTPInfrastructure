@@ -63,6 +63,7 @@ from pathlib import Path
 
 import pytest
 
+from . import _stage_manifest
 from ._timing import scaled
 from .fake_ingest import FakeIngest
 from .match_flow import MatchDriver, MatchType
@@ -83,8 +84,8 @@ from .match_flow import MatchDriver, MatchType
 # so the moment this is wired to a workflow input (which passes '' when blank)
 # the pin would become the empty string on every non-gate run. Normalized to
 # match the MatchHandler and PracticeMode pins.
-EXPECTED_KTPHUDOBSERVER_VERSION = (
-    os.environ.get("KTP_EXPECTED_HUDOBSERVER_VERSION") or "2.0.0"
+EXPECTED_KTPHUDOBSERVER_VERSION = _stage_manifest.expected_version(
+    "KTPHudObserver.amxx", "KTP_EXPECTED_HUDOBSERVER_VERSION", "2.0.0"
 )
 
 

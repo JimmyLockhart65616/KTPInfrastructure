@@ -26,6 +26,7 @@ from pathlib import Path
 
 import pytest
 
+from . import _stage_manifest
 from ._timing import LOG_POLL_TIMEOUT, WITNESS_TIMEOUT
 from .log_tail import (
     current_log_size,
@@ -53,8 +54,11 @@ from .match_flow import MatchDriver, MatchType
 # and PR runs. os.environ.get(k, default) returns '' for a set-but-empty var, so
 # a get() default would pin every non-gate run to the empty string and fail all
 # of them.
-EXPECTED_KTPMATCHHANDLER_VERSION = (
-    os.environ.get("KTP_EXPECTED_MATCHHANDLER_VERSION") or "0.10.147"
+# Resolution is env override -> stage manifest -> literal floor; see
+# _stage_manifest.py. The floor stays at the build activated 2026-07-21 so a
+# runner with no manifest still asserts something.
+EXPECTED_KTPMATCHHANDLER_VERSION = _stage_manifest.expected_version(
+    "KTPMatchHandler.amxx", "KTP_EXPECTED_MATCHHANDLER_VERSION", "0.10.147"
 )
 
 
