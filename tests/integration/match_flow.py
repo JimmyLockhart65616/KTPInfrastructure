@@ -84,12 +84,35 @@ class MatchState:
     required_ready_count: int
 
 
+@dataclass(frozen=True)
+class SetStateResult:
+    """Outcome of an `amx_ktp_test_setstate` call.
+
+    A refusal is a legitimate result, not an error — most of what these tests
+    assert is that the gates refuse when they should. So `setstate()` returns
+    this instead of raising on rejection; it still raises MatchDriverError for
+    `ERROR` (malformed call / test-mode build not loaded), which IS a bug.
+
+    `reason` mirrors the plugin's own vocabulary verbatim: `parse=bad_token`,
+    `gate=not_live`, `gate=overtime`, `gate=intermission`, `scores=bad_half`,
+    `scores=negative_h2`, `scores=h1_mismatch`. Empty on accept.
+    """
+    accepted: bool
+    reason: str = ""
+    derived_h2: tuple[int, int] | None = None  # (team1, team2); set on accept
+
+
 _RCON_OK_PREFIXES = ("KTP_TEST_SETUP:", "KTP_TEST_PENDING:", "KTP_TEST_LIVE:",
                      "KTP_TEST_END:", "KTP_TEST_END_HALF1:", "KTP_TEST_ABANDON:",
                      "KTP_TEST_ROUNDLIVE_LOG:", "KTP_TEST_FORCERESET:",
-                     "KTP_TEST_RESTARTHALF:", "KTP_TEST_RESET:")
+                     "KTP_TEST_RESTARTHALF:", "KTP_TEST_RESET:",
+                     "KTP_TEST_SETSTATE:")
 _STATE_LINE_RE = re.compile(r"KTP_TEST_STATE:\s*(\{.*\})")
 _LOCALINFO_LINE_RE = re.compile(r"KTP_TEST_LOCALINFO:\s+key=(\S+)\s+value=(.*)")
+_SETSTATE_REJECT_RE = re.compile(
+    r"KTP_TEST_SETSTATE:\s*REJECTED\s+((?:parse|gate|scores)=\S+)"
+)
+_SETSTATE_OK_RE = re.compile(r"KTP_TEST_SETSTATE:\s*ok\b.*?\bh2=(-?\d+),(-?\d+)")
 
 
 class MatchDriver:
@@ -282,6 +305,54 @@ class MatchDriver:
         """
         out = self._handle.rcon("amx_ktp_test_restarthalf")
         self._raise_on_error(out, "KTP_TEST_RESTARTHALF")
+
+    def setstate(
+        self,
+        half: int | str,
+        allies: int | str,
+        axis: int | str,
+        h1_team1: int | str,
+        h1_team2: int | str,
+    ) -> SetStateResult:
+        """Drive `.setstate` without the chat layer (KTPMatchHandler 0.10.150+).
+
+        `allies`/`axis` are the CURRENT cumulative scoreboard totals; `h1_team1`
+        and `h1_team2` are 1st-half scores BY TEAM IDENTITY — team1 started as
+        Allies, team2 as Axis, and the sides swap in the 2nd half. So in half 2
+        the plugin derives team1's H2 from `axis` and team2's H2 from `allies`.
+        Getting that backwards is the bug this wrapper's naming exists to
+        prevent.
+
+        The rcon runs the same `setstate_gate_reason()` and
+        `setstate_validate_scores()` the chat command runs, so a refusal here
+        is the production refusal. It skips only chat-arg tokenizing and the
+        retype-to-confirm window.
+
+        Arguments accept `str` as well as `int` so tests can send tokens the
+        plugin must refuse (`"-5"`, `"abc"`, `"1000"`) without the wrapper
+        sanitizing away the thing under test.
+
+        Returns SetStateResult; raises MatchDriverError only on `ERROR`.
+        """
+        out = self._handle.rcon(
+            f"amx_ktp_test_setstate {half} {allies} {axis} {h1_team1} {h1_team2}"
+        )
+        self._raise_on_error(out, "KTP_TEST_SETSTATE")
+
+        rejected = _SETSTATE_REJECT_RE.search(out)
+        if rejected:
+            return SetStateResult(accepted=False, reason=rejected.group(1))
+
+        ok = _SETSTATE_OK_RE.search(out)
+        if not ok:
+            raise MatchDriverError(
+                f"setstate response was neither REJECTED nor a parseable ok "
+                f"line: {out!r}"
+            )
+        return SetStateResult(
+            accepted=True,
+            derived_h2=(int(ok.group(1)), int(ok.group(2))),
+        )
 
     # -- State readback -------------------------------------------------
 
