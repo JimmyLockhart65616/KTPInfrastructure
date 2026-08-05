@@ -1,0 +1,22 @@
+[Unit]
+Description=KTP support.ktpdod.com web service
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=supportweb
+Group=supportweb
+WorkingDirectory=/opt/support-web
+EnvironmentFile=/etc/ktp/support-web.env
+ExecStart=/opt/support-web/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/var/lib/support-web
+
+[Install]
+WantedBy=multi-user.target

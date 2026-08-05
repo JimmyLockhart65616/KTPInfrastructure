@@ -1,0 +1,62 @@
+# support.ktpdod.com
+#
+# server_name is support.ktpdod.com and NOTHING ELSE. Do not add ktpdod.com or
+# www.ktpdod.com "for convenience": the apex already resolves to this box while
+# www resolves to Sears' host, so a stray entry here captures the main domain on
+# the next reload -- no DNS change, no warning, and the symptom looks like a bug
+# on their side. Same for TLS: issue a cert for support. alone, never a SAN
+# covering the apex, so renewals for the two properties cannot contend.
+
+# Add to /etc/nginx/conf.d/ktp-ratelimit.conf, not here -- zones are http-context
+# and that file already owns them:
+#   limit_req_zone $binary_remote_addr zone=support_report:1m rate=6r/m;
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name support.ktpdod.com;
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name support.ktpdod.com;
+
+    ssl_certificate     /etc/letsencrypt/live/support.ktpdod.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/support.ktpdod.com/privkey.pem;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy same-origin always;
+
+    # The poller's public document, served as a static file: one poll feeds every
+    # viewer. Cache shorter than the 60s poll so a refresh cannot show older data
+    # than the page's own staleness check assumes.
+    location = /status/public.json {
+        alias /var/www/support.ktpdod.com/status/public.json;
+        add_header Cache-Control "public, max-age=30";
+    }
+
+    # detail.json is NOT here by design -- it lives in /var/lib/support-web and
+    # is reachable only through an authenticated route in the app.
+
+    location = /api/report {
+        limit_req zone=support_report burst=3 nodelay;
+        limit_req_status 429;
+        proxy_pass http://127.0.0.1:8100;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8100;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
