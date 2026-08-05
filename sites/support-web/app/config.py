@@ -34,6 +34,12 @@ class Settings:
     ktp_admin_ids: set[str] = field(default_factory=set)
     one3_admin_ids: set[str] = field(default_factory=set)
 
+    db_host: str = "localhost"
+    db_port: int = 3306
+    db_user: str = "support_web"
+    db_password: str = ""
+    db_name: str = "hlstatsx"
+
     public_json: str = "/var/www/support.ktpdod.com/status/public.json"
     detail_json: str = "/var/lib/support-web/detail.json"
 
@@ -44,6 +50,11 @@ class Settings:
     @property
     def relay_configured(self) -> bool:
         return bool(self.relay_url and self.relay_secret)
+
+    @property
+    def db_kwargs(self) -> dict:
+        return {"host": self.db_host, "port": self.db_port, "user": self.db_user,
+                "password": self.db_password, "database": self.db_name}
 
     def channel_for(self, channel_name: str) -> str:
         return (
@@ -66,6 +77,11 @@ def load() -> Settings:
         channel_player_reports=env("SUPPORT_CHANNEL_PLAYER_REPORTS") or "",
         relay_url=env("DISCORD_RELAY_URL") or "",
         relay_secret=env("DISCORD_RELAY_SECRET") or "",
+        db_host=env("SUPPORT_DB_HOST") or Settings.db_host,
+        db_port=int(env("SUPPORT_DB_PORT") or Settings.db_port),
+        db_user=env("SUPPORT_DB_USER") or Settings.db_user,
+        db_password=env("SUPPORT_DB_PASSWORD") or "",
+        db_name=env("SUPPORT_DB_NAME") or Settings.db_name,
         ktp_admin_ids=_ids(env("SUPPORT_KTP_ADMIN_IDS")),
         one3_admin_ids=_ids(env("SUPPORT_ONE3_ADMIN_IDS")),
         public_json=env("SUPPORT_PUBLIC_JSON") or Settings.public_json,

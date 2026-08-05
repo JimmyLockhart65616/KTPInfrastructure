@@ -12,6 +12,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 
+class _FakeConn:
+    """Stands in for a pymysql connection; records that it was closed."""
+
+    def __init__(self, log):
+        self.log = log
+
+    def close(self):
+        self.log.append(("closed",))
+
+
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     pub = tmp_path / "public.json"
@@ -35,6 +45,20 @@ def client(tmp_path, monkeypatch):
     importlib.reload(app.config)
     import app.main
     m = importlib.reload(app.main)
+
+    # No real MySQL and no real relay in tests. Without this the report tests
+    # spend ~20s waiting on connection timeouts and, worse, would post to a live
+    # Discord channel the moment someone ran them with a configured env.
+    sent = []
+    monkeypatch.setattr(m.store, "connect", lambda **kw: _FakeConn(sent))
+    monkeypatch.setattr(m.store, "insert_report",
+                        lambda conn, iid, rep, ip: sent.append(("row", iid, rep.channel.value)) or 1)
+    monkeypatch.setattr(m.store, "mark_relayed",
+                        lambda conn, rid: sent.append(("marked", rid)))
+    monkeypatch.setattr(m.relay, "post_embed",
+                        lambda url, sec, ch, emb, **kw: sent.append(("relay", ch, emb))
+                        or m.relay.RelayResult(True, 200))
+    m.delivered = sent
 
     def as_tier(did=None):
         from app.tiers import resolve
@@ -141,3 +165,45 @@ def test_rate_limit_kicks_in_and_reports_retry_after(client):
 
 def test_instant_submission_is_rejected(client):
     assert client().post("/api/report", data=form(started="0.2")).status_code == 400
+
+
+# --- delivery ordering ----------------------------------------------------
+
+def test_report_is_stored_before_it_is_relayed_then_marked(client):
+    import app.main as m
+    c = client()
+    assert c.post("/api/report", data=form()).status_code == 200
+    kinds = [e[0] for e in m.delivered]
+    assert kinds == ["row", "relay", "marked", "closed"], kinds
+
+
+def test_cheating_report_relays_to_the_player_channel(client, monkeypatch):
+    import app.main as m
+    monkeypatch.setenv("SUPPORT_CHANNEL_PLAYER_REPORTS", "200")
+    c = client()
+    c.post("/api/report", data=form(category="cheating"))
+    row = next(e for e in m.delivered if e[0] == "row")
+    assert row[2] == "player"
+
+
+def test_a_relay_failure_still_tells_the_reporter_it_was_sent(client, monkeypatch):
+    import app.main as m
+    monkeypatch.setattr(m.relay, "post_embed",
+                        lambda *a, **k: m.relay.RelayResult(False, 502, "bad gateway"))
+    r = client().post("/api/report", data=form())
+    # The row is durable and the unrelayed index is the retry queue; telling
+    # them it failed would make them re-submit something we already have.
+    assert r.status_code == 200 and r.json()["ok"] is True
+    assert "marked" not in [e[0] for e in m.delivered]
+
+
+def test_a_database_failure_does_not_block_the_relay(client, monkeypatch):
+    import app.main as m
+
+    def boom(**kw):
+        raise RuntimeError("mysql is down")
+
+    monkeypatch.setattr(m.store, "connect", boom)
+    r = client().post("/api/report", data=form())
+    assert r.status_code == 200
+    assert "relay" in [e[0] for e in m.delivered]   # report still reached Discord

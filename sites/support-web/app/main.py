@@ -7,6 +7,7 @@ request; this file is wiring.
 
 from __future__ import annotations
 
+import logging
 import secrets
 
 from authlib.integrations.starlette_client import OAuth
@@ -15,10 +16,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import status as st
+from . import relay, status as st, store
 from .config import settings
 from .reports import RateLimiter, ReportRejected, validate
 from .tiers import Tier, can_view_detail_status, resolve, visible_sections
+
+log = logging.getLogger("support-web")
 
 app = FastAPI(title="KTP Support", docs_url=None, redoc_url=None)
 app.add_middleware(SessionMiddleware, secret_key=settings.session_secret, https_only=True)
@@ -139,10 +142,39 @@ async def api_report(
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     intake_id = secrets.token_hex(6)
-    # TODO(wiring): persist to support_reports, then POST the embed to the relay
-    # channel settings.channel_for(report.channel.value) and flip `relayed`.
-    # Row first, relay second -- a relay outage must not eat a report.
+    deliver_report(report, intake_id, key)
+    # The reporter is told "sent" either way. Delivery is our problem from here:
+    # the row is durable and the unrelayed index is the retry queue, so telling
+    # them it failed would make them re-submit something we already have.
     return JSONResponse({"ok": True, "intake": intake_id})
+
+
+def deliver_report(report, intake_id: str, ip_hash: str) -> None:
+    """Persist, then relay, then mark. Never raises into the request."""
+    conn = report_id = None
+    try:
+        conn = store.connect(**settings.db_kwargs)
+        report_id = store.insert_report(conn, intake_id, report, ip_hash)
+    except Exception as exc:                     # noqa: BLE001 - log and continue
+        log.error("report %s could not be stored: %s", intake_id, exc)
+
+    result = relay.post_embed(
+        settings.relay_url,
+        settings.relay_secret,
+        settings.channel_for(report.channel.value),
+        relay.report_embed(report, intake_id),
+    )
+    if not result.ok:
+        log.error("report %s relay failed (%s): %s", intake_id, result.status, result.error)
+    elif conn and report_id:
+        try:
+            store.mark_relayed(conn, report_id)
+        except Exception as exc:                 # noqa: BLE001
+            # Worst case it is retried and posts twice, which is recoverable;
+            # a lost report is not.
+            log.error("report %s relayed but not marked: %s", intake_id, exc)
+    if conn:
+        conn.close()
 
 
 @app.get("/auth/login")
