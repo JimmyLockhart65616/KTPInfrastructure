@@ -1,0 +1,20 @@
+<!doctype html>
+<meta charset="utf-8"><title>KTP Support</title>
+<h1>KTP Support</h1>
+<p data-tier="{{ tier }}">{% if user %}Signed in as {{ user }}{% else %}Not signed in{% endif %}</p>
+
+{% if 'status' in sections %}
+<section id="status">
+  {% if status.freshness != 'fresh' %}<p class="unknown">{{ status.message }}</p>
+  {% else %}<ul>{% for s in status.servers %}
+    <li>{{ s.label }} — {{ s.map or '' }} {{ s.players }}/{{ s.max_players }}{% if s.hltv %} +H{% endif %}
+      {%- if s.match_type %} [{{ s.match_type }} · {{ s.state }}]{% endif %}</li>
+  {% endfor %}</ul>{% endif %}
+</section>{% endif %}
+
+{% if 'report' in sections %}<section id="report">report-a-problem</section>{% endif %}
+{% if 'request_one3' in sections %}<section id="request_one3">1.3 moderator request</section>{% endif %}
+{% if 'request_ktp' in sections %}<section id="request_ktp">KTP privilege request</section>{% endif %}
+{% if 'commands' in sections %}<section id="commands">bot command hub</section>{% endif %}
+{% if 'tickets' in sections %}<section id="tickets">ticket queue</section>{% endif %}
+{% if 'sponsor' in sections %}<a href="https://github.com/sponsors/afraznein">Sponsor KTP</a>{% endif %}
