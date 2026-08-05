@@ -125,6 +125,11 @@ def count_humans(names: list[str]) -> int:
     return sum(1 for n in names if not is_hltv(n))
 
 
+def count_hltv(names: list[str]) -> int:
+    """Proxies occupying player slots, so capacity can be reported honestly."""
+    return sum(1 for n in names if is_hltv(n))
+
+
 def query_players(ip: str, port: int, timeout: float = DEFAULT_TIMEOUT) -> list[str]:
     """A2S_PLAYER, answering the challenge GoldSrc always sends for it."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

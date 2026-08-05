@@ -26,7 +26,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
-from .a2s import A2SError, count_humans, query, query_players
+from .a2s import A2SError, count_hltv, count_humans, query, query_players
 from .hostname import parse
 
 DOWN_AFTER = 3          # consecutive failed polls before a server reads "down"
@@ -87,9 +87,10 @@ def _poll_one(inst: Instance) -> dict:
     # instance. Ask for the roster and count actual people; if that second query
     # fails, fall back rather than losing the whole server from the page.
     try:
-        humans = count_humans(query_players(inst.ip, inst.port, POLL_TIMEOUT))
+        roster = query_players(inst.ip, inst.port, POLL_TIMEOUT)
+        humans, proxies = count_humans(roster), count_hltv(roster)
     except A2SError:
-        humans = None
+        humans, proxies = None, 0
 
     return {
         "instance": inst,
@@ -99,6 +100,7 @@ def _poll_one(inst: Instance) -> dict:
         "info": info,
         "name": parse(info.hostname),
         "humans": humans,
+        "hltv": proxies,
         "last_ok": streak.last_ok,
     }
 
@@ -127,7 +129,13 @@ def public_document(results: list[dict], now: float | None = None) -> dict:
             # and that one still includes HLTV.
             humans = r.get("humans")
             entry["players"] = info.humans if humans is None else humans
-            entry["max_players"] = info.max_players
+            # An HLTV proxy holds a real slot, so advertising the raw A2S max
+            # overstates how many people can actually join. Report the human
+            # capacity and flag the proxy separately -- the page renders "0/12 +H".
+            proxies = r.get("hltv", 0)
+            entry["max_players"] = max(0, info.max_players - proxies)
+            if proxies:
+                entry["hltv"] = True
             if name.match_type:
                 entry["match_type"] = name.match_type
                 entry["state"] = name.state

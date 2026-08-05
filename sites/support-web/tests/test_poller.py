@@ -136,3 +136,18 @@ def test_summary_players_uses_the_roster_too():
         r["humans"] = humans
         rs.append(r)
     assert P.public_document(rs)["summary"]["players"] == 9
+
+
+def test_capacity_excludes_the_hltv_slot_and_flags_it():
+    # A2S reports 13 slots, one of which the proxy holds. 12 people can join.
+    r = _ok("Dallas 1", "Dallas", "KTP - Dallas 1", players=1, mx=13)
+    r["humans"], r["hltv"] = 0, 1
+    s = P.public_document([r])["servers"][0]
+    assert (s["players"], s["max_players"], s["hltv"]) == (0, 12, True)
+
+
+def test_no_proxy_means_full_capacity_and_no_flag():
+    r = _ok("Dallas 1", "Dallas", "KTP - Dallas 1", players=0, mx=13)
+    r["humans"], r["hltv"] = 0, 0
+    s = P.public_document([r])["servers"][0]
+    assert s["max_players"] == 13 and "hltv" not in s
