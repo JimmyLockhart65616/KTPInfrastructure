@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#001e62">
+<title>support.ktpdod.com — KTP — Keep the Practice · Competitive Day of Defeat</title>
+<style>
+/* ============================================================
+   ktpdod.com landing — design prototype.
+   Design system: KTPAntiCheat/docs/bundles-web/styles.css is the
+   source of record. Tokens, type scale, panel shapes and pill
+   treatments are copied from it, not reinterpreted.
+
+   Deliberate deviations (see DESIGN.md § Deviations):
+   1. nav is NOT position:sticky — operator requires a static,
+      non-moving header.
+   2. --amber added for the "degraded" status state (the sibling
+      palette has no middle state; red=down, blue=ok are kept).
+   3. JetBrains Mono is self-hosted in production exactly as
+      bundles-web does it; this prototype is self-contained (no
+      external requests) so it rides the fallback mono stack.
+
+   The brand is a committed dark treatment across every sibling
+   site; color-scheme is declared so light-mode UAs don't invert
+   form controls. There is intentionally no light variant.
+   ============================================================ */
+:root {
+  --bg:        #001e62;
+  --panel:     #0a2f77;
+  --panel-2:   #13367c;
+  --inset:     #001a54;
+  --border:    #214895;
+  --text:      #f3fbff;
+  --dim:       #adc8e0;
+  --faint:     #8aa6cf;
+  --red:       #f52735;
+  --blue:      #0072d5;
+  --blue-soft: #4ea3e6;
+  --amber:     #e8a13c;   /* status "degraded" only — not a brand color */
+  --radius: 14px;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  color-scheme: dark;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background:
+    radial-gradient(120% 80% at 50% -10%, #0a2f77 0%, rgba(10,47,119,0) 55%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { color: var(--blue-soft); }
+::selection { background: var(--red); color:#fff; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 22px; width: 100%; }
+[hidden] { display: none !important; }
+
+a:focus-visible, button:focus-visible { outline: 2px solid var(--blue-soft); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+/* ---- top bar — STATIC by operator requirement (not sticky, not animated) ---- */
+nav {
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,26,84,0.72);
+  position: static;
+}
+nav .row { display:flex; align-items:center; gap: 22px; height: 58px; }
+.brand { font-weight: 800; letter-spacing: 1px; font-size: 1.05rem; color: var(--text); }
+.brand .k { color: var(--red); }
+nav .spacer { flex: 1; }
+nav .navlink { color: var(--dim); font-size: 0.82rem; letter-spacing: 0.6px; }
+nav .navlink:hover { color: var(--text); }
+.who {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.76rem; color: var(--dim); letter-spacing: 0.4px;
+  border: 1px solid var(--border); border-radius: 999px; padding: 6px 13px;
+  white-space: nowrap;
+}
+.who b { color: var(--text); font-weight: 700; }
+@media (max-width: 720px) { nav .hidesm { display: none; } }
+
+/* ---- shared bits (verbatim from bundles-web) ---- */
+.eyebrow {
+  font-size: 0.72rem; letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--dim); display:flex; align-items:center; gap: 10px;
+}
+.eyebrow::before { content:""; width: 26px; height: 2px; background: var(--blue); display:inline-block; }
+.accent { color: var(--red); }
+.panel {
+  background: linear-gradient(180deg, var(--panel) 0%, #082a6b 100%);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+.panel .head {
+  font-size:0.68rem; letter-spacing:1.8px; text-transform:uppercase; color:var(--dim);
+  padding: 13px 16px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; gap: 10px;
+}
+.panel .head .n { color: var(--faint); letter-spacing: 0.6px; text-transform: none; font-size: 0.72rem; }
+.panel .body { padding: 15px 16px; }
+.pill { font-size: 0.7rem; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--border); color: var(--dim); letter-spacing: 0.4px; white-space: nowrap; }
+.pill.ok { border-color: var(--blue); color: var(--blue-soft); }
+.pill.warn { border-color: var(--amber); color: var(--amber); }
+.pill.down { border-color: var(--red); color: var(--red); }
+.note-box { border-left: 3px solid var(--red); background: var(--inset); padding: 14px 16px; border-radius: 0 var(--radius) var(--radius) 0; margin: 18px 0; font-size: 0.86rem; color: var(--dim); }
+.note-box b { color: var(--text); }
+
+/* ---- hero ---- */
+header.hero { padding: 52px 0 10px; }
+h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -1px; line-height: 1.04; margin: 16px 0 12px; }
+.lede { color: var(--dim); max-width: 68ch; font-size: 0.92rem; }
+.lede b { color: var(--text); font-weight: 600; }
+
+/* ---- section scaffolding ---- */
+section { padding: 26px 0 8px; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; margin-bottom: 16px; }
+h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
+.sec-head .meta { font-size: 0.76rem; color: var(--faint); letter-spacing: 0.4px; }
+
+/* ---- status: fleet grid ---- */
+.fleet { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.region .head b { color: var(--text); letter-spacing: 1.8px; }
+.inst { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(33,72,149,0.4); font-size: 0.82rem; }
+.inst:last-child { border-bottom: none; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dot.ok { background: var(--blue-soft); }
+.dot.down { background: var(--red); }
+.dot.warn { background: var(--amber); }
+.inst .nm { color: var(--text); white-space: nowrap; }
+.inst .bar { flex: 1; height: 5px; background: var(--inset); border-radius: 999px; overflow: hidden; min-width: 30px; }
+.inst .bar i { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
+.inst .ct { color: var(--dim); font-size: 0.76rem; white-space: nowrap; min-width: 5ch; text-align: right; }
+.inst.off .nm { color: var(--faint); }
+.inst.off .ct { color: var(--red); }
+
+/* ---- status: services strip ---- */
+.services { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 12px; }
+.svc { background: linear-gradient(180deg, var(--panel) 0%, #082a6b 100%); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 15px; display: flex; align-items: center; gap: 11px; }
+.svc .dot { width: 9px; height: 9px; }
+.svc .t { min-width: 0; }
+.svc .t b { display: block; font-size: 0.84rem; color: var(--text); font-weight: 700; }
+.svc .t span { display: block; font-size: 0.72rem; color: var(--faint); letter-spacing: 0.3px; }
+.status-foot { font-size: 0.76rem; color: var(--faint); margin-top: 12px; letter-spacing: 0.3px; }
+
+/* ---- ops detail (KTP-admin gated) ---- */
+.opstable { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 560px; }
+.opstable th { text-align: left; color: var(--faint); font-weight: 400; font-size: 0.7rem; letter-spacing: 1.4px; text-transform: uppercase; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--border); }
+.opstable td { padding: 7px 14px 7px 0; border-bottom: 1px solid rgba(33,72,149,0.4); color: var(--dim); vertical-align: top; }
+.opstable td.u { color: var(--text); white-space: nowrap; }
+.scrollbox { overflow-x: auto; }
+
+/* ---- hub cards ---- */
+.hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.hcard {
+  display: block; color: inherit;
+  background: linear-gradient(180deg, var(--panel) 0%, #082a6b 100%);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 15px 17px; position: relative; overflow: hidden;
+}
+.hcard::before {
+  content:""; position:absolute; left:0; top:0; bottom:0; width: 3px;
+  background: var(--red); transform: scaleY(0); transform-origin: top;
+  transition: transform .18s ease;
+}
+.hcard:hover { border-color: #2f5cb0; }
+.hcard:hover::before { transform: scaleY(1); }
+.hcard b { display: block; font-size: 0.92rem; color: var(--text); font-weight: 700; }
+.hcard .u { display: block; font-size: 0.72rem; color: var(--blue-soft); letter-spacing: 0.3px; margin: 2px 0 6px; }
+.hcard p { font-size: 0.78rem; color: var(--dim); }
+.sponsor-slot { float:right; font-weight:700; color:var(--red); border:1px solid var(--red);
+  border-radius:4px; padding:2px 10px; text-decoration:none; letter-spacing:.02em; }
+.sponsor-slot:hover { background:var(--red); color:#fff; }
+.badge { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em;
+  padding:1px 6px; border-radius:3px; border:1px solid var(--line); margin-left:6px; }
+.badge.live { border-color:var(--green); color:var(--green); }
+.badge.type { border-color:var(--accent); color:var(--accent); }
+.hcard.sponsor { border-color: var(--red); }
+.hcard.sponsor .u { color: var(--red); }
+
+/* ---- forms (field treatment verbatim from bundles-web login) ---- */
+.field { margin-bottom: 18px; }
+.field label {
+  display: block; font-size: 0.68rem; letter-spacing: 1.8px; text-transform: uppercase;
+  color: var(--dim); margin-bottom: 7px;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--inset); border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text); font-family: var(--mono); font-size: 0.92rem;
+  padding: 12px 14px; outline: none;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); }
+.field input::placeholder, .field textarea::placeholder { color: var(--faint); }
+.field .hint { font-size: 0.74rem; color: var(--faint); margin-top: 6px; letter-spacing: 0.3px; }
+.field textarea { resize: vertical; min-height: 110px; }
+.btn {
+  display: inline-block;
+  background: var(--blue); color: #fff; border: 1px solid var(--blue);
+  border-radius: 10px; padding: 12px 22px; margin-top: 4px;
+  font-family: var(--mono); font-size: 0.92rem; font-weight: 700; letter-spacing: 0.6px;
+  cursor: pointer; text-align: center;
+  transition: background .16s ease, border-color .16s ease;
+}
+.btn:hover { background: #0b82e8; border-color: #0b82e8; }
+.btn.ghost { background: var(--inset); color: var(--text); border-color: var(--border); }
+.btn.ghost:hover { border-color: var(--blue); color: #cfe6ff; }
+.form-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+@media (max-width: 640px) { .form-cols { grid-template-columns: 1fr; } }
+.fineprint { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.76rem; color: var(--faint); line-height: 1.65; }
+.fineprint b { color: var(--dim); }
+
+/* ---- two-col layout for report + signin ---- */
+.twocol { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .twocol { grid-template-columns: 1fr; } }
+
+/* ---- admin: command hub ---- */
+.cmdgrid { display: grid; gap: 16px; }
+.cmdtable { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 640px; }
+.cmdtable td { padding: 8px 14px 8px 0; border-bottom: 1px solid rgba(33,72,149,0.4); vertical-align: top; }
+.cmdtable tr:last-child td { border-bottom: none; }
+.cmdtable code { color: var(--blue-soft); white-space: nowrap; font-family: var(--mono); }
+.cmdtable .d { color: var(--dim); }
+.copy {
+  background: var(--inset); color: var(--dim); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 12px; font-size: 0.7rem; cursor: pointer;
+  font-family: var(--mono); letter-spacing: 0.4px; white-space: nowrap;
+}
+.copy:hover { border-color: var(--blue); color: #cfe6ff; }
+.copy.done { border-color: var(--blue); color: var(--blue-soft); }
+
+/* ---- request queue / ticket states ---- */
+.ticket { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid rgba(33,72,149,0.4); font-size: 0.82rem; }
+.ticket:last-child { border-bottom: none; }
+.ticket .who-t { color: var(--text); min-width: 16ch; }
+.ticket .what { color: var(--dim); flex: 1; min-width: 20ch; }
+.ticket .acts { display: flex; gap: 8px; }
+
+/* ---- flow strip (state machine, shown to requesters) ---- */
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.74rem; color: var(--dim); margin-top: 10px; }
+.flow .st { border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; letter-spacing: 0.4px; white-space: nowrap; }
+.flow .st.cur { border-color: var(--blue); color: var(--blue-soft); }
+.flow .arr { color: var(--faint); }
+
+/* ---- footer ---- */
+footer { border-top: 1px solid var(--border); padding: 30px 0 70px; color: var(--dim); font-size: 0.82rem; margin-top: 40px; }
+footer.split { display:flex; flex-wrap:wrap; gap: 24px; justify-content: space-between; }
+footer .col { max-width: 46ch; }
+footer h4 { color: var(--text); font-size: 0.72rem; letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 8px; }
+footer p { margin: 4px 0; }
+footer .accent { color: var(--red); white-space: nowrap; }
+
+/* ---- MOCKUP-ONLY tier switcher — not part of the design ---- */
+.mock {
+  position: fixed; right: 14px; bottom: 14px; z-index: 90;
+  background: var(--inset); border: 2px dashed var(--amber); border-radius: 12px;
+  padding: 10px 12px; max-width: 260px;
+}
+.mock .tag { display: block; font-size: 0.64rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+.mock .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.mock button {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.4px;
+  background: var(--panel); color: var(--dim); border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.mock button[aria-pressed="true"] { border-color: var(--blue); color: var(--blue-soft); background: rgba(0,114,213,0.14); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto; }
+}
+</style>
+</head>
+<body data-tier="public">
+
+<!-- Static header: identical visual treatment to the sibling sites,
+     but position:static — operator requirement. -->
+<nav>
+  <div class="wrap row">
+    <span class="brand"><span class="k">KTP</span> — Keep the Practice</span>
+    <span class="spacer"></span>
+    <a class="navlink hidesm" href="#status">Status</a>
+    <a class="navlink hidesm" href="#report">Report a problem</a>
+    <a class="navlink hidesm" href="#hub">Sites</a>
+    <a class="navlink" href="#admin">Admin</a>
+    <span class="who" data-show="public"><a href="#admin">Sign in</a></span>
+    <span class="who" data-show="one3" hidden>1.3 admin · <b>mockuser</b></span>
+    <span class="who" data-show="ktp" hidden>KTP admin · <b>mockuser</b></span>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Keep the Practice · Competitive Day of Defeat
+      <a class="sponsor-slot" href="https://github.com/sponsors/afraznein">❤ Sponsor KTP</a></div>
+    <h1>The <span class="accent">front door</span>.</h1>
+    <p class="lede">Live status for every KTP game server, one place to report a problem,
+      and the way in to everything else — <b>stats, demos, anti-cheat transparency, the
+      broadcast HUD</b> — without memorizing ten subdomains.</p>
+  </header>
+
+  <!-- ============================ STATUS ============================ -->
+  <section id="status">
+    <div class="sec-head">
+      <h2>Server status</h2>
+      <span class="meta">updated 41s ago · one server-side poll per minute, shared by every viewer</span>
+    </div>
+
+    <div class="fleet">
+      <div class="panel region">
+        <div class="head"><b>Atlanta</b><span class="n">5/5 up · 37 playing</span></div>
+        <div class="body">
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #1</span><span class="bar"><i style="width:44%"></i></span><span class="ct">14/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #2</span><span class="bar"><i style="width:38%"></i></span><span class="ct">12/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #3</span><span class="bar"><i style="width:22%"></i></span><span class="ct">7/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #4</span><span class="bar"><i style="width:13%"></i></span><span class="ct">4/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+        </div>
+      </div>
+
+      <div class="panel region">
+        <div class="head"><b>Dallas</b><span class="n">5/5 up · 22 playing</span></div>
+        <div class="body">
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #1</span><span class="bar"><i style="width:56%"></i></span><span class="ct">18/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #2</span><span class="bar"><i style="width:13%"></i></span><span class="ct">4/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+        </div>
+      </div>
+
+      <div class="panel region">
+        <div class="head"><b>Denver</b><span class="n">4/5 up · 12 playing</span></div>
+        <div class="body">
+          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #1</span><span class="bar"><i style="width:38%"></i></span><span class="ct">12/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #2</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst off"><span class="dot down"></span><span class="nm">Denver #4</span><span class="bar"></span><span class="ct">offline</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+        </div>
+      </div>
+
+      <div class="panel region">
+        <div class="head"><b>New York</b><span class="n">5/5 up · 29 playing</span></div>
+        <div class="body">
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #1</span><span class="bar"><i style="width:63%"></i></span><span class="ct">20/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #2</span><span class="bar"><i style="width:28%"></i></span><span class="ct">9/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+        </div>
+      </div>
+
+      <div class="panel region">
+        <div class="head"><b>Chicago</b><span class="n">4/4 up · 6 playing</span></div>
+        <div class="body">
+          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #1</span><span class="bar"><i style="width:19%"></i></span><span class="ct">6/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #2</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services: HLTV proxies, recording API and demo pipeline are
+         deliberately SEPARATE indicators — they fail independently. -->
+    <div class="services">
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>HLTV relays</b><span>24/24 broadcasting</span></div></div>
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>Atlanta 1</b><span>dod_donner · 8/16<span class="badge type">12MAN</span><span class="badge live">LIVE &mdash; 2ND HALF</span></span></div></div>
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>Dallas 3</b><span>dod_avalanche · 12/16<span class="badge type">KTP</span><span class="badge live">LIVE &mdash; OT1</span></span></div></div>
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>Denver 2</b><span>dod_kalt · 0/16</span></div></div>
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>Match recording</b><span>demo recording API</span></div></div>
+      <div class="svc"><span class="dot warn"></span><div class="t"><b>Demo pipeline</b><span>naming &amp; archive — degraded</span></div></div>
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>Broadcast HUD</b><span>observer engine</span></div></div>
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>HUD web</b><span>hud.ktpdod.com</span></div></div>
+    </div>
+
+    <p class="status-foot">Public view shows region, server name and player count only.
+      Signed-in KTP admins see operational detail below.</p>
+
+    <!-- KTP-admin-only operational detail: unit names, timestamps,
+         failure detail. NEVER in the public JSON. -->
+    <div class="panel" data-show="ktp" hidden style="margin-top:12px">
+      <div class="head">Operational detail <span class="pill">KTP admins only</span></div>
+      <div class="body scrollbox">
+        <table class="opstable">
+          <thead><tr><th>Indicator</th><th>Unit / source</th><th>State</th><th>Since</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr><td class="u">Denver #4</td><td>den:27018 (A2S)</td><td><span class="pill down">down</span></td><td>02:41 ET</td><td>no A2S reply ×3 · last seen map dod_railroad2</td></tr>
+            <tr><td class="u">Demo pipeline</td><td>hltv-demo-renamer.service</td><td><span class="pill warn">degraded</span></td><td>09:12 ET</td><td>unit active, 14 demos queued &gt; 30 min</td></tr>
+            <tr><td class="u">Match recording</td><td>hltv-api (:8087 localhost)</td><td><span class="pill ok">ok</span></td><td>—</td><td>health 200, 0.8s</td></tr>
+            <tr><td class="u">HLTV relays</td><td>hltv@27020–27043</td><td><span class="pill ok">24/24</span></td><td>—</td><td>all units active</td></tr>
+            <tr><td class="u">Broadcast HUD</td><td>hud-observer.service / hud-observer-web.service</td><td><span class="pill ok">ok</span></td><td>—</td><td>both active</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== REPORT A PROBLEM ==================== -->
+  <section id="report">
+    <div class="sec-head"><h2>Report a problem</h2>
+      <span class="meta">goes straight to the admin team — never posted publicly</span></div>
+
+    <div class="twocol">
+      <div class="panel">
+        <div class="body">
+          <form onsubmit="return false">
+            <div class="form-cols">
+              <div class="field">
+                <label for="r-cat">What kind of problem</label>
+                <select id="r-cat">
+                  <option>Game server (lag, crash, can't connect)</option>
+                  <option>HLTV / demos</option>
+                  <option>Stats / website</option>
+                  <option>Player behavior</option>
+                  <option>Something else</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="r-srv">Which server (if any)</label>
+                <select id="r-srv">
+                  <option>Not server-specific</option>
+                  <option>Atlanta #1</option><option>Atlanta #2</option><option>Atlanta #3</option><option>Atlanta #4</option><option>Atlanta #5</option>
+                  <option>Dallas #1</option><option>Dallas #2</option><option>Dallas #3</option><option>Dallas #4</option><option>Dallas #5</option>
+                  <option>Denver #1</option><option>Denver #2</option><option>Denver #3</option><option>Denver #4</option><option>Denver #5</option>
+                  <option>New York #1</option><option>New York #2</option><option>New York #3</option><option>New York #4</option><option>New York #5</option>
+                  <option>Chicago #1</option><option>Chicago #2</option><option>Chicago #3</option><option>Chicago #4</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="r-desc">What happened</label>
+              <textarea id="r-desc" maxlength="2000" placeholder="When it happened, what you saw, your in-game name if relevant…"></textarea>
+              <div class="hint">Max 2000 characters. Don't include passwords — ever.</div>
+            </div>
+            <div class="field">
+              <label for="r-contact">Discord handle <span style="text-transform:none;letter-spacing:0">(optional — only if you want a reply)</span></label>
+              <input id="r-contact" type="text" autocomplete="off" placeholder="yourname">
+            </div>
+            <!-- production: hidden honeypot field + per-IP rate limit; see DESIGN.md -->
+            <button class="btn" type="submit">Send report</button>
+            <div class="fineprint">
+              Reports go to a <b>private admin channel</b> on Discord. They are never shown on
+              this site or anywhere public. Limited to a few reports per hour per connection.
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="head">Faster routes</div>
+          <div class="body" style="font-size:0.84rem; color:var(--dim)">
+            <p><b style="color:var(--text)">Mid-match issue?</b> Tell the server — admins are
+              usually in the Discord already. This form is for things that can wait an hour.</p>
+            <p style="margin-top:10px"><b style="color:var(--text)">Anti-cheat question?</b>
+              Your own data is at <a href="https://bundles.ktpdod.com/">bundles.ktpdod.com</a>;
+              policy lives at <a href="https://ac.ktpdod.com/">ac.ktpdod.com</a>.</p>
+          </div>
+        </div>
+        <div class="note-box">
+          <b>Suspect cheating?</b> Use this form with the “Player behavior” category —
+          include server, time and player name. It routes to the anti-cheat admins
+          privately. Never accuse in public chat.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ HUB ============================ -->
+  <section id="hub">
+    <div class="sec-head"><h2>Everything KTP</h2>
+      <span class="meta">the ten sites, one place</span></div>
+    <div class="hub">
+      <a class="hcard" href="https://profiles.ktpdod.com/"><b>Player profiles</b><span class="u">profiles.ktpdod.com</span><p>What the field runs — configs, rates, hardware posture.</p></a>
+      <a class="hcard" href="https://ac.ktpdod.com/"><b>Anti-cheat</b><span class="u">ac.ktpdod.com</span><p>How the KTP anti-cheat works, in the open.</p></a>
+      <a class="hcard" href="https://bundles.ktpdod.com/"><b>My AC data</b><span class="u">bundles.ktpdod.com</span><p>See and download everything the anti-cheat collected from you.</p></a>
+      <a class="hcard" href="https://netcode.ktpdod.com/"><b>Netcode</b><span class="u">netcode.ktpdod.com</span><p>Hitreg, lag compensation and what we measured.</p></a>
+      <a class="hcard" href="https://watch.ktpdod.com/"><b>Watch</b><span class="u">watch.ktpdod.com</span><p>Spectate live matches.</p></a>
+      <a class="hcard" href="https://hud.ktpdod.com/"><b>Broadcast HUD</b><span class="u">hud.ktpdod.com</span><p>The observer overlay for casted matches.</p></a>
+      <a class="hcard" href="https://fastdl.ktpdod.com/demos/"><b>Demo archive</b><span class="u">fastdl.ktpdod.com/demos</span><p>Every recorded HLTV demo, by match.</p></a>
+      <a class="hcard" href="https://dodworldseries.com/"><b>World Series of DoD</b><span class="u">dodworldseries.com</span><p>The LAN — teams, brackets, results.</p></a>
+    </div>
+  </section>
+
+  <!-- ============================ ADMIN ============================ -->
+  <section id="admin">
+    <div class="sec-head"><h2>Admin</h2>
+      <span class="meta">Discord sign-in · what you see depends on who you are</span></div>
+
+    <!-- ---- logged out ---- -->
+    <div class="twocol" data-show="public">
+      <div class="panel">
+        <div class="body">
+          <p style="font-size:0.9rem; color:var(--dim); max-width:56ch">Sign in with Discord to
+            request admin privileges or use the admin tools. <b style="color:var(--text)">Two
+            kinds of access:</b></p>
+          <div style="margin-top:14px; display:grid; gap:10px">
+            <div style="display:flex; gap:10px; align-items:baseline"><span class="pill">1.3 admins</span>
+              <span style="font-size:0.82rem; color:var(--dim)">request moderator (<code style="color:var(--blue-soft)">.kick</code>) access for your community's moderators</span></div>
+            <div style="display:flex; gap:10px; align-items:baseline"><span class="pill">KTP admins</span>
+              <span style="font-size:0.82rem; color:var(--dim)">bot command reference, privilege requests, request approvals</span></div>
+          </div>
+          <button class="btn" style="margin-top:18px">Sign in with Discord</button>
+          <div class="fineprint">Uses Discord only to identify you (<b>identify</b> scope — no
+            server list, no messages). Access is granted per-person by the KTP staff.</div>
+        </div>
+      </div>
+      <div class="note-box" style="margin:0">
+        <b>Nothing here is self-service.</b> Signing in doesn't grant anything — it lets you
+        ask. Every privilege change is reviewed and applied by a person.
+      </div>
+    </div>
+
+    <!-- ---- 1.3 admin tier ---- -->
+    <div data-show="one3 ktp" hidden>
+      <div class="panel">
+        <div class="head">Request moderator access · 1.3 community
+          <span class="pill ok">signed in</span></div>
+        <div class="body">
+          <form onsubmit="return false">
+            <div class="form-cols">
+              <div class="field">
+                <label for="m-steamid">Moderator's SteamID</label>
+                <input id="m-steamid" type="text" placeholder="STEAM_0:0:12345" autocomplete="off">
+                <div class="hint">The account that will get <b>.kick</b> on the 1.3 servers.</div>
+              </div>
+              <div class="field">
+                <label for="m-name">Moderator's name</label>
+                <input id="m-name" type="text" placeholder="in-game / Discord name" autocomplete="off">
+              </div>
+            </div>
+            <div class="field">
+              <label for="m-why">Context</label>
+              <textarea id="m-why" maxlength="1000" placeholder="Who they are, which nights they mod…"></textarea>
+            </div>
+            <button class="btn" type="submit">Submit request</button>
+            <div class="fineprint">
+              <b>This queues a ticket — nothing changes automatically.</b> A KTP admin reviews it,
+              applies the change to the server admin list by hand, and the moderator gets their
+              login details by Discord DM. <b>Never put a password in this form.</b>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <div class="head">Your requests</div>
+        <div class="body">
+          <div class="ticket">
+            <span class="who-t">STEAM_0:1:44821</span>
+            <span class="what">moderator (.kick) — “our Tuesday night mod”</span>
+            <span class="pill warn">pending review</span>
+          </div>
+          <div class="ticket">
+            <span class="who-t">STEAM_0:0:9917</span>
+            <span class="what">moderator (.kick)</span>
+            <span class="pill ok">applied · next restart</span>
+          </div>
+          <div class="flow" aria-label="Request lifecycle">
+            <span class="st cur">submitted</span><span class="arr">→</span>
+            <span class="st">approved</span><span class="arr">→</span>
+            <span class="st">applied by admin</span><span class="arr">→</span>
+            <span class="st">active after nightly restart</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- KTP admin tier ---- -->
+    <div data-show="ktp" hidden style="margin-top:16px">
+
+      <div class="panel">
+        <div class="head">AC review console
+          <span class="pill">KTP admins</span></div>
+        <div class="body">
+          <p><a href="https://admin.ktpdod.com/"><b>admin.ktpdod.com</b></a> &mdash; anti-cheat review console.</p>
+          <p class="hint">Moved off the public hub deliberately: the console is reachable either way,
+          but a front door should not advertise the admin entrance.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="head">Request KTP privileges
+          <span class="pill">KTP admins</span></div>
+        <div class="body">
+          <form onsubmit="return false">
+            <div class="form-cols">
+              <div class="field">
+                <label for="k-steamid">SteamID</label>
+                <input id="k-steamid" type="text" placeholder="STEAM_0:0:12345" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="k-role">Requested role</label>
+                <select id="k-role">
+                  <option>Seasonal captain — .kick, changemap (this season only)</option>
+                  <option>KTP admin — full match admin set</option>
+                  <option>1.3 moderator — .kick</option>
+                </select>
+                <div class="hint">Captain grants expire with the season and are removed in the postseason sweep.</div>
+              </div>
+            </div>
+            <div class="field">
+              <label for="k-why">Context</label>
+              <textarea id="k-why" maxlength="1000" placeholder="Who this is for and why…"></textarea>
+            </div>
+            <button class="btn" type="submit">Submit request</button>
+            <div class="fineprint"><b>Queued ticket, human-applied</b> — same flow as every
+              privilege change. Passwords are set by the applying admin and DM'd, never typed here.</div>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <div class="head">Approval queue <span class="n">2 waiting</span></div>
+        <div class="body">
+          <div class="ticket">
+            <span class="who-t">STEAM_0:1:44821</span>
+            <span class="what">1.3 moderator — requested by mockuser13 (1.3) · “our Tuesday night mod”</span>
+            <span class="acts"><button class="btn ghost" style="padding:6px 14px; font-size:0.76rem">Approve</button>
+            <button class="btn ghost" style="padding:6px 14px; font-size:0.76rem">Reject</button></span>
+          </div>
+          <div class="ticket">
+            <span class="who-t">STEAM_0:0:31007</span>
+            <span class="what">seasonal captain — requested by nein · season 12 draft captain</span>
+            <span class="acts"><button class="btn ghost" style="padding:6px 14px; font-size:0.76rem">Approve</button>
+            <button class="btn ghost" style="padding:6px 14px; font-size:0.76rem">Reject</button></span>
+          </div>
+          <div class="fineprint">Approving creates a checklist item, not a server change. The
+            applying admin edits the admin list over SSH, marks the ticket <b>applied</b>, and the
+            grant goes live at the next nightly restart.</div>
+        </div>
+      </div>
+
+      <!-- ---- command hub ---- -->
+      <div class="sec-head" style="margin-top:26px"><h2 style="font-size:1.1rem">Bot command hub</h2>
+        <span class="meta">run these in Discord · click to copy</span></div>
+
+      <div class="cmdgrid">
+        <div class="panel">
+          <div class="head">/ops — fleet operations <span class="n">KTP AdminBot</span></div>
+          <div class="body scrollbox">
+            <table class="cmdtable">
+              <tr><td><code>/ops fleet-health</code></td><td class="d">One-shot health grid for every game instance.</td><td><button class="copy" data-cmd="/ops fleet-health">copy</button></td></tr>
+              <tr><td><code>/ops server-status</code></td><td class="d">A2S query a single instance or all.</td><td><button class="copy" data-cmd="/ops server-status">copy</button></td></tr>
+              <tr><td><code>/ops matches</code></td><td class="d">Recent matches across the fleet (or one server).</td><td><button class="copy" data-cmd="/ops matches">copy</button></td></tr>
+              <tr><td><code>/ops versions</code></td><td class="d">md5 engine + KTPAMXX + MatchHandler across the fleet (drift detection).</td><td><button class="copy" data-cmd="/ops versions">copy</button></td></tr>
+              <tr><td><code>/ops restart-status</code></td><td class="d">Last scheduled-restart result per host.</td><td><button class="copy" data-cmd="/ops restart-status">copy</button></td></tr>
+              <tr><td><code>/ops services</code></td><td class="d">Data-server systemd unit status grid.</td><td><button class="copy" data-cmd="/ops services">copy</button></td></tr>
+              <tr><td><code>/ops disk</code></td><td class="d">Data-server disk usage + top MySQL tables.</td><td><button class="copy" data-cmd="/ops disk">copy</button></td></tr>
+              <tr><td><code>/ops health</code></td><td class="d">AC health snapshot: HWID, verdicts, match linkage.</td><td><button class="copy" data-cmd="/ops health">copy</button></td></tr>
+              <tr><td><code>/ops logs</code></td><td class="d">Tail console log for one instance (region:port).</td><td><button class="copy" data-cmd="/ops logs">copy</button></td></tr>
+              <tr><td><code>/ops demos</code></td><td class="d">List HLTV demo recordings, newest first.</td><td><button class="copy" data-cmd="/ops demos">copy</button></td></tr>
+              <tr><td><code>/ops hltv-status</code></td><td class="d">HLTV proxy systemd state across the fleet.</td><td><button class="copy" data-cmd="/ops hltv-status">copy</button></td></tr>
+              <tr><td><code>/ops hltv-restart</code></td><td class="d">Restart a specific HLTV instance (with confirm).</td><td><button class="copy" data-cmd="/ops hltv-restart">copy</button></td></tr>
+              <tr><td><code>/ops player-search</code></td><td class="d">Partial-match search by SteamID or nickname.</td><td><button class="copy" data-cmd="/ops player-search">copy</button></td></tr>
+              <tr><td><code>/ops cvar-violations</code></td><td class="d">KTPCvarChecker violations, recent window.</td><td><button class="copy" data-cmd="/ops cvar-violations">copy</button></td></tr>
+              <tr><td><code>/ops fps</code> · <code>/ops spikes</code> · <code>/ops pull-spikes</code> · <code>/ops spikes-by-fingerprint</code></td><td class="d">Performance telemetry: FPS percentiles and spike aggregates.</td><td><button class="copy" data-cmd="/ops fps">copy</button></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="head">/ac — anti-cheat admin <span class="n">KTP AdminBot</span></div>
+          <div class="body scrollbox">
+            <table class="cmdtable">
+              <tr><td><code>/ac player info|add|remove|reset-password</code></td><td class="d">AC player accounts.</td><td><button class="copy" data-cmd="/ac player info">copy</button></td></tr>
+              <tr><td><code>/ac session list|show|review</code></td><td class="d">Session uploads for a SteamID; mark reviewed.</td><td><button class="copy" data-cmd="/ac session list">copy</button></td></tr>
+              <tr><td><code>/ac session mismatches</code></td><td class="d">Server re-score beat the client's claim (tamper triage).</td><td><button class="copy" data-cmd="/ac session mismatches">copy</button></td></tr>
+              <tr><td><code>/ac match show|recent</code></td><td class="d">Match lookups.</td><td><button class="copy" data-cmd="/ac match recent">copy</button></td></tr>
+              <tr><td><code>/ac hwid list|lookup|whoelse|ban|unban</code></td><td class="d">HWID bans. <b>whoelse is sensitive — always ephemeral.</b></td><td><button class="copy" data-cmd="/ac hwid lookup">copy</button></td></tr>
+              <tr><td><code>/ac attest grant|list|revoke</code></td><td class="d">HE/RT keyboard attestations. Verify model + VID before granting.</td><td><button class="copy" data-cmd="/ac attest list">copy</button></td></tr>
+              <tr><td><code>/ac verdict-ack</code></td><td class="d">Acknowledge a flagged verdict (mark reviewed=clean).</td><td><button class="copy" data-cmd="/ac verdict-ack">copy</button></td></tr>
+              <tr><td><code>/ac profile-status</code></td><td class="d">Read a player's public-profile consent state.</td><td><button class="copy" data-cmd="/ac profile-status">copy</button></td></tr>
+              <tr><td><code>/ac profile-hide</code></td><td class="d">Unpublish a profile &mdash; keeps consent, reversible.</td><td><button class="copy" data-cmd="/ac profile-hide">copy</button></td></tr>
+              <tr><td><code>/ac profile-unhide</code></td><td class="d">Re-allow a hidden profile to publish on the next upload.</td><td><button class="copy" data-cmd="/ac profile-unhide">copy</button></td></tr>
+              <tr><td><code>/ac profile-revoke</code></td><td class="d"><b>Destructive &mdash; not reversible.</b> Deletes the public profile <i>and</i> its history (full takedown).</td><td><button class="copy" data-cmd="/ac profile-revoke">copy</button></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="head">/ktp — league <span class="n">player-facing</span></div>
+          <div class="body scrollbox">
+            <table class="cmdtable">
+              <tr><td><code>/ktp register-team</code></td><td class="d">Register a team for the upcoming season.</td><td><button class="copy" data-cmd="/ktp register-team">copy</button></td></tr>
+              <tr><td><code>/ktp register-fa</code></td><td class="d">Register as a free agent.</td><td><button class="copy" data-cmd="/ktp register-fa">copy</button></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="split">
+    <div class="col">
+      <h4>What this is</h4>
+      <p>The front door for KTP — competitive Day of Defeat 1.3, played the way it was meant
+        to be played. Twenty-four servers, five cities, every match recorded.</p>
+    </div>
+    <div class="col">
+      <h4>Keep it running</h4>
+      <p><a href="https://github.com/sponsors/afraznein">Sponsor the infrastructure</a> ·
+        <a href="#report">Report a problem</a></p>
+      <p style="margin-top:8px"><span class="accent">Keep the Practice</span></p>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ============ MOCKUP DEVICE — tier switcher. NOT part of the design.
+     In production these views are rendered server-side per session;
+     no admin markup is ever sent to a logged-out client. ============ -->
+<div class="mock" role="region" aria-label="Prototype-only tier switcher">
+  <span class="tag">Mockup device — not real auth</span>
+  <div class="btns">
+    <button data-tier-btn="public" aria-pressed="true">Logged out</button>
+    <button data-tier-btn="one3" aria-pressed="false">1.3 admin</button>
+    <button data-tier-btn="ktp" aria-pressed="false">KTP admin</button>
+  </div>
+</div>
+
+<script>
+// Prototype-only. Production renders per-tier server-side.
+(function () {
+  var btns = document.querySelectorAll('[data-tier-btn]');
+  function setTier(tier) {
+    document.body.setAttribute('data-tier', tier);
+    btns.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-tier-btn') === tier));
+    });
+    document.querySelectorAll('[data-show]').forEach(function (el) {
+      var tiers = el.getAttribute('data-show').split(' ');
+      el.hidden = tiers.indexOf(tier) === -1;
+    });
+  }
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { setTier(b.getAttribute('data-tier-btn')); });
+  });
+  setTier('public');
+
+  // copy buttons for the command hub
+  document.querySelectorAll('.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var txt = b.getAttribute('data-cmd');
+      function done() { b.textContent = 'copied'; b.classList.add('done');
+        setTimeout(function () { b.textContent = 'copy'; b.classList.remove('done'); }, 1400); }
+      if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(done, done); }
+      else { done(); }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
