@@ -8,7 +8,9 @@ request; this file is wiring.
 from __future__ import annotations
 
 import logging
+import re
 import secrets
+from datetime import date
 
 from authlib.integrations.starlette_client import OAuth
 from fastapi import Depends, FastAPI, Form, Request
@@ -19,6 +21,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from . import relay, status as st, store
 from .config import settings
 from .reports import RateLimiter, ReportRejected, validate
+from .season import current_season
+from .tickets import Scope, Status, TransitionError, may_request, transition
 from .tiers import Tier, can_view_detail_status, resolve, visible_sections
 
 log = logging.getLogger("support-web")
@@ -43,6 +47,16 @@ oauth.register(
 )
 
 SESSION_ID, SESSION_NAME = "discord_id", "discord_name"
+
+# Both universes appear in the wild and STEAM_0:Y:Z and STEAM_1:Y:Z are the same
+# account. Storing whichever the requester happened to paste would create two
+# rows for one person and hide an existing grant.
+_STEAMID = re.compile(r"^STEAM_[0-9]:([01]):(\d+)$", re.I)
+
+
+def normalise_steamid(raw: str) -> str | None:
+    m = _STEAMID.match((raw or "").strip())
+    return f"STEAM_0:{m.group(1)}:{m.group(2)}" if m else None
 
 
 def current_tier(request: Request) -> Tier:
@@ -175,6 +189,100 @@ def deliver_report(report, intake_id: str, ip_hash: str) -> None:
             log.error("report %s relayed but not marked: %s", intake_id, exc)
     if conn:
         conn.close()
+
+
+@app.post("/api/tickets")
+def create_ticket(
+    request: Request,
+    scope: str = Form(...),
+    # Defaulted rather than required: an empty required Form yields FastAPI's
+    # raw 422 schema error, and the person filling this in should see our
+    # sentence about SteamID format instead.
+    steam_id: str = Form(""),
+    display_name: str = Form(""),
+    note: str = Form(""),
+    tier: Tier = Depends(current_tier),
+):
+    """File a privilege request. Never touches users.ini -- this is a row."""
+    if not tier.is_admin:
+        return JSONResponse({"detail": "not found"}, status_code=404)
+    try:
+        want = Scope(scope)
+    except ValueError:
+        return JSONResponse({"ok": False, "error": "Unknown privilege."}, status_code=400)
+
+    # Checked again here, not only in the template: a 1.3 admin who never sees
+    # the KTP form can still POST to this endpoint.
+    if not may_request(tier.value, want):
+        return JSONResponse({"ok": False, "error": "Not yours to request."}, status_code=403)
+
+    sid = normalise_steamid(steam_id)
+    if not sid:
+        return JSONResponse(
+            {"ok": False, "error": "SteamID must look like STEAM_0:1:12345."}, status_code=400
+        )
+
+    name = display_name.strip()[:64]
+    if not name:
+        return JSONResponse({"ok": False, "error": "Who is it for?"}, status_code=400)
+
+    season = current_season(date.today()).number if want.expires_with_season else None
+    try:
+        conn = store.connect(**settings.db_kwargs)
+    except Exception as exc:                                     # noqa: BLE001
+        log.error("ticket store unavailable: %s", exc)
+        return JSONResponse({"ok": False, "error": "Try again shortly."}, status_code=503)
+    try:
+        ticket_id = store.insert_ticket(
+            conn, want, sid, name,
+            request.session.get(SESSION_ID, ""), note.strip()[:500] or None, season,
+        )
+    finally:
+        conn.close()
+    return JSONResponse({"ok": True, "ticket": ticket_id})
+
+
+@app.post("/api/tickets/{ticket_id}/status")
+def advance_ticket(
+    ticket_id: int,
+    request: Request,
+    current: str = Form(...),
+    target: str = Form(...),
+    tier: Tier = Depends(current_tier),
+):
+    """Move a ticket along. KTP admins only -- 1.3 admins request, they do not decide."""
+    if tier is not Tier.KTP:
+        return JSONResponse({"detail": "not found"}, status_code=404)
+    try:
+        now_status, want_status = Status(current), Status(target)
+    except ValueError:
+        return JSONResponse({"ok": False, "error": "Unknown status."}, status_code=400)
+
+    try:
+        transition(now_status, want_status)
+    except TransitionError as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=409)
+
+    try:
+        conn = store.connect(**settings.db_kwargs)
+    except Exception as exc:                                     # noqa: BLE001
+        log.error("ticket store unavailable: %s", exc)
+        return JSONResponse({"ok": False, "error": "Try again shortly."}, status_code=503)
+    try:
+        moved = store.set_ticket_status(
+            conn, now_status, want_status, ticket_id, request.session.get(SESSION_ID, "")
+        )
+    finally:
+        conn.close()
+
+    if not moved:
+        # The row was not in `current` any more: someone else already acted.
+        # Reporting success would show this admin a decision that is not theirs.
+        return JSONResponse(
+            {"ok": False, "error": "Someone else already moved this ticket. Reload."},
+            status_code=409,
+        )
+    return JSONResponse({"ok": True, "status": want_status.value})
 
 
 @app.get("/auth/login")

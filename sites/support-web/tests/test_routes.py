@@ -55,6 +55,9 @@ def client(tmp_path, monkeypatch):
                         lambda conn, iid, rep, ip: sent.append(("row", iid, rep.channel.value)) or 1)
     monkeypatch.setattr(m.store, "mark_relayed",
                         lambda conn, rid: sent.append(("marked", rid)))
+    monkeypatch.setattr(m.store, "insert_ticket",
+                        lambda *a, **k: sent.append(("ticket",)) or 7)
+    monkeypatch.setattr(m.store, "set_ticket_status", lambda *a, **k: True)
     monkeypatch.setattr(m.relay, "post_embed",
                         lambda url, sec, ch, emb, **kw: sent.append(("relay", ch, emb))
                         or m.relay.RelayResult(True, 200))
@@ -188,6 +191,9 @@ def test_cheating_report_relays_to_the_player_channel(client, monkeypatch):
 
 def test_a_relay_failure_still_tells_the_reporter_it_was_sent(client, monkeypatch):
     import app.main as m
+    monkeypatch.setattr(m.store, "insert_ticket",
+                        lambda *a, **k: sent.append(("ticket",)) or 7)
+    monkeypatch.setattr(m.store, "set_ticket_status", lambda *a, **k: True)
     monkeypatch.setattr(m.relay, "post_embed",
                         lambda *a, **k: m.relay.RelayResult(False, 502, "bad gateway"))
     r = client().post("/api/report", data=form())
@@ -207,3 +213,71 @@ def test_a_database_failure_does_not_block_the_relay(client, monkeypatch):
     r = client().post("/api/report", data=form())
     assert r.status_code == 200
     assert "relay" in [e[0] for e in m.delivered]   # report still reached Discord
+
+
+# --- tickets --------------------------------------------------------------
+
+def ticket_form(**kw):
+    d = {"scope": "one3_moderator", "steam_id": "STEAM_0:1:12345", "display_name": "someone"}
+    d.update(kw)
+    return d
+
+
+def test_public_cannot_see_or_file_tickets(client):
+    r = client().post("/api/tickets", data=ticket_form())
+    assert r.status_code == 404          # 404, not 403 -- says nothing
+
+
+def test_one3_admin_may_request_only_its_own_scope(client):
+    c = client("333")
+    assert c.post("/api/tickets", data=ticket_form()).status_code == 200
+    # The KTP form is never rendered for them, but the endpoint is still open.
+    r = c.post("/api/tickets", data=ticket_form(scope="ktp_admin"))
+    assert r.status_code == 403
+
+
+def test_ktp_admin_may_request_any_scope(client):
+    c = client("111")
+    for scope in ("one3_moderator", "ktp_admin", "season_captain"):
+        assert c.post("/api/tickets", data=ticket_form(scope=scope)).status_code == 200
+
+
+@pytest.mark.parametrize("bad", ["", "76561198000000000", "STEAM_0:2:1", "STEAM_0:1:", "nonsense"])
+def test_malformed_steamids_are_rejected(client, bad):
+    r = client("111").post("/api/tickets", data=ticket_form(steam_id=bad))
+    assert r.status_code == 400
+
+
+def test_steamid_universe_digit_is_normalised(client):
+    # STEAM_0:1:5 and STEAM_1:1:5 are the same account; storing both would
+    # create two rows for one person and hide an existing grant.
+    import app.main as m
+    assert m.normalise_steamid("STEAM_1:1:5") == "STEAM_0:1:5"
+    assert m.normalise_steamid("steam_0:1:5") == "STEAM_0:1:5"
+    assert m.normalise_steamid("  STEAM_0:1:5  ") == "STEAM_0:1:5"
+
+
+def test_only_ktp_admins_may_advance_a_ticket(client):
+    data = {"current": "submitted", "target": "approved"}
+    assert client().post("/api/tickets/1/status", data=data).status_code == 404
+    assert client("333").post("/api/tickets/1/status", data=data).status_code == 404
+
+
+def test_a_ticket_cannot_skip_approval(client):
+    r = client("111").post("/api/tickets/1/status",
+                           data={"current": "submitted", "target": "applied"})
+    assert r.status_code == 409
+    assert "not allowed" in r.json()["error"]
+
+
+def test_a_lost_race_reports_conflict_rather_than_success(client, monkeypatch):
+    import app.main as m
+    monkeypatch.setattr(m.store, "set_ticket_status", lambda *a, **k: False)
+    r = client("111").post("/api/tickets/1/status",
+                           data={"current": "submitted", "target": "approved"})
+    assert r.status_code == 409 and "already moved" in r.json()["error"]
+
+
+def test_missing_display_name_gets_our_message_not_a_schema_error(client):
+    r = client("111").post("/api/tickets", data=ticket_form(display_name="  "))
+    assert r.status_code == 400 and r.json()["error"] == "Who is it for?"

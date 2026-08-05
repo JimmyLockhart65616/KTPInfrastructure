@@ -82,7 +82,7 @@ def insert_ticket(conn, scope, steam_id, display_name, requested_by, note, seaso
         return cur.lastrowid
 
 
-def set_ticket_status(conn, ticket_id: int, current, target, actor: str) -> bool:
+def set_ticket_status(conn, current, target, ticket_id: int, actor: str) -> bool:
     """Advance a ticket, refusing to skip a step.
 
     The WHERE clause pins the current status, so two admins acting at once
