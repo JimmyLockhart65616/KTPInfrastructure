@@ -543,3 +543,42 @@ to keep in sync forever.
 
 **Nothing above blocks building `support.`.** Both are conversations to have with Sears, not
 prerequisites.
+
+---
+
+## H. Deployment reality — measured on the data server 2026-08-05
+
+`support.ktpdod.com` was added to Wix routing. Verified what that actually produced:
+
+| Host | Resolves to | Serves today |
+|---|---|---|
+| `support.ktpdod.com` | **74.91.112.242** (data server) ✅ | **404** — no vhost yet, as expected |
+| `ac` / `admin` / `api` / `bundles` / `fastdl` / `hud` / `netcode` / `profiles` / `watch` | 74.91.112.242 | own vhost each, own LE cert each |
+| **`ktpdod.com` (apex)** | **74.91.112.242 — OUR box** | ⚠️ **404** |
+| **`www.ktpdod.com`** | **34.149.87.45 — external** | Sears' host |
+
+DNS for `support.` is correct and nothing more is needed there.
+
+### 🔴 The apex and `www` are split, and the apex points at us
+
+`ktpdod.com` resolves to the data server while `www.ktpdod.com` resolves elsewhere. No vhost claims
+the apex (confirmed: `server_name` across all of `/etc/nginx/` has no `ktpdod.com` / `www.ktpdod.com`
+entry), so it falls to the `_` catch-all in `sites-available/default` and **returns 404**.
+
+**So today, typing `ktpdod.com` gets a 404 from our infrastructure** — while `www.` reaches Sears'
+site. That is a live split-brain on the main domain, and it is not ours to fix unilaterally: the apex
+A record should almost certainly follow `www` to Sears' host, not sit on our box. **Flag it to whoever
+holds the Wix DNS.**
+
+🔴 This also sharpens §A's warning from theoretical to immediate: **the apex already resolves
+here.** A stray `ktpdod.com` in `support.`'s `server_name` would capture it the instant nginx reloads
+— no DNS change required, no warning. Keep `server_name support.ktpdod.com;` and nothing else.
+
+### Reusable, already on the box
+
+- **Rate limiting:** `/etc/nginx/conf.d/ktp-ratelimit.conf` already defines zones in the http context
+  (`zone=ghsponsors:1m rate=30r/m`). Add a `support_report` zone there rather than inventing a second
+  place for zones to live.
+- **Certs:** Let's Encrypt per-subdomain, one `live/` dir each — nine already. `support.` follows the
+  same pattern: **its own cert, never a SAN including the apex** (§A).
+- **Vhost convention:** one file per subdomain in `sites-available` → symlinked. `support.` matches.
