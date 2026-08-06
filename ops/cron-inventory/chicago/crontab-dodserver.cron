@@ -1,0 +1,9 @@
+# KTP Server Monitor - check every minute
+* * * * * ~/dod-27015/dodserver monitor > /dev/null 2>&1
+* * * * * ~/dod-27016/dodserver2 monitor > /dev/null 2>&1
+* * * * * ~/dod-27017/dodserver3 monitor > /dev/null 2>&1
+* * * * * ~/dod-27018/dodserver4 monitor > /dev/null 2>&1
+# DISABLED 2026-04-10: chi5 disabled (CPU contention on 4-vCPU VPS)
+# KTP Scheduled Restart - nightly at 3:00 AM ET
+0 3 * * * /home/dodserver/ktp-scheduled-restart.sh >> /home/dodserver/log/scheduled-restart.log 2>&1
+* * * * * /home/dodserver/ktp-fleet-health.sh >/dev/null 2>&1

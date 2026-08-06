@@ -1,0 +1,18 @@
+# KTP scheduled verification — post-matchday HLTV F+A soak
+#
+# Runs Monday at 10:00 ET (after 03:00 ET HLTV restart + 04:00 ET demo organize +
+# 04:30 ET demo retention + 04:45 ET auto-cleanup all complete).
+#
+# Posts to Discord scheduled-report channel ONLY if any check is YELLOW or RED.
+# All-green runs are silent (cron stdout still captured to log for forensics).
+#
+# To add a new scheduled suite, define it in /usr/local/bin/ktp-soak-verify
+# and drop a sibling cron file in /etc/cron.d/ktp-soak-verify-<suite>.
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=''
+
+# Cron uses local TZ when /etc/localtime is set (America/New_York on this host).
+# 10:00 Monday America/New_York.
+0 10 * * 1   root  /usr/local/bin/ktp-soak-verify --suite post-matchday >> /var/log/ktp-soak-verify-post-matchday.log 2>&1

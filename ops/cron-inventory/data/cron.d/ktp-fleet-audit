@@ -1,0 +1,6 @@
+# KTP Fleet Drift Audit — Monday 05:00 ET weekly
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=''
+
+0 5 * * 1   root  /usr/local/bin/ktp-fleet-audit.sh >> /var/log/ktp-fleet-audit.log 2>&1

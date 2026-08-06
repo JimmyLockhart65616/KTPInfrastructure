@@ -1,0 +1,12 @@
+# KTP HLTV Demo Retention
+# Tiered: ktp/draft=180d, 12man/scrim=90d
+# See /usr/local/bin/ktp-demo-retention.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=''
+
+# Daily deletion at 04:30 ET (runs after demo-organize cron at 04:00)
+30 4 * * *   root  /usr/local/bin/ktp-demo-retention.sh delete  >> /var/log/ktp-demo-retention.log 2>&1
+
+# Weekly preview to Discord at 09:00 ET every Sunday
+0 9 * * 0    root  /usr/local/bin/ktp-demo-retention.sh preview >> /var/log/ktp-demo-retention.log 2>&1

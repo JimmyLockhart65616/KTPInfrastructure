@@ -1,0 +1,10 @@
+# DISABLED 2026-08-06 (box decommissioned; alerter expects 5 live instances):
+# * * * * * /home/dodserver/ktp-fleet-health.sh >/dev/null 2>&1
+# KTP Server Monitor - check every minute
+# DISABLED 2026-08-05 (bind fails at home -> 113MB core per attempt; restore from /root/dodserver.crontab.bak-20260805-pre-disable): * * * * * ~/dod-27015/dodserver monitor > /dev/null 2>&1
+# DISABLED 2026-08-05 (bind fails at home -> 113MB core per attempt; restore from /root/dodserver.crontab.bak-20260805-pre-disable): * * * * * ~/dod-27016/dodserver2 monitor > /dev/null 2>&1
+# DISABLED 2026-08-05 (bind fails at home -> 113MB core per attempt; restore from /root/dodserver.crontab.bak-20260805-pre-disable): * * * * * ~/dod-27017/dodserver3 monitor > /dev/null 2>&1
+# DISABLED 2026-08-05 (bind fails at home -> 113MB core per attempt; restore from /root/dodserver.crontab.bak-20260805-pre-disable): * * * * * ~/dod-27018/dodserver4 monitor > /dev/null 2>&1
+# DISABLED 2026-08-05 (bind fails at home -> 113MB core per attempt; restore from /root/dodserver.crontab.bak-20260805-pre-disable): * * * * * ~/dod-27019/dodserver5 monitor > /dev/null 2>&1
+# DISABLED 2026-08-05 (would restart the crash loop at 03:00; restore from /root/dodserver.crontab.bak-20260805-pre-disable): 0 3 * * * /home/dodserver/ktp-scheduled-restart.sh >> /home/dodserver/log/scheduled-restart.log 2>&1
+# DISABLED 2026-08-05 (bind fails at home -> 113MB core per attempt; restore from /root/dodserver.crontab.bak-20260805-pre-disable): * * * * * /srv/ktpdata/warmup/dodserver monitor > /dev/null 2>&1

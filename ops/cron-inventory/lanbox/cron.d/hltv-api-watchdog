@@ -1,0 +1,2 @@
+# KTP LAN — restart hltv-api if its /health endpoint stops responding
+*/5 * * * * root curl -fsS --max-time 5 http://127.0.0.1:8087/health >/dev/null 2>&1 || systemctl restart hltv-api

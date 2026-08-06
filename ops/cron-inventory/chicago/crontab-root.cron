@@ -1,0 +1,1 @@
+# DISABLED 2026-07-09 (stale pre-rotation rcon password; would feed AdminAudit 2.7.17 rcon-failure Discord consumer): * * * * * /usr/bin/python3 /usr/local/bin/ktp-server-monitor.py
