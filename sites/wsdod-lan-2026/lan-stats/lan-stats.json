@@ -36,12 +36,13 @@
      "gun_kills": 310,
      "prone_changes": 259,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 116,
-      "Sniper (Springfield)": 102
+      "Scharf (K98 scoped)": 116,
+      "Springfield": 102
      },
      "roles": {
       "Sniper": 218
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 234,
@@ -105,11 +106,12 @@
      "prone_changes": 311,
      "classes": {
       "BAR": 142,
-      "MP44": 134
+      "STG (MP44)": 134
      },
      "roles": {
-      "Support": 276
+      "Heavy": 276
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 415,
@@ -172,12 +174,13 @@
      "gun_kills": 271,
      "prone_changes": 321,
      "classes": {
-      "MP44": 155,
+      "STG (MP44)": 155,
       "BAR": 145
      },
      "roles": {
-      "Support": 300
+      "Heavy": 300
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 436,
@@ -240,13 +243,14 @@
      "gun_kills": 267,
      "prone_changes": 328,
      "classes": {
-      "Rifleman (Garand)": 156,
-      "K43": 82,
-      "Kar98": 72
+      "Garand": 156,
+      "Stoss (K43)": 82,
+      "K98": 72
      },
      "roles": {
       "Rifle": 310
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 320,
@@ -309,13 +313,14 @@
      "gun_kills": 249,
      "prone_changes": 334,
      "classes": {
-      "Rifleman (Garand)": 163,
-      "Kar98": 75,
-      "K43": 74
+      "Garand": 163,
+      "K98": 75,
+      "Stoss (K43)": 74
      },
      "roles": {
       "Rifle": 312
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 360,
@@ -378,18 +383,19 @@
      "gun_kills": 218,
      "prone_changes": 321,
      "classes": {
-      "Rifleman (Garand)": 127,
-      "Kar98": 103,
-      "K43": 30,
+      "Garand": 127,
+      "K98": 103,
+      "Stoss (K43)": 30,
       "BAR": 4,
-      "MP40": 1,
+      "Unter (MP40)": 1,
       "Carbine": 1
      },
      "roles": {
-      "Rifle": 261,
-      "Support": 4,
-      "SMG": 1
+      "Rifle": 260,
+      "Heavy": 4,
+      "3rd": 2
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 171,
@@ -453,13 +459,14 @@
      "prone_changes": 352,
      "classes": {
       "BAR": 156,
-      "MP40": 122,
-      "MP44": 27
+      "Unter (MP40)": 122,
+      "STG (MP44)": 27
      },
      "roles": {
-      "Support": 183,
-      "SMG": 122
+      "Heavy": 183,
+      "3rd": 122
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 500,
@@ -522,12 +529,13 @@
      "gun_kills": 275,
      "prone_changes": 328,
      "classes": {
-      "Rifleman (Garand)": 176,
-      "Kar98": 144
+      "Garand": 176,
+      "K98": 144
      },
      "roles": {
       "Rifle": 320
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 287,
@@ -590,12 +598,13 @@
      "gun_kills": 298,
      "prone_changes": 367,
      "classes": {
-      "Rifleman (Garand)": 187,
-      "Kar98": 162
+      "Garand": 187,
+      "K98": 162
      },
      "roles": {
       "Rifle": 349
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 381,
@@ -659,13 +668,14 @@
      "prone_changes": 324,
      "classes": {
       "BAR": 141,
-      "MP44": 103,
-      "MP40": 58
+      "STG (MP44)": 103,
+      "Unter (MP40)": 58
      },
      "roles": {
-      "Support": 244,
-      "SMG": 58
+      "Heavy": 244,
+      "3rd": 58
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 353,
@@ -728,12 +738,13 @@
      "gun_kills": 210,
      "prone_changes": 360,
      "classes": {
-      "Kar98": 161,
-      "Rifleman (Garand)": 142
+      "K98": 161,
+      "Garand": 142
      },
      "roles": {
       "Rifle": 303
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 359,
@@ -796,12 +807,13 @@
      "gun_kills": 219,
      "prone_changes": 372,
      "classes": {
-      "Kar98": 160,
-      "Rifleman (Garand)": 153
+      "K98": 160,
+      "Garand": 153
      },
      "roles": {
       "Rifle": 313
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 389,
@@ -864,12 +876,13 @@
      "gun_kills": 298,
      "prone_changes": 362,
      "classes": {
-      "Rifleman (Garand)": 181,
-      "Kar98": 168
+      "Garand": 181,
+      "K98": 168
      },
      "roles": {
       "Rifle": 349
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 332,
@@ -932,13 +945,14 @@
      "gun_kills": 236,
      "prone_changes": 360,
      "classes": {
-      "Rifleman (Garand)": 154,
-      "K43": 136,
-      "Kar98": 34
+      "Garand": 154,
+      "Stoss (K43)": 136,
+      "K98": 34
      },
      "roles": {
       "Rifle": 324
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 358,
@@ -1001,16 +1015,16 @@
      "gun_kills": 289,
      "prone_changes": 341,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 159,
-      "Sniper (Springfield)": 130,
-      "Thompson": 6,
+      "Scharf (K98 scoped)": 159,
+      "Springfield": 130,
+      "Tommy (Thompson)": 6,
       "Carbine": 5
      },
      "roles": {
-      "Sniper": 289,
-      "SMG": 6,
-      "Rifle": 5
+      "3rd": 11,
+      "Sniper": 289
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 240,
@@ -1073,12 +1087,13 @@
      "gun_kills": 241,
      "prone_changes": 358,
      "classes": {
-      "Rifleman (Garand)": 160,
-      "Kar98": 155
+      "Garand": 160,
+      "K98": 155
      },
      "roles": {
       "Rifle": 315
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 282,
@@ -1141,12 +1156,13 @@
      "gun_kills": 279,
      "prone_changes": 245,
      "classes": {
-      "Sniper (Springfield)": 131,
-      "Scharfsch\u00fctze (K98 scoped)": 110
+      "Springfield": 131,
+      "Scharf (K98 scoped)": 110
      },
      "roles": {
       "Sniper": 241
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 171,
@@ -1209,14 +1225,15 @@
      "gun_kills": 238,
      "prone_changes": 314,
      "classes": {
-      "Kar98": 137,
-      "Rifleman (Garand)": 137,
-      "Thompson": 2
+      "K98": 137,
+      "Garand": 137,
+      "Tommy (Thompson)": 2
      },
      "roles": {
       "Rifle": 274,
-      "SMG": 2
+      "3rd": 2
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 307,
@@ -1280,13 +1297,14 @@
      "prone_changes": 356,
      "classes": {
       "BAR": 150,
-      "MP44": 129,
-      "MP40": 17
+      "STG (MP44)": 129,
+      "Unter (MP40)": 17
      },
      "roles": {
-      "Support": 279,
-      "SMG": 17
+      "Heavy": 279,
+      "3rd": 17
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 320,
@@ -1350,13 +1368,14 @@
      "prone_changes": 328,
      "classes": {
       "BAR": 153,
-      "MP44": 89,
-      "MP40": 68
+      "STG (MP44)": 89,
+      "Unter (MP40)": 68
      },
      "roles": {
-      "Support": 242,
-      "SMG": 68
+      "Heavy": 242,
+      "3rd": 68
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 347,
@@ -1419,12 +1438,13 @@
      "gun_kills": 244,
      "prone_changes": 355,
      "classes": {
-      "Rifleman (Garand)": 168,
-      "Kar98": 161
+      "Garand": 168,
+      "K98": 161
      },
      "roles": {
       "Rifle": 329
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 336,
@@ -1487,20 +1507,21 @@
      "gun_kills": 241,
      "prone_changes": 334,
      "classes": {
-      "Sniper (Springfield)": 155,
-      "Scharfsch\u00fctze (K98 scoped)": 138,
-      "MP44": 6,
-      "MP40": 5,
+      "Springfield": 155,
+      "Scharf (K98 scoped)": 138,
+      "STG (MP44)": 6,
+      "Unter (MP40)": 5,
       "Carbine": 3,
-      "Thompson": 3,
-      "K43": 1
+      "Tommy (Thompson)": 3,
+      "Stoss (K43)": 1
      },
      "roles": {
-      "Sniper": 293,
-      "SMG": 8,
-      "Support": 6,
-      "Rifle": 4
+      "Rifle": 1,
+      "Heavy": 6,
+      "3rd": 11,
+      "Sniper": 293
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 257,
@@ -1563,12 +1584,13 @@
      "gun_kills": 234,
      "prone_changes": 351,
      "classes": {
-      "MP44": 161,
+      "STG (MP44)": 161,
       "BAR": 147
      },
      "roles": {
-      "Support": 308
+      "Heavy": 308
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 361,
@@ -1632,13 +1654,14 @@
      "prone_changes": 377,
      "classes": {
       "BAR": 184,
-      "MP44": 184,
-      "MP40": 5
+      "STG (MP44)": 184,
+      "Unter (MP40)": 5
      },
      "roles": {
-      "Support": 368,
-      "SMG": 5
+      "Heavy": 368,
+      "3rd": 5
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 451,
@@ -1702,11 +1725,12 @@
      "prone_changes": 408,
      "classes": {
       "BAR": 196,
-      "MP44": 183
+      "STG (MP44)": 183
      },
      "roles": {
-      "Support": 379
+      "Heavy": 379
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 466,
@@ -1769,12 +1793,13 @@
      "gun_kills": 278,
      "prone_changes": 400,
      "classes": {
-      "Rifleman (Garand)": 184,
-      "Kar98": 182
+      "Garand": 184,
+      "K98": 182
      },
      "roles": {
       "Rifle": 366
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 236,
@@ -1837,17 +1862,18 @@
      "gun_kills": 220,
      "prone_changes": 353,
      "classes": {
-      "Rifleman (Garand)": 156,
-      "Kar98": 135,
-      "K43": 22,
-      "MP44": 1,
-      "MP40": 1
+      "Garand": 156,
+      "K98": 135,
+      "Stoss (K43)": 22,
+      "STG (MP44)": 1,
+      "Unter (MP40)": 1
      },
      "roles": {
       "Rifle": 313,
-      "Support": 1,
-      "SMG": 1
+      "Heavy": 1,
+      "3rd": 1
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 258,
@@ -1910,14 +1936,15 @@
      "gun_kills": 243,
      "prone_changes": 389,
      "classes": {
-      "Kar98": 175,
-      "Rifleman (Garand)": 172,
-      "Thompson": 3
+      "K98": 175,
+      "Garand": 172,
+      "Tommy (Thompson)": 3
      },
      "roles": {
       "Rifle": 347,
-      "SMG": 3
+      "3rd": 3
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 360,
@@ -1980,15 +2007,16 @@
      "gun_kills": 201,
      "prone_changes": 365,
      "classes": {
-      "Rifleman (Garand)": 155,
-      "Kar98": 100,
-      "K43": 20,
-      "MP40": 2
+      "Garand": 155,
+      "K98": 100,
+      "Stoss (K43)": 20,
+      "Unter (MP40)": 2
      },
      "roles": {
       "Rifle": 275,
-      "SMG": 2
+      "3rd": 2
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 278,
@@ -2052,16 +2080,17 @@
      "prone_changes": 389,
      "classes": {
       "BAR": 142,
-      "MP44": 89,
-      "MP40": 53,
-      "Rifleman (Garand)": 32,
-      "K43": 15
+      "STG (MP44)": 89,
+      "Unter (MP40)": 53,
+      "Garand": 32,
+      "Stoss (K43)": 15
      },
      "roles": {
-      "Support": 231,
-      "SMG": 53,
-      "Rifle": 47
+      "Rifle": 47,
+      "Heavy": 231,
+      "3rd": 53
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 368,
@@ -2125,12 +2154,13 @@
      "prone_changes": 362,
      "classes": {
       "BAR": 157,
-      "MP40": 145
+      "Unter (MP40)": 145
      },
      "roles": {
-      "Support": 157,
-      "SMG": 145
+      "Heavy": 157,
+      "3rd": 145
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 424,
@@ -2193,16 +2223,17 @@
      "gun_kills": 251,
      "prone_changes": 501,
      "classes": {
-      "MP44": 203,
+      "STG (MP44)": 203,
       "BAR": 196,
-      "Kar98": 37,
-      "Rifleman (Garand)": 34,
-      "K43": 6
+      "K98": 37,
+      "Garand": 34,
+      "Stoss (K43)": 6
      },
      "roles": {
-      "Support": 399,
-      "Rifle": 77
+      "Rifle": 77,
+      "Heavy": 399
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 270,
@@ -2265,13 +2296,14 @@
      "gun_kills": 227,
      "prone_changes": 364,
      "classes": {
-      "Rifleman (Garand)": 184,
-      "K43": 138,
-      "Kar98": 26
+      "Garand": 184,
+      "Stoss (K43)": 138,
+      "K98": 26
      },
      "roles": {
       "Rifle": 348
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 264,
@@ -2334,13 +2366,14 @@
      "gun_kills": 229,
      "prone_changes": 305,
      "classes": {
-      "Rifleman (Garand)": 151,
-      "Kar98": 118,
-      "K43": 28
+      "Garand": 151,
+      "K98": 118,
+      "Stoss (K43)": 28
      },
      "roles": {
       "Rifle": 297
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 247,
@@ -2403,15 +2436,16 @@
      "gun_kills": 255,
      "prone_changes": 444,
      "classes": {
-      "MP40": 166,
-      "Rifleman (Garand)": 106,
-      "Thompson": 90,
-      "K43": 32
+      "Unter (MP40)": 166,
+      "Garand": 106,
+      "Tommy (Thompson)": 90,
+      "Stoss (K43)": 32
      },
      "roles": {
-      "SMG": 256,
-      "Rifle": 138
+      "Rifle": 138,
+      "3rd": 256
      },
+     "primary_role": "3rd",
      "hitboxes": {
       "Left arm": {
        "hits": 394,
@@ -2474,21 +2508,22 @@
      "gun_kills": 172,
      "prone_changes": 342,
      "classes": {
-      "Thompson": 52,
-      "MP40": 49,
-      "Rifleman (Garand)": 46,
-      "K43": 45,
-      "MP44": 32,
+      "Tommy (Thompson)": 52,
+      "Unter (MP40)": 49,
+      "Garand": 46,
+      "Stoss (K43)": 45,
+      "STG (MP44)": 32,
       "BAR": 24,
       "Carbine": 4,
-      "Scharfsch\u00fctze (K98 scoped)": 3
+      "Scharf (K98 scoped)": 3
      },
      "roles": {
-      "SMG": 101,
-      "Rifle": 95,
-      "Support": 56,
+      "Rifle": 91,
+      "Heavy": 56,
+      "3rd": 105,
       "Sniper": 3
      },
+     "primary_role": "3rd",
      "hitboxes": {
       "Generic": {
        "hits": 247,
@@ -2551,12 +2586,13 @@
      "gun_kills": 270,
      "prone_changes": 349,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 165,
-      "Sniper (Springfield)": 143
+      "Scharf (K98 scoped)": 165,
+      "Springfield": 143
      },
      "roles": {
       "Sniper": 308
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 222,
@@ -2620,13 +2656,14 @@
      "prone_changes": 323,
      "classes": {
       "BAR": 138,
-      "MP44": 135,
-      "MP40": 27
+      "STG (MP44)": 135,
+      "Unter (MP40)": 27
      },
      "roles": {
-      "Support": 273,
-      "SMG": 27
+      "Heavy": 273,
+      "3rd": 27
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 329,
@@ -2689,15 +2726,16 @@
      "gun_kills": 235,
      "prone_changes": 355,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 166,
-      "Sniper (Springfield)": 136,
-      "Thompson": 16,
-      "MP40": 4
+      "Scharf (K98 scoped)": 166,
+      "Springfield": 136,
+      "Tommy (Thompson)": 16,
+      "Unter (MP40)": 4
      },
      "roles": {
-      "Sniper": 302,
-      "SMG": 20
+      "3rd": 20,
+      "Sniper": 302
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 222,
@@ -2760,12 +2798,13 @@
      "gun_kills": 230,
      "prone_changes": 374,
      "classes": {
-      "Kar98": 173,
-      "Rifleman (Garand)": 172
+      "K98": 173,
+      "Garand": 172
      },
      "roles": {
       "Rifle": 345
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 377,
@@ -2828,19 +2867,20 @@
      "gun_kills": 162,
      "prone_changes": 347,
      "classes": {
-      "Rifleman (Garand)": 165,
-      "Kar98": 103,
-      "K43": 41,
-      "MP44": 9,
-      "Scharfsch\u00fctze (K98 scoped)": 1,
-      "MP40": 1
+      "Garand": 165,
+      "K98": 103,
+      "Stoss (K43)": 41,
+      "STG (MP44)": 9,
+      "Scharf (K98 scoped)": 1,
+      "Unter (MP40)": 1
      },
      "roles": {
       "Rifle": 309,
-      "Support": 9,
-      "Sniper": 1,
-      "SMG": 1
+      "Heavy": 9,
+      "3rd": 1,
+      "Sniper": 1
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 380,
@@ -2904,13 +2944,14 @@
      "prone_changes": 365,
      "classes": {
       "BAR": 160,
-      "MP44": 156,
-      "MP40": 8
+      "STG (MP44)": 156,
+      "Unter (MP40)": 8
      },
      "roles": {
-      "Support": 316,
-      "SMG": 8
+      "Heavy": 316,
+      "3rd": 8
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 263,
@@ -2973,12 +3014,13 @@
      "gun_kills": 294,
      "prone_changes": 499,
      "classes": {
-      "Rifleman (Garand)": 243,
-      "Kar98": 223
+      "Garand": 243,
+      "K98": 223
      },
      "roles": {
       "Rifle": 466
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 210,
@@ -3042,16 +3084,17 @@
      "prone_changes": 383,
      "classes": {
       "BAR": 145,
-      "MP40": 87,
-      "MP44": 60,
-      "Thompson": 11,
-      "K43": 8
+      "Unter (MP40)": 87,
+      "STG (MP44)": 60,
+      "Tommy (Thompson)": 11,
+      "Stoss (K43)": 8
      },
      "roles": {
-      "Support": 205,
-      "SMG": 98,
-      "Rifle": 8
+      "Rifle": 8,
+      "Heavy": 205,
+      "3rd": 98
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 295,
@@ -3114,12 +3157,13 @@
      "gun_kills": 224,
      "prone_changes": 419,
      "classes": {
-      "Rifleman (Garand)": 200,
-      "K43": 192
+      "Garand": 200,
+      "Stoss (K43)": 192
      },
      "roles": {
       "Rifle": 392
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 225,
@@ -3182,12 +3226,13 @@
      "gun_kills": 246,
      "prone_changes": 352,
      "classes": {
-      "Sniper (Springfield)": 158,
-      "Scharfsch\u00fctze (K98 scoped)": 155
+      "Springfield": 158,
+      "Scharf (K98 scoped)": 155
      },
      "roles": {
       "Sniper": 313
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 261,
@@ -3250,18 +3295,19 @@
      "gun_kills": 176,
      "prone_changes": 297,
      "classes": {
-      "Sniper (Springfield)": 133,
-      "Scharfsch\u00fctze (K98 scoped)": 132,
-      "MP44": 5,
-      "Rifleman (Garand)": 3,
-      "Thompson": 1
+      "Springfield": 133,
+      "Scharf (K98 scoped)": 132,
+      "STG (MP44)": 5,
+      "Garand": 3,
+      "Tommy (Thompson)": 1
      },
      "roles": {
-      "Sniper": 265,
-      "Support": 5,
       "Rifle": 3,
-      "SMG": 1
+      "Heavy": 5,
+      "3rd": 1,
+      "Sniper": 265
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 172,
@@ -3324,17 +3370,18 @@
      "gun_kills": 175,
      "prone_changes": 292,
      "classes": {
-      "Rifleman (Garand)": 127,
-      "K43": 106,
+      "Garand": 127,
+      "Stoss (K43)": 106,
       "BAR": 28,
-      "MP44": 22,
-      "MP40": 1
+      "STG (MP44)": 22,
+      "Unter (MP40)": 1
      },
      "roles": {
       "Rifle": 233,
-      "Support": 50,
-      "SMG": 1
+      "Heavy": 50,
+      "3rd": 1
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 250,
@@ -3397,14 +3444,15 @@
      "gun_kills": 265,
      "prone_changes": 406,
      "classes": {
-      "Sniper (Springfield)": 196,
-      "Scharfsch\u00fctze (K98 scoped)": 175,
-      "Thompson": 1
+      "Springfield": 196,
+      "Scharf (K98 scoped)": 175,
+      "Tommy (Thompson)": 1
      },
      "roles": {
-      "Sniper": 371,
-      "SMG": 1
+      "3rd": 1,
+      "Sniper": 371
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 198,
@@ -3468,13 +3516,14 @@
      "prone_changes": 440,
      "classes": {
       "BAR": 218,
-      "MP44": 110,
-      "MP40": 101
+      "STG (MP44)": 110,
+      "Unter (MP40)": 101
      },
      "roles": {
-      "Support": 328,
-      "SMG": 101
+      "Heavy": 328,
+      "3rd": 101
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 327,
@@ -3538,13 +3587,14 @@
      "prone_changes": 456,
      "classes": {
       "BAR": 193,
-      "MP44": 161,
-      "MP40": 25
+      "STG (MP44)": 161,
+      "Unter (MP40)": 25
      },
      "roles": {
-      "Support": 354,
-      "SMG": 25
+      "Heavy": 354,
+      "3rd": 25
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 344,
@@ -3608,11 +3658,12 @@
      "prone_changes": 394,
      "classes": {
       "BAR": 189,
-      "MP44": 185
+      "STG (MP44)": 185
      },
      "roles": {
-      "Support": 374
+      "Heavy": 374
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 376,
@@ -3675,14 +3726,15 @@
      "gun_kills": 151,
      "prone_changes": 376,
      "classes": {
-      "Rifleman (Garand)": 185,
-      "K43": 184,
-      "MP40": 1
+      "Garand": 185,
+      "Stoss (K43)": 184,
+      "Unter (MP40)": 1
      },
      "roles": {
       "Rifle": 369,
-      "SMG": 1
+      "3rd": 1
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 276,
@@ -3745,12 +3797,13 @@
      "gun_kills": 223,
      "prone_changes": 421,
      "classes": {
-      "Kar98": 217,
-      "Rifleman (Garand)": 199
+      "K98": 217,
+      "Garand": 199
      },
      "roles": {
       "Rifle": 416
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 162,
@@ -3813,17 +3866,18 @@
      "gun_kills": 239,
      "prone_changes": 384,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 165,
-      "Sniper (Springfield)": 137,
-      "MP44": 31,
+      "Scharf (K98 scoped)": 165,
+      "Springfield": 137,
+      "STG (MP44)": 31,
       "BAR": 24,
-      "MP40": 10
+      "Unter (MP40)": 10
      },
      "roles": {
-      "Sniper": 302,
-      "Support": 55,
-      "SMG": 10
+      "Heavy": 55,
+      "3rd": 10,
+      "Sniper": 302
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 173,
@@ -3886,15 +3940,16 @@
      "gun_kills": 208,
      "prone_changes": 499,
      "classes": {
-      "Kar98": 206,
-      "Rifleman (Garand)": 186,
-      "Scharfsch\u00fctze (K98 scoped)": 34,
-      "Sniper (Springfield)": 29
+      "K98": 206,
+      "Garand": 186,
+      "Scharf (K98 scoped)": 34,
+      "Springfield": 29
      },
      "roles": {
       "Rifle": 392,
       "Sniper": 63
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 137,
@@ -3957,12 +4012,13 @@
      "gun_kills": 177,
      "prone_changes": 385,
      "classes": {
-      "Rifleman (Garand)": 195,
-      "Kar98": 185
+      "Garand": 195,
+      "K98": 185
      },
      "roles": {
       "Rifle": 380
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 154,
@@ -4025,20 +4081,21 @@
      "gun_kills": 128,
      "prone_changes": 381,
      "classes": {
-      "K43": 179,
-      "Rifleman (Garand)": 160,
+      "Stoss (K43)": 179,
+      "Garand": 160,
       "Carbine": 17,
-      "Thompson": 3,
-      "MP44": 2,
-      "Scharfsch\u00fctze (K98 scoped)": 1,
-      "MP40": 1
+      "Tommy (Thompson)": 3,
+      "STG (MP44)": 2,
+      "Scharf (K98 scoped)": 1,
+      "Unter (MP40)": 1
      },
      "roles": {
-      "Rifle": 356,
-      "SMG": 4,
-      "Support": 2,
+      "Rifle": 339,
+      "Heavy": 2,
+      "3rd": 21,
       "Sniper": 1
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 399,
@@ -4102,13 +4159,14 @@
      "prone_changes": 398,
      "classes": {
       "BAR": 187,
-      "MP44": 174,
-      "K43": 14
+      "STG (MP44)": 174,
+      "Stoss (K43)": 14
      },
      "roles": {
-      "Support": 361,
-      "Rifle": 14
+      "Rifle": 14,
+      "Heavy": 361
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 290,
@@ -4171,12 +4229,13 @@
      "gun_kills": 201,
      "prone_changes": 425,
      "classes": {
-      "MP44": 208,
+      "STG (MP44)": 208,
       "BAR": 193
      },
      "roles": {
-      "Support": 401
+      "Heavy": 401
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 233,
@@ -4239,18 +4298,19 @@
      "gun_kills": 130,
      "prone_changes": 552,
      "classes": {
-      "Rifleman (Garand)": 147,
-      "K43": 116,
-      "MP40": 73,
-      "Thompson": 29,
+      "Garand": 147,
+      "Stoss (K43)": 116,
+      "Unter (MP40)": 73,
+      "Tommy (Thompson)": 29,
       "Carbine": 7,
-      "Scharfsch\u00fctze (K98 scoped)": 2
+      "Scharf (K98 scoped)": 2
      },
      "roles": {
-      "Rifle": 270,
-      "SMG": 102,
+      "Rifle": 263,
+      "3rd": 109,
       "Sniper": 2
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 209,
@@ -9377,12 +9437,13 @@
      "gun_kills": 293,
      "prone_changes": 363,
      "classes": {
-      "Rifleman (Garand)": 168,
-      "Kar98": 138
+      "Garand": 168,
+      "K98": 138
      },
      "roles": {
       "Rifle": 306
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 389,
@@ -9445,12 +9506,13 @@
      "gun_kills": 129,
      "prone_changes": 207,
      "classes": {
-      "Rifleman (Garand)": 92,
-      "K43": 81
+      "Garand": 92,
+      "Stoss (K43)": 81
      },
      "roles": {
       "Rifle": 173
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 247,
@@ -9514,13 +9576,14 @@
      "prone_changes": 130,
      "classes": {
       "BAR": 65,
-      "MP44": 46,
-      "MP40": 5
+      "STG (MP44)": 46,
+      "Unter (MP40)": 5
      },
      "roles": {
-      "Support": 111,
-      "SMG": 5
+      "Heavy": 111,
+      "3rd": 5
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 327,
@@ -9583,13 +9646,14 @@
      "gun_kills": 245,
      "prone_changes": 309,
      "classes": {
-      "Rifleman (Garand)": 162,
-      "K43": 89,
-      "Kar98": 47
+      "Garand": 162,
+      "Stoss (K43)": 89,
+      "K98": 47
      },
      "roles": {
       "Rifle": 298
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 320,
@@ -9652,12 +9716,13 @@
      "gun_kills": 238,
      "prone_changes": 360,
      "classes": {
-      "MP44": 171,
+      "STG (MP44)": 171,
       "BAR": 166
      },
      "roles": {
-      "Support": 337
+      "Heavy": 337
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 436,
@@ -9720,12 +9785,13 @@
      "gun_kills": 190,
      "prone_changes": 290,
      "classes": {
-      "MP44": 138,
+      "STG (MP44)": 138,
       "BAR": 121
      },
      "roles": {
-      "Support": 259
+      "Heavy": 259
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 415,
@@ -9788,14 +9854,15 @@
      "gun_kills": 187,
      "prone_changes": 369,
      "classes": {
-      "Kar98": 162,
-      "Rifleman (Garand)": 136,
-      "Thompson": 17
+      "K98": 162,
+      "Garand": 136,
+      "Tommy (Thompson)": 17
      },
      "roles": {
       "Rifle": 298,
-      "SMG": 17
+      "3rd": 17
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 380,
@@ -9858,12 +9925,13 @@
      "gun_kills": 252,
      "prone_changes": 357,
      "classes": {
-      "Rifleman (Garand)": 162,
-      "Kar98": 156
+      "Garand": 162,
+      "K98": 156
      },
      "roles": {
       "Rifle": 318
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 282,
@@ -9926,13 +9994,15 @@
      "gun_kills": 375,
      "prone_changes": 458,
      "classes": {
-      "Kar98": 198,
-      "Rifleman (Garand)": 164,
+      "K98": 198,
+      "Garand": 164,
       "Carbine": 82
      },
      "roles": {
-      "Rifle": 444
+      "Rifle": 362,
+      "3rd": 82
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 381,
@@ -9995,12 +10065,13 @@
      "gun_kills": 108,
      "prone_changes": 114,
      "classes": {
-      "K43": 58,
-      "Rifleman (Garand)": 54
+      "Stoss (K43)": 58,
+      "Garand": 54
      },
      "roles": {
       "Rifle": 112
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 225,
@@ -10063,16 +10134,17 @@
      "gun_kills": 272,
      "prone_changes": 332,
      "classes": {
-      "Kar98": 169,
-      "Rifleman (Garand)": 133,
-      "Scharfsch\u00fctze (K98 scoped)": 3,
-      "Thompson": 1
+      "K98": 169,
+      "Garand": 133,
+      "Scharf (K98 scoped)": 3,
+      "Tommy (Thompson)": 1
      },
      "roles": {
       "Rifle": 302,
-      "Sniper": 3,
-      "SMG": 1
+      "3rd": 1,
+      "Sniper": 3
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 359,
@@ -10136,13 +10208,14 @@
      "prone_changes": 298,
      "classes": {
       "BAR": 144,
-      "MP40": 108,
-      "MP44": 24
+      "Unter (MP40)": 108,
+      "STG (MP44)": 24
      },
      "roles": {
-      "Support": 168,
-      "SMG": 108
+      "Heavy": 168,
+      "3rd": 108
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 353,
@@ -10205,12 +10278,13 @@
      "gun_kills": 232,
      "prone_changes": 269,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 109,
-      "Sniper (Springfield)": 102
+      "Scharf (K98 scoped)": 109,
+      "Springfield": 102
      },
      "roles": {
       "Sniper": 211
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 234,
@@ -10274,13 +10348,14 @@
      "prone_changes": 123,
      "classes": {
       "BAR": 48,
-      "MP40": 42,
-      "MP44": 13
+      "Unter (MP40)": 42,
+      "STG (MP44)": 13
      },
      "roles": {
-      "Support": 61,
-      "SMG": 42
+      "Heavy": 61,
+      "3rd": 42
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 263,
@@ -10343,12 +10418,13 @@
      "gun_kills": 123,
      "prone_changes": 122,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 60,
-      "Sniper (Springfield)": 60
+      "Scharf (K98 scoped)": 60,
+      "Springfield": 60
      },
      "roles": {
       "Sniper": 120
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 198,
@@ -10412,13 +10488,14 @@
      "prone_changes": 148,
      "classes": {
       "BAR": 73,
-      "MP44": 68,
-      "MP40": 2
+      "STG (MP44)": 68,
+      "Unter (MP40)": 2
      },
      "roles": {
-      "Support": 141,
-      "SMG": 2
+      "Heavy": 141,
+      "3rd": 2
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 270,
@@ -10482,15 +10559,15 @@
      "prone_changes": 454,
      "classes": {
       "BAR": 209,
-      "MP40": 172,
-      "MP44": 1,
+      "Unter (MP40)": 172,
+      "STG (MP44)": 1,
       "Carbine": 1
      },
      "roles": {
-      "Support": 210,
-      "SMG": 172,
-      "Rifle": 1
+      "Heavy": 210,
+      "3rd": 173
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 500,
@@ -10553,13 +10630,14 @@
      "gun_kills": 175,
      "prone_changes": 256,
      "classes": {
-      "Rifleman (Garand)": 111,
-      "Kar98": 99,
-      "K43": 14
+      "Garand": 111,
+      "K98": 99,
+      "Stoss (K43)": 14
      },
      "roles": {
       "Rifle": 224
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 171,
@@ -10622,13 +10700,15 @@
      "gun_kills": 159,
      "prone_changes": 215,
      "classes": {
-      "Kar98": 103,
-      "Rifleman (Garand)": 103,
+      "K98": 103,
+      "Garand": 103,
       "Carbine": 1
      },
      "roles": {
-      "Rifle": 207
+      "Rifle": 206,
+      "3rd": 1
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 307,
@@ -10691,12 +10771,13 @@
      "gun_kills": 267,
      "prone_changes": 347,
      "classes": {
-      "Rifleman (Garand)": 166,
-      "Kar98": 163
+      "Garand": 166,
+      "K98": 163
      },
      "roles": {
       "Rifle": 329
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 336,
@@ -10759,16 +10840,17 @@
      "gun_kills": 347,
      "prone_changes": 425,
      "classes": {
-      "Sniper (Springfield)": 187,
-      "Scharfsch\u00fctze (K98 scoped)": 173,
-      "Thompson": 19,
-      "MP44": 1
+      "Springfield": 187,
+      "Scharf (K98 scoped)": 173,
+      "Tommy (Thompson)": 19,
+      "STG (MP44)": 1
      },
      "roles": {
-      "Sniper": 360,
-      "SMG": 19,
-      "Support": 1
+      "Heavy": 1,
+      "3rd": 19,
+      "Sniper": 360
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 257,
@@ -10831,12 +10913,13 @@
      "gun_kills": 206,
      "prone_changes": 298,
      "classes": {
-      "Kar98": 143,
-      "Rifleman (Garand)": 138
+      "K98": 143,
+      "Garand": 138
      },
      "roles": {
       "Rifle": 281
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 287,
@@ -10900,13 +10983,14 @@
      "prone_changes": 355,
      "classes": {
       "BAR": 159,
-      "MP44": 98,
-      "MP40": 38
+      "STG (MP44)": 98,
+      "Unter (MP40)": 38
      },
      "roles": {
-      "Support": 257,
-      "SMG": 38
+      "Heavy": 257,
+      "3rd": 38
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 320,
@@ -10969,12 +11053,13 @@
      "gun_kills": 287,
      "prone_changes": 400,
      "classes": {
-      "Kar98": 203,
-      "Rifleman (Garand)": 174
+      "K98": 203,
+      "Garand": 174
      },
      "roles": {
       "Rifle": 377
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 236,
@@ -11038,13 +11123,14 @@
      "prone_changes": 432,
      "classes": {
       "BAR": 201,
-      "MP44": 177,
-      "MP40": 27
+      "STG (MP44)": 177,
+      "Unter (MP40)": 27
      },
      "roles": {
-      "Support": 378,
-      "SMG": 27
+      "Heavy": 378,
+      "3rd": 27
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 466,
@@ -11107,12 +11193,13 @@
      "gun_kills": 292,
      "prone_changes": 338,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 145,
-      "Sniper (Springfield)": 143
+      "Scharf (K98 scoped)": 145,
+      "Springfield": 143
      },
      "roles": {
       "Sniper": 288
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 261,
@@ -11175,14 +11262,15 @@
      "gun_kills": 293,
      "prone_changes": 392,
      "classes": {
-      "Rifleman (Garand)": 152,
-      "K43": 147,
-      "MP40": 23
+      "Garand": 152,
+      "Stoss (K43)": 147,
+      "Unter (MP40)": 23
      },
      "roles": {
       "Rifle": 299,
-      "SMG": 23
+      "3rd": 23
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 358,
@@ -11245,13 +11333,14 @@
      "gun_kills": 200,
      "prone_changes": 334,
      "classes": {
-      "Rifleman (Garand)": 171,
-      "Kar98": 75,
-      "K43": 49
+      "Garand": 171,
+      "K98": 75,
+      "Stoss (K43)": 49
      },
      "roles": {
       "Rifle": 295
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 360,
@@ -11315,13 +11404,14 @@
      "prone_changes": 307,
      "classes": {
       "BAR": 119,
-      "MP44": 61,
-      "MP40": 52
+      "STG (MP44)": 61,
+      "Unter (MP40)": 52
      },
      "roles": {
-      "Support": 180,
-      "SMG": 52
+      "Heavy": 180,
+      "3rd": 52
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 368,
@@ -11384,14 +11474,15 @@
      "gun_kills": 111,
      "prone_changes": 158,
      "classes": {
-      "Kar98": 72,
-      "Rifleman (Garand)": 72,
-      "Thompson": 2
+      "K98": 72,
+      "Garand": 72,
+      "Tommy (Thompson)": 2
      },
      "roles": {
       "Rifle": 144,
-      "SMG": 2
+      "3rd": 2
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 210,
@@ -11454,22 +11545,23 @@
      "gun_kills": 181,
      "prone_changes": 366,
      "classes": {
-      "Rifleman (Garand)": 79,
-      "K43": 40,
-      "Kar98": 39,
+      "Garand": 79,
+      "Stoss (K43)": 40,
+      "K98": 39,
       "BAR": 38,
-      "MP40": 32,
-      "MP44": 29,
-      "Sniper (Springfield)": 26,
-      "Scharfsch\u00fctze (K98 scoped)": 21,
-      "Thompson": 18
+      "Unter (MP40)": 32,
+      "STG (MP44)": 29,
+      "Springfield": 26,
+      "Scharf (K98 scoped)": 21,
+      "Tommy (Thompson)": 18
      },
      "roles": {
       "Rifle": 158,
-      "Support": 67,
-      "SMG": 50,
+      "Heavy": 67,
+      "3rd": 50,
       "Sniper": 47
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 258,
@@ -11532,14 +11624,15 @@
      "gun_kills": 101,
      "prone_changes": 114,
      "classes": {
-      "Sniper (Springfield)": 59,
-      "Scharfsch\u00fctze (K98 scoped)": 52,
-      "MP40": 1
+      "Springfield": 59,
+      "Scharf (K98 scoped)": 52,
+      "Unter (MP40)": 1
      },
      "roles": {
-      "Sniper": 111,
-      "SMG": 1
+      "3rd": 1,
+      "Sniper": 111
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 173,
@@ -11602,14 +11695,15 @@
      "gun_kills": 265,
      "prone_changes": 468,
      "classes": {
-      "Rifleman (Garand)": 216,
-      "Kar98": 193,
-      "Sniper (Springfield)": 11
+      "Garand": 216,
+      "K98": 193,
+      "Springfield": 11
      },
      "roles": {
       "Rifle": 409,
       "Sniper": 11
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 360,
@@ -11673,13 +11767,14 @@
      "prone_changes": 341,
      "classes": {
       "BAR": 152,
-      "MP44": 106,
-      "MP40": 60
+      "STG (MP44)": 106,
+      "Unter (MP40)": 60
      },
      "roles": {
-      "Support": 258,
-      "SMG": 60
+      "Heavy": 258,
+      "3rd": 60
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 329,
@@ -11743,12 +11838,13 @@
      "prone_changes": 420,
      "classes": {
       "BAR": 187,
-      "MP40": 169
+      "Unter (MP40)": 169
      },
      "roles": {
-      "Support": 187,
-      "SMG": 169
+      "Heavy": 187,
+      "3rd": 169
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 424,
@@ -11811,12 +11907,13 @@
      "gun_kills": 285,
      "prone_changes": 429,
      "classes": {
-      "MP44": 214,
+      "STG (MP44)": 214,
       "BAR": 186
      },
      "roles": {
-      "Support": 400
+      "Heavy": 400
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 451,
@@ -11880,13 +11977,14 @@
      "prone_changes": 336,
      "classes": {
       "BAR": 150,
-      "MP44": 123,
-      "MP40": 44
+      "STG (MP44)": 123,
+      "Unter (MP40)": 44
      },
      "roles": {
-      "Support": 273,
-      "SMG": 44
+      "Heavy": 273,
+      "3rd": 44
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 347,
@@ -11949,12 +12047,13 @@
      "gun_kills": 235,
      "prone_changes": 336,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 155,
-      "Sniper (Springfield)": 152
+      "Scharf (K98 scoped)": 155,
+      "Springfield": 152
      },
      "roles": {
       "Sniper": 307
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 240,
@@ -12017,12 +12116,13 @@
      "gun_kills": 211,
      "prone_changes": 363,
      "classes": {
-      "Kar98": 170,
-      "Rifleman (Garand)": 162
+      "K98": 170,
+      "Garand": 162
      },
      "roles": {
       "Rifle": 332
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 377,
@@ -12085,12 +12185,13 @@
      "gun_kills": 190,
      "prone_changes": 233,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 109,
-      "Sniper (Springfield)": 98
+      "Scharf (K98 scoped)": 109,
+      "Springfield": 98
      },
      "roles": {
       "Sniper": 207
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 171,
@@ -12153,12 +12254,13 @@
      "gun_kills": 258,
      "prone_changes": 461,
      "classes": {
-      "Kar98": 224,
-      "Rifleman (Garand)": 223
+      "K98": 224,
+      "Garand": 223
      },
      "roles": {
       "Rifle": 447
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 332,
@@ -12221,12 +12323,13 @@
      "gun_kills": 249,
      "prone_changes": 339,
      "classes": {
-      "Kar98": 170,
-      "Rifleman (Garand)": 158
+      "K98": 170,
+      "Garand": 158
      },
      "roles": {
       "Rifle": 328
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 247,
@@ -12289,16 +12392,17 @@
      "gun_kills": 108,
      "prone_changes": 240,
      "classes": {
-      "Rifleman (Garand)": 107,
-      "K43": 98,
-      "MP40": 9,
-      "MP44": 8
+      "Garand": 107,
+      "Stoss (K43)": 98,
+      "Unter (MP40)": 9,
+      "STG (MP44)": 8
      },
      "roles": {
       "Rifle": 205,
-      "SMG": 9,
-      "Support": 8
+      "Heavy": 8,
+      "3rd": 9
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 250,
@@ -12361,15 +12465,16 @@
      "gun_kills": 192,
      "prone_changes": 367,
      "classes": {
-      "Rifleman (Garand)": 145,
-      "Kar98": 133,
-      "K43": 11,
-      "MP40": 11
+      "Garand": 145,
+      "K98": 133,
+      "Stoss (K43)": 11,
+      "Unter (MP40)": 11
      },
      "roles": {
       "Rifle": 289,
-      "SMG": 11
+      "3rd": 11
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 278,
@@ -12432,15 +12537,16 @@
      "gun_kills": 122,
      "prone_changes": 264,
      "classes": {
-      "Sniper (Springfield)": 114,
-      "Scharfsch\u00fctze (K98 scoped)": 114,
-      "Thompson": 2,
-      "MP40": 1
+      "Springfield": 114,
+      "Scharf (K98 scoped)": 114,
+      "Tommy (Thompson)": 2,
+      "Unter (MP40)": 1
      },
      "roles": {
-      "Sniper": 228,
-      "SMG": 3
+      "3rd": 3,
+      "Sniper": 228
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 172,
@@ -12503,14 +12609,15 @@
      "gun_kills": 234,
      "prone_changes": 443,
      "classes": {
-      "MP44": 197,
+      "STG (MP44)": 197,
       "BAR": 150,
-      "Scharfsch\u00fctze (K98 scoped)": 4
+      "Scharf (K98 scoped)": 4
      },
      "roles": {
-      "Support": 347,
+      "Heavy": 347,
       "Sniper": 4
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 361,
@@ -12573,12 +12680,13 @@
      "gun_kills": 159,
      "prone_changes": 387,
      "classes": {
-      "K43": 192,
-      "Rifleman (Garand)": 185
+      "Stoss (K43)": 192,
+      "Garand": 185
      },
      "roles": {
       "Rifle": 377
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 276,
@@ -12641,14 +12749,15 @@
      "gun_kills": 229,
      "prone_changes": 446,
      "classes": {
-      "MP44": 227,
+      "STG (MP44)": 227,
       "BAR": 194,
-      "K43": 9
+      "Stoss (K43)": 9
      },
      "roles": {
-      "Support": 421,
-      "Rifle": 9
+      "Rifle": 9,
+      "Heavy": 421
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 290,
@@ -12711,12 +12820,13 @@
      "gun_kills": 52,
      "prone_changes": 102,
      "classes": {
-      "Kar98": 53,
-      "Rifleman (Garand)": 49
+      "K98": 53,
+      "Garand": 49
      },
      "roles": {
       "Rifle": 102
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 154,
@@ -12780,13 +12890,14 @@
      "prone_changes": 282,
      "classes": {
       "BAR": 129,
-      "MP40": 78,
-      "MP44": 39
+      "Unter (MP40)": 78,
+      "STG (MP44)": 39
      },
      "roles": {
-      "Support": 168,
-      "SMG": 78
+      "Heavy": 168,
+      "3rd": 78
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 295,
@@ -12849,15 +12960,16 @@
      "gun_kills": 210,
      "prone_changes": 488,
      "classes": {
-      "MP40": 174,
-      "Thompson": 118,
-      "Rifleman (Garand)": 84,
-      "K43": 64
+      "Unter (MP40)": 174,
+      "Tommy (Thompson)": 118,
+      "Garand": 84,
+      "Stoss (K43)": 64
      },
      "roles": {
-      "SMG": 292,
-      "Rifle": 148
+      "Rifle": 148,
+      "3rd": 292
      },
+     "primary_role": "3rd",
      "hitboxes": {
       "Left arm": {
        "hits": 394,
@@ -12920,15 +13032,16 @@
      "gun_kills": 194,
      "prone_changes": 457,
      "classes": {
-      "Rifleman (Garand)": 215,
-      "K43": 189,
+      "Garand": 215,
+      "Stoss (K43)": 189,
       "Carbine": 7,
-      "Thompson": 1
+      "Tommy (Thompson)": 1
      },
      "roles": {
-      "Rifle": 411,
-      "SMG": 1
+      "Rifle": 404,
+      "3rd": 8
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 399,
@@ -12991,14 +13104,15 @@
      "gun_kills": 267,
      "prone_changes": 465,
      "classes": {
-      "Sniper (Springfield)": 212,
-      "Scharfsch\u00fctze (K98 scoped)": 206,
-      "K43": 11
+      "Springfield": 212,
+      "Scharf (K98 scoped)": 206,
+      "Stoss (K43)": 11
      },
      "roles": {
-      "Sniper": 418,
-      "Rifle": 11
+      "Rifle": 11,
+      "Sniper": 418
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 222,
@@ -13061,17 +13175,18 @@
      "gun_kills": 226,
      "prone_changes": 395,
      "classes": {
-      "Rifleman (Garand)": 162,
-      "K43": 89,
-      "MP40": 57,
-      "Kar98": 32,
+      "Garand": 162,
+      "Stoss (K43)": 89,
+      "Unter (MP40)": 57,
+      "K98": 32,
       "BAR": 28
      },
      "roles": {
       "Rifle": 283,
-      "SMG": 57,
-      "Support": 28
+      "Heavy": 28,
+      "3rd": 57
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 264,
@@ -13134,18 +13249,19 @@
      "gun_kills": 231,
      "prone_changes": 380,
      "classes": {
-      "Scharfsch\u00fctze (K98 scoped)": 154,
-      "Sniper (Springfield)": 139,
-      "MP40": 26,
-      "Thompson": 8,
-      "K43": 6,
-      "Kar98": 2
+      "Scharf (K98 scoped)": 154,
+      "Springfield": 139,
+      "Unter (MP40)": 26,
+      "Tommy (Thompson)": 8,
+      "Stoss (K43)": 6,
+      "K98": 2
      },
      "roles": {
-      "Sniper": 293,
-      "SMG": 34,
-      "Rifle": 8
+      "Rifle": 8,
+      "3rd": 34,
+      "Sniper": 293
      },
+     "primary_role": "Sniper",
      "hitboxes": {
       "Left arm": {
        "hits": 222,
@@ -13209,17 +13325,18 @@
      "prone_changes": 461,
      "classes": {
       "BAR": 171,
-      "MP44": 161,
-      "Rifleman (Garand)": 30,
-      "K43": 14,
-      "MP40": 8,
+      "STG (MP44)": 161,
+      "Garand": 30,
+      "Stoss (K43)": 14,
+      "Unter (MP40)": 8,
       "Carbine": 1
      },
      "roles": {
-      "Support": 332,
-      "Rifle": 45,
-      "SMG": 8
+      "Rifle": 44,
+      "Heavy": 332,
+      "3rd": 9
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 344,
@@ -13282,12 +13399,13 @@
      "gun_kills": 227,
      "prone_changes": 442,
      "classes": {
-      "MP44": 216,
+      "STG (MP44)": 216,
       "BAR": 196
      },
      "roles": {
-      "Support": 412
+      "Heavy": 412
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 376,
@@ -13350,14 +13468,15 @@
      "gun_kills": 54,
      "prone_changes": 150,
      "classes": {
-      "K43": 58,
-      "Rifleman (Garand)": 55,
-      "Thompson": 1
+      "Stoss (K43)": 58,
+      "Garand": 55,
+      "Tommy (Thompson)": 1
      },
      "roles": {
       "Rifle": 113,
-      "SMG": 1
+      "3rd": 1
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Generic": {
        "hits": 209,
@@ -13420,12 +13539,13 @@
      "gun_kills": 74,
      "prone_changes": 165,
      "classes": {
-      "Kar98": 74,
-      "Rifleman (Garand)": 73
+      "K98": 74,
+      "Garand": 73
      },
      "roles": {
       "Rifle": 147
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 137,
@@ -13488,12 +13608,13 @@
      "gun_kills": 67,
      "prone_changes": 146,
      "classes": {
-      "MP44": 74,
+      "STG (MP44)": 74,
       "BAR": 72
      },
      "roles": {
-      "Support": 146
+      "Heavy": 146
      },
+     "primary_role": "Heavy",
      "hitboxes": {
       "Left arm": {
        "hits": 233,
@@ -13556,12 +13677,13 @@
      "gun_kills": 39,
      "prone_changes": 135,
      "classes": {
-      "Rifleman (Garand)": 73,
-      "Kar98": 62
+      "Garand": 73,
+      "K98": 62
      },
      "roles": {
       "Rifle": 135
      },
+     "primary_role": "Rifle",
      "hitboxes": {
       "Left arm": {
        "hits": 162,

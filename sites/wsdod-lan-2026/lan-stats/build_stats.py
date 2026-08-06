@@ -31,7 +31,7 @@ import sys
 import warnings
 from collections import defaultdict
 
-from lookups import label_classes, label_hitboxes, roll_up_roles
+from lookups import label_classes, label_hitboxes, primary_role, roll_up_roles
 
 import paramiko
 
@@ -250,6 +250,7 @@ def main() -> int:
                 "prone_changes": b["prone"],
                 "classes": label_classes(b["classes"]),
                 "roles": roll_up_roles(b["classes"]),
+                "primary_role": primary_role(b["classes"]),
                 "hitboxes": label_hitboxes(hb_by.get(steam, {})),
             })
         players.sort(key=lambda p: -p["ktpr"])
