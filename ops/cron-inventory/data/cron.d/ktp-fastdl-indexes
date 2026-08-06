@@ -1,0 +1,10 @@
+# KTP FastDL index pages — regenerates the styled browsers under /dod and /demos.
+# Script: /usr/local/bin/ktp-fastdl-indexes.py (canonical: KTPInfrastructure/scripts/).
+#
+# 04:45 ET, deliberately AFTER the 04:00 organizer and the 04:30 retention sweep, so the
+# demo counts on the pages reflect what actually survived rather than what existed at
+# midnight. Without this the fleet pages go stale -- the tree gains ~11 demos a day and
+# retention deletes on its own schedule.
+#
+# Only ever writes index.html. It never touches a .dem.
+45 4 * * *   root  /usr/bin/python3 /usr/local/bin/ktp-fastdl-indexes.py --apply >> /var/log/ktp-fastdl-indexes.log 2>&1
