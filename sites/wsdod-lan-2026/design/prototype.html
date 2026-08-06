@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#171c0a">
+<title>dodworldseries.com — WSDoD · World Series of Day of Defeat · Philly LAN 2026</title>
+<style>
+/* ============================================================
+   dodworldseries.com — design prototype (full rework).
+   Design system: the KTP property olive-drab scheme, tokens and
+   component shapes copied from support-web/app/templates/index.html
+   (itself derived from KTPAntiCheat/docs/bundles-web/styles.css).
+   Nothing here is reinterpreted — see design/DESIGN.md for the
+   token mapping and the deliberate page-specific additions.
+
+   Page-specific additions (all documented in DESIGN.md):
+   - .crest        : the WSDoD patch, recoloured into the olive scheme
+   - .statstrip    : event fact tiles under the hero
+   - .dayboard     : the per-day stats board (the structural answer to
+                     "KTPR is not comparable across days")
+   - .rolepill     : the four league positions (neutral — not status)
+
+   Hard rules carried from the property:
+   - static header (not sticky, not animated)
+   - zero external requests; JetBrains Mono rides the fallback stack
+   - committed dark; no light variant
+   - colour carries information only: rust=accent/alert, moss=ok/
+     info/actions, tan=degraded/attention, warm-grey ramp for the rest
+   ============================================================ */
+:root {
+  --bg:        #171c0a;
+  --panel:     #252a14;
+  --panel-2:   #323920;
+  --inset:     #101407;
+  --border:    #3d432b;
+  --rule:      rgba(61,67,43,0.5);
+  --text:      #eae7d4;
+  --dim:       #b6b299;
+  --faint:     #98947c;
+  --red:       #d0513b;   /* rust — alert / accent */
+  --red-soft:  #e07a63;   /* rust lifted for small text */
+  --blue:      #819746;   /* moss — ok / info / actions (name kept from the blue era) */
+  --blue-soft: #9fb45c;
+  --amber:     #c08b5c;   /* tan — attention only */
+  --radius: 14px;
+  --panel-grad: linear-gradient(180deg, var(--panel) 0%, #1e230f 100%);
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  color-scheme: dark;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background:
+    radial-gradient(120% 80% at 50% -10%, #252a14 0%, rgba(37,42,20,0) 55%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { color: var(--blue-soft); }
+code { font-family: var(--mono); color: var(--blue-soft); }
+::selection { background: var(--red); color:#150b04; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 22px; width: 100%; }
+[hidden] { display: none !important; }
+
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--blue-soft); outline-offset: 2px; }
+
+.mt8  { margin-top: 8px; }
+.mt16 { margin-top: 16px; }
+
+/* ---- top bar — STATIC by property requirement ---- */
+nav {
+  border-bottom: 1px solid var(--border);
+  background: rgba(16,20,7,0.72);
+  position: static;
+}
+nav .row { display:flex; align-items:center; gap: 22px; height: 58px; }
+.brand { font-weight: 800; letter-spacing: 1px; font-size: 1.05rem; color: var(--text); white-space: nowrap; }
+.brand .k { color: var(--red); }
+nav .spacer { flex: 1; }
+nav .navlink { color: var(--dim); font-size: 0.82rem; letter-spacing: 0.6px; }
+nav .navlink:hover { color: var(--text); }
+.who {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.72rem; color: var(--dim); letter-spacing: 0.4px;
+  border: 1px solid var(--border); border-radius: 999px; padding: 6px 13px;
+  white-space: nowrap;
+}
+.who b { color: var(--text); font-weight: 700; }
+@media (max-width: 860px) { nav .hidesm { display: none; } }
+
+/* ---- shared bits (verbatim from the property) ---- */
+.eyebrow {
+  font-size: 0.72rem; letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--dim); display:flex; align-items:center; gap: 10px; flex-wrap: wrap;
+}
+.eyebrow::before { content:""; width: 26px; height: 2px; background: var(--blue); display:inline-block; flex:none; }
+.accent { color: var(--red); }
+.panel { background: var(--panel-grad); border: 1px solid var(--border); border-radius: var(--radius); }
+.panel + .panel { margin-top: 16px; }
+.cards3 > .panel, .teamgrid > .panel, .staffgrid > .panel { margin-top: 0; }
+.panel .head,
+details.panel > summary {
+  font-size:0.68rem; letter-spacing:1.8px; text-transform:uppercase; color:var(--dim);
+  padding: 13px 16px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; gap: 10px;
+}
+.panel .head .n,
+details.panel > summary .n { color: var(--faint); letter-spacing: 0.6px; text-transform: none; font-size: 0.72rem; }
+.panel .body { padding: 15px 16px; }
+.pill { font-size: 0.7rem; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--border); color: var(--dim); letter-spacing: 0.4px; white-space: nowrap; }
+.pill.ok { border-color: var(--blue); color: var(--blue-soft); }
+.pill.warn { border-color: var(--amber); color: var(--amber); }
+.note-box { border-left: 3px solid var(--red); background: var(--inset); padding: 14px 16px; border-radius: 0 var(--radius) var(--radius) 0; margin: 16px 0; font-size: 0.86rem; color: var(--dim); }
+.note-box b { color: var(--text); }
+.hint { font-size: 0.72rem; color: var(--faint); letter-spacing: 0.3px; }
+.prose { font-size: 0.86rem; color: var(--dim); }
+.prose b { color: var(--text); }
+.prose p + p { margin-top: 8px; }
+.measure { max-width: 56ch; }
+.scrollbox { overflow-x: auto; }
+
+/* ---- hero ---- */
+header.hero { padding: 56px 0 0; }
+.hero-grid { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: start; }
+@media (max-width: 760px) { .hero-grid { grid-template-columns: 1fr; } .crest { display:none; } }
+h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -1px; line-height: 1.04; margin: 16px 0 12px; }
+.lede { color: var(--dim); max-width: 68ch; font-size: 0.92rem; }
+.lede b { color: var(--text); font-weight: 600; }
+.discord-slot {
+  margin-left: auto; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px;
+  color: var(--blue-soft); border: 1px solid var(--blue); border-radius: 999px;
+  padding: 4px 13px; white-space: nowrap; text-transform: none;
+}
+.discord-slot:hover { background: var(--blue); color: #0b0f04; }
+/* the crest — the one pictorial element on the page (see DESIGN.md) */
+.crest { width: 150px; height: 150px; flex: none; margin-top: 12px; }
+
+/* ---- event fact strip ---- */
+.statstrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 32px; }
+.stile { background: var(--panel-grad); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 15px; }
+.stile b { display: block; font-size: 1.3rem; font-weight: 800; color: var(--text); letter-spacing: -0.4px; }
+.stile span { display: block; font-size: 0.72rem; color: var(--faint); letter-spacing: 0.4px; }
+
+/* ---- section scaffolding ---- */
+section { padding: 48px 0 0; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; margin-bottom: 16px; }
+h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
+.sec-head h2::before { content:""; display:block; width: 26px; height: 2px; background: var(--blue); margin-bottom: 10px; }
+.sec-head .meta { font-size: 0.72rem; color: var(--faint); letter-spacing: 0.4px; }
+
+/* ---- the weekend cards ---- */
+.cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.daycard .head b { color: var(--text); letter-spacing: 1.8px; }
+.daycard .body { font-size: 0.82rem; color: var(--dim); }
+.daycard .body b { color: var(--text); }
+.venue-row { display: grid; grid-template-columns: 2fr 3fr; gap: 16px; margin-top: 16px; align-items: start; }
+@media (max-width: 860px) { .venue-row { grid-template-columns: 1fr; } }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 0.82rem; }
+.kv dt { color: var(--faint); font-size: 0.72rem; letter-spacing: 1.4px; text-transform: uppercase; padding-top: 2px; }
+.kv dd { color: var(--dim); }
+.kv dd b { color: var(--text); }
+
+/* ---- teams ---- */
+.teamgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.teamcard .head b { color: var(--text); letter-spacing: 0.4px; text-transform: none; font-size: 0.82rem; }
+.teamcard .head .n { max-width: 12em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.roster { list-style: none; }
+.roster li { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--rule); font-size: 0.82rem; }
+.roster li:last-child { border-bottom: none; }
+.roster .num { color: var(--faint); font-size: 0.72rem; min-width: 2ch; text-align: right; }
+.roster .cpt { font-size: 0.62rem; letter-spacing: 1px; color: var(--red-soft); border: 1px solid var(--red); border-radius: 4px; padding: 0 5px; }
+.roster .nm { color: var(--dim); }
+.roster li:first-child .nm { color: var(--text); }
+.teamcard .reg { padding: 8px 16px 12px; font-size: 0.68rem; color: var(--faint); letter-spacing: 0.6px; }
+
+/* ---- results / match log ---- */
+.logtable { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 520px; }
+.logtable th { text-align: left; color: var(--faint); font-weight: 400; font-size: 0.68rem; letter-spacing: 1.4px; text-transform: uppercase; padding: 6px 16px 6px 0; border-bottom: 1px solid var(--border); }
+.logtable td { padding: 7px 16px 7px 0; border-bottom: 1px solid var(--rule); color: var(--dim); }
+.logtable tr:last-child td { border-bottom: none; }
+.logtable td.map { color: var(--text); white-space: nowrap; }
+.logtable td.r { text-align: right; padding-right: 24px; }
+.logtable th.r { text-align: right; padding-right: 24px; }
+
+/* ---- stats: day boards ---- */
+.daytabs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+@media (max-width: 640px) { .daytabs { grid-template-columns: 1fr; } }
+.daytab {
+  text-align: left; cursor: pointer; font-family: var(--mono);
+  background: var(--panel-grad); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 13px 16px; color: var(--dim);
+}
+.daytab b { display: block; font-size: 0.92rem; font-weight: 800; color: var(--text); letter-spacing: 0.4px; }
+.daytab span { display: block; font-size: 0.72rem; color: var(--faint); letter-spacing: 0.4px; margin-top: 2px; }
+.daytab[aria-pressed="true"] { border-color: var(--blue); }
+.daytab[aria-pressed="true"] b { color: var(--blue-soft); }
+.baseline {
+  display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline;
+  background: var(--inset); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 16px; margin-bottom: 16px; font-size: 0.78rem; color: var(--dim);
+}
+.baseline .t { font-size: 0.68rem; letter-spacing: 1.8px; text-transform: uppercase; color: var(--faint); }
+.baseline b { color: var(--text); }
+.mapchips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.chip {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.4px; cursor: pointer;
+  background: var(--inset); color: var(--dim); border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 14px;
+}
+.chip:hover { color: var(--text); border-color: #565e3b; }
+.chip[aria-pressed="true"] { border-color: var(--blue); color: var(--blue-soft); background: rgba(129,151,70,0.16); }
+
+.leader { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 880px; }
+.leader th { text-align: left; color: var(--faint); font-weight: 400; font-size: 0.68rem; letter-spacing: 1.4px; text-transform: uppercase; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.leader th.r, .leader td.r { text-align: right; }
+.leader td { padding: 7px 14px 7px 0; border-bottom: 1px solid var(--rule); color: var(--dim); vertical-align: middle; white-space: nowrap; }
+.leader td.player { color: var(--text); max-width: 24ch; overflow: hidden; text-overflow: ellipsis; }
+.leader tr.top3 td.rank { color: var(--red-soft); font-weight: 700; }
+.leader td.rank { color: var(--faint); }
+.ktprcell { display: flex; align-items: center; gap: 10px; min-width: 130px; }
+.ktprcell b { color: var(--text); font-weight: 700; min-width: 5ch; }
+.ktprbar { flex: 1; height: 4px; background: var(--inset); border-radius: 999px; overflow: hidden; min-width: 50px; }
+.ktprbar i { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
+.rolepill { font-size: 0.68rem; letter-spacing: 0.6px; border: 1px solid var(--border); color: var(--dim); border-radius: 4px; padding: 1px 7px; }
+.rolepill.inferred { border-style: dashed; }
+.detailbtn {
+  background: var(--inset); color: var(--faint); border: 1px solid var(--border);
+  border-radius: 999px; padding: 1px 10px; font-size: 0.68rem; cursor: pointer;
+  font-family: var(--mono); letter-spacing: 0.4px;
+}
+.detailbtn:hover { border-color: var(--blue); color: #e6e3cf; }
+.detailbtn[aria-expanded="true"] { border-color: var(--blue); color: var(--blue-soft); }
+tr.detail > td { padding: 0 0 16px; white-space: normal; }
+.detailgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; padding: 14px 16px; background: var(--inset); border: 1px solid var(--border); border-radius: 10px; margin-top: 8px; }
+.detailgrid h4 { font-size: 0.68rem; letter-spacing: 1.8px; text-transform: uppercase; color: var(--faint); font-weight: 400; margin-bottom: 8px; }
+.hbrow { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; padding: 2px 0; }
+.hbrow .lbl { min-width: 9ch; color: var(--dim); }
+.hbrow .bar { flex: 1; height: 4px; background: var(--panel); border-radius: 999px; overflow: hidden; }
+.hbrow .bar i { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
+.hbrow .ct { color: var(--faint); min-width: 8ch; text-align: right; }
+.kvmini { display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; font-size: 0.72rem; }
+.kvmini dt { color: var(--dim); }
+.kvmini dd { color: var(--text); text-align: right; }
+.showall { margin-top: 12px; }
+.btn {
+  display: inline-block;
+  background: var(--blue); color: #0b0f04; border: 1px solid var(--blue);
+  border-radius: 10px; padding: 8px 18px;
+  font-family: var(--mono); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.6px;
+  cursor: pointer; text-align: center;
+  transition: background .16s ease, border-color .16s ease;
+}
+.btn:hover { background: #93aa55; border-color: #93aa55; }
+.btn.ghost { background: var(--inset); color: var(--text); border-color: var(--border); }
+.btn.ghost:hover { border-color: var(--blue); color: #e6e3cf; }
+.status-foot { font-size: 0.78rem; color: var(--faint); margin-top: 12px; letter-spacing: 0.3px; }
+.status-foot b { color: var(--dim); }
+
+/* ---- rules ---- */
+details.panel > summary { border-bottom: none; cursor: pointer; list-style: none; user-select: none; }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary:hover { color: var(--text); }
+details.panel > summary::after { content: "+"; color: var(--faint); font-size: 0.95rem; flex: none; }
+details.panel[open] > summary { border-bottom: 1px solid var(--border); }
+details.panel[open] > summary::after { content: "\2013"; }
+.reglist { font-size: 0.82rem; color: var(--dim); }
+.reglist h4 { font-size: 0.72rem; letter-spacing: 1.8px; text-transform: uppercase; color: var(--text); font-weight: 700; margin: 14px 0 6px; }
+.reglist h4:first-child { margin-top: 0; }
+.reglist .reg { display: grid; grid-template-columns: 4.5ch 1fr; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.reglist .reg:last-child { border-bottom: none; }
+.reglist .no { color: var(--red-soft); font-size: 0.72rem; text-align: right; }
+.reglist b { color: var(--text); }
+.fineprint { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--faint); line-height: 1.65; }
+.fineprint b { color: var(--dim); }
+
+/* ---- staff ---- */
+.staffgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.staffcard { background: var(--panel-grad); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 15px; }
+.staffcard b { display: block; font-size: 0.82rem; color: var(--text); font-weight: 700; }
+.staffcard span { display: block; font-size: 0.68rem; color: var(--faint); letter-spacing: 0.6px; text-transform: uppercase; }
+
+/* ---- archive ---- */
+.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .twocol { grid-template-columns: 1fr; } }
+
+/* ---- footer ---- */
+footer { border-top: 1px solid var(--border); padding: 32px 0 72px; color: var(--dim); font-size: 0.82rem; margin-top: 48px; }
+footer.split { display:flex; flex-wrap:wrap; gap: 24px; justify-content: space-between; }
+footer .col { max-width: 46ch; }
+footer h4 { color: var(--text); font-size: 0.72rem; letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 8px; }
+footer p { margin: 4px 0; }
+footer .accent { color: var(--red); white-space: nowrap; }
+
+/* ---- stats publication gate ---- */
+body[data-stats="off"] #stats { display: none; }
+body[data-stats="off"] [data-stats-link] { display: none; }
+
+/* ---- MOCKUP-ONLY publication switcher — not part of the design ---- */
+.mock {
+  position: fixed; right: 14px; bottom: 14px; z-index: 90;
+  background: var(--inset); border: 2px dashed var(--amber); border-radius: 12px;
+  padding: 10px 12px; max-width: 260px;
+}
+.mock .tag { display: block; font-size: 0.68rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+.mock .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.mock button {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.4px;
+  background: var(--panel); color: var(--dim); border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.mock button[aria-pressed="true"] { border-color: var(--blue); color: var(--blue-soft); background: rgba(129,151,70,0.16); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto; }
+}
+</style>
+</head>
+<body data-stats="on">
+
+<!-- Static header: property treatment, position:static. -->
+<nav>
+  <div class="wrap row">
+    <span class="brand"><span class="k">WSDoD</span> — World Series of DoD</span>
+    <span class="spacer"></span>
+    <a class="navlink hidesm" href="#event">Event</a>
+    <a class="navlink hidesm" href="#teams">Teams</a>
+    <a class="navlink hidesm" href="#results">Results</a>
+    <a class="navlink hidesm" href="#stats" data-stats-link>Stats</a>
+    <a class="navlink hidesm" href="#rules">Rules</a>
+    <a class="navlink hidesm" href="#archive">Archive</a>
+    <span class="who"><a href="https://ktpdod.com/">part of <b>KTP</b></a></span>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Philadelphia · 31 Jul – 2 Aug 2026 · TAP Esport Center
+      <a class="discord-slot" href="https://discord.gg/bDw2NmEFj2">WSDoD Discord</a></div>
+    <div class="hero-grid">
+      <div>
+        <h1>The <span class="accent">World Series</span> of Day of Defeat.</h1>
+        <p class="lede">Three days on the basement floor in Chinatown. A twelve-company field,
+          <b>61 players</b>, and <b>100 matches</b> of Day of Defeat 1.3 — draft Friday,
+          group play Saturday, playoffs and finals Sunday. Every match played on the KTP
+          stack and recorded end to end.</p>
+      </div>
+      <!-- The crest: the dossier-era divisional patch, redrawn in the
+           property palette. The page's one pictorial element. -->
+      <svg class="crest" viewBox="0 0 200 200" role="img" aria-label="WSDoD LAN 2026 patch">
+        <circle cx="100" cy="100" r="96" fill="#252a14" stroke="#3d432b" stroke-width="2"/>
+        <circle cx="100" cy="100" r="88" fill="none" stroke="#819746" stroke-width="1.5" stroke-dasharray="2 3"/>
+        <circle cx="100" cy="100" r="74" fill="#101407" stroke="#3d432b" stroke-width="2"/>
+        <defs>
+          <path id="rim-top" d="M 24 100 A 76 76 0 0 1 176 100" fill="none"/>
+          <path id="rim-bot" d="M 24 100 A 76 76 0 0 0 176 100" fill="none"/>
+        </defs>
+        <text font-family="JetBrains Mono, ui-monospace, Consolas, monospace" font-size="15" font-weight="800" fill="#eae7d4" letter-spacing="3">
+          <textPath href="#rim-top" startOffset="50%" text-anchor="middle">WORLD SERIES OF</textPath>
+        </text>
+        <text font-family="JetBrains Mono, ui-monospace, Consolas, monospace" font-size="15" font-weight="800" fill="#eae7d4" letter-spacing="3">
+          <textPath href="#rim-bot" startOffset="50%" text-anchor="middle">DAY OF DEFEAT</textPath>
+        </text>
+        <g transform="translate(100 100)" stroke="#819746" stroke-width="2.4" stroke-linecap="round" fill="none">
+          <line x1="-32" y1="-30" x2="30" y2="32"/>
+          <line x1="-32" y1="-30" x2="-36" y2="-26"/>
+          <line x1="-32" y1="-30" x2="-26" y2="-36"/>
+          <line x1="-12" y1="-10" x2="-8" y2="-14"/>
+          <line x1="-30" y1="32" x2="32" y2="-30" stroke-width="3.6"/>
+          <circle cx="32" cy="-30" r="3" fill="#819746"/>
+        </g>
+        <text x="100" y="76" font-family="JetBrains Mono, ui-monospace, Consolas, monospace" font-size="14" fill="#d0513b" text-anchor="middle" letter-spacing="4" font-weight="800">★ LAN ★</text>
+        <text x="100" y="148" font-family="JetBrains Mono, ui-monospace, Consolas, monospace" font-size="18" fill="#eae7d4" text-anchor="middle" letter-spacing="3" font-weight="700">2026</text>
+      </svg>
+    </div>
+
+    <div class="statstrip">
+      <div class="stile"><b>12</b><span>company cap · 11 registered</span></div>
+      <div class="stile"><b>61</b><span>players in the field</span></div>
+      <div class="stile"><b>100</b><span>matches over the weekend</span></div>
+      <div class="stile"><b>58</b><span>tournament (.ktp) matches</span></div>
+      <div class="stile"><b>242</b><span>HLTV demos recorded</span></div>
+    </div>
+  </header>
+
+  <!-- ============================ EVENT ============================ -->
+  <section id="event">
+    <div class="sec-head"><h2>The weekend</h2>
+      <span class="meta">second year at TAP · all times Eastern</span></div>
+
+    <div class="cards3">
+      <div class="panel daycard">
+        <div class="head"><b>Friday · Jul 31</b><span class="n">draft day</span></div>
+        <div class="body"><b>16 draft matches</b> and 15 scrims. The pickup tournament —
+          open to anyone in attendance who wanted in, seats limited at the door.</div>
+      </div>
+      <div class="panel daycard">
+        <div class="head"><b>Saturday · Aug 1</b><span class="n">group play</span></div>
+        <div class="body"><b>31 tournament matches</b> across six maps — the full field,
+          every company bracketed up. Roughly 22 hours of server time in one day.</div>
+      </div>
+      <div class="panel daycard">
+        <div class="head"><b>Sunday · Aug 2</b><span class="n">playoffs &amp; finals</span></div>
+        <div class="body"><b>27 tournament matches</b> across seven maps, the field
+          thinning through knockouts to a champion by evening.</div>
+      </div>
+    </div>
+
+    <div class="venue-row">
+      <div class="panel">
+        <div class="head">The venue</div>
+        <div class="body">
+          <dl class="kv">
+            <dt>Where</dt><dd><b>TAP Esport Center</b> — basement floor<br>924 Cherry St, Philadelphia, PA 19107</dd>
+            <dt>Area</dt><dd>Chinatown gate two blocks east — dinner solves itself</dd>
+            <dt>Transit</dt><dd>SEPTA Race–Vine (BSL) four blocks south · 30th St Station ten minutes west</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="head">How it ran</div>
+        <div class="body prose">
+          <p>Matches ran on five LAN servers on the full <b>KTP stack</b> — the same engine,
+            cvar enforcement and match handling as the online league, with the broadcast HUD
+            capturing per-player telemetry the whole weekend. Comms on Mumble,
+            POV demos recorded every half, HLTV on every match.</p>
+          <p class="hint mt8">Questions about the event: the
+            <a href="https://discord.gg/bDw2NmEFj2">WSDoD Discord</a>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ TEAMS ============================ -->
+  <section id="teams">
+    <div class="sec-head"><h2>Teams</h2>
+      <span class="meta">the order of battle · 12-company cap · rosters as registered</span></div>
+
+    <div class="teamgrid">
+      <div class="panel teamcard">
+        <div class="head"><b>dicE</b><span class="n">dicE[: :]</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">stealthlol</span></li>
+          <li><span class="num">2</span><span class="nm">dyeL!fe[dd]</span></li>
+          <li><span class="num">3</span><span class="nm">gorilla[bc]</span></li>
+          <li><span class="num">4</span><span class="nm">warchyld[dd]</span></li>
+          <li><span class="num">5</span><span class="nm">m00cat</span></li>
+          <li><span class="num">6</span><span class="nm">element</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 09 FEB 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>b team</b><span class="n">b.</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">twist~</span></li>
+          <li><span class="num">2</span><span class="nm">sTarK x_0</span></li>
+          <li><span class="num">3</span><span class="nm">reptaR</span></li>
+          <li><span class="num">4</span><span class="nm">steve</span></li>
+          <li><span class="num">5</span><span class="nm">fallen</span></li>
+          <li><span class="num">6</span><span class="nm">hey hi</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 09 FEB 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>Uncle Rico's Time Machine</b><span class="n">uR[TM]*</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">HLAH</span></li>
+          <li><span class="num">2</span><span class="nm">zamp0lit</span></li>
+          <li><span class="num">3</span><span class="nm">Las1K64</span></li>
+          <li><span class="num">4</span><span class="nm">SirSnipeys</span></li>
+          <li><span class="num">5</span><span class="nm">Jee</span></li>
+          <li><span class="num">6</span><span class="nm">Kev.de</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 18 FEB 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>Herd of Cats</b><span class="n">ฅ(=^･ｪ･^=)ฅ</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">kroD-</span></li>
+          <li><span class="num">2</span><span class="nm">Nicholson</span></li>
+          <li><span class="num">3</span><span class="nm">TillJim</span></li>
+          <li><span class="num">4</span><span class="nm">Incite</span></li>
+          <li><span class="num">5</span><span class="nm">Patten</span></li>
+          <li><span class="num">6</span><span class="nm">p12</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 18 FEB 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>North Atlantic Treaty Org</b><span class="n">[NATO]</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">bayko</span></li>
+          <li><span class="num">2</span><span class="nm">Sz</span></li>
+          <li><span class="num">3</span><span class="nm">Sq</span></li>
+          <li><span class="num">4</span><span class="nm">nightmare</span></li>
+          <li><span class="num">5</span><span class="nm">NoName</span></li>
+          <li><span class="num">6</span><span class="nm">Ho0liii</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 18 FEB 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>icyHOT</b><span class="n">iH.</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">kanguhhh</span></li>
+          <li><span class="num">2</span><span class="nm">Seanality</span></li>
+          <li><span class="num">3</span><span class="nm">s i k</span></li>
+          <li><span class="num">4</span><span class="nm">monday</span></li>
+          <li><span class="num">5</span><span class="nm">vertex</span></li>
+          <li><span class="num">6</span><span class="nm">hildebrand?</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 22 FEB 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>onLAN thunder</b><span class="n">THUNDER</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">Toxinator</span></li>
+          <li><span class="num">2</span><span class="nm">JaGGonator</span></li>
+          <li><span class="num">3</span><span class="nm">Jules</span></li>
+          <li><span class="num">4</span><span class="nm">Dorito</span></li>
+          <li><span class="num">5</span><span class="nm">Omenayr</span></li>
+          <li><span class="num">6</span><span class="nm">Ian</span></li>
+          <li><span class="num">7</span><span class="nm">Mogers</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 07 MAR 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>NoSoul</b><span class="n">NoSo !</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">Khoi</span></li>
+          <li><span class="num">2</span><span class="nm">bausch</span></li>
+          <li><span class="num">3</span><span class="nm">yayme</span></li>
+          <li><span class="num">4</span><span class="nm">stamp</span></li>
+          <li><span class="num">5</span><span class="nm">arachnid</span></li>
+          <li><span class="num">6</span><span class="nm">Savage</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 08 MAR 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>(To be determined)</b><span class="n">(TBD)</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">BuLLeT FoDDeR</span></li>
+          <li><span class="num">2</span><span class="nm">Epyon</span></li>
+          <li><span class="num">3</span><span class="nm">Brascal</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 15 MAR 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>Best Price</b><span class="n">[ $ ]</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">Nein</span></li>
+          <li><span class="num">2</span><span class="nm">Hypnotik</span></li>
+          <li><span class="num">3</span><span class="nm">Piff</span></li>
+          <li><span class="num">4</span><span class="nm">Cory</span></li>
+          <li><span class="num">5</span><span class="nm">Caleb</span></li>
+          <li><span class="num">6</span><span class="nm">Bromley</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 17 MAR 2026</div>
+      </div>
+
+      <div class="panel teamcard">
+        <div class="head"><b>TBA</b><span class="n">TBA</span></div>
+        <div class="body"><ol class="roster">
+          <li><span class="num">1</span><span class="cpt">CPT</span><span class="nm">cKillA-</span></li>
+          <li><span class="num">2</span><span class="nm">paintball</span></li>
+          <li><span class="num">3</span><span class="nm">Hopper</span></li>
+        </ol></div>
+        <div class="reg">REGISTERED 14 MAY 2026</div>
+      </div>
+    </div>
+
+    <p class="status-foot">Rosters shown are <b>as registered</b>. Several squads reshuffled
+      between registration and the weekend — a played-roster pass is pending from staff.</p>
+  </section>
+
+  <!-- ============================ RESULTS ============================ -->
+  <section id="results">
+    <div class="sec-head"><h2>Results</h2>
+      <span class="meta">58 tournament matches · verified against HLTV demos</span></div>
+
+    <div class="note-box">
+      <b>Bracket placements are being compiled.</b> Final standings are verified by staff
+      against captains' score submissions and the HLTV record before they publish here.
+      The match log below is the engine's own record of every tournament match played.
+    </div>
+
+    <details class="panel" open>
+      <summary>Saturday match log <span class="n">31 matches · six maps · ~22h of play</span></summary>
+      <div class="body scrollbox">
+        <table class="logtable">
+          <thead><tr><th>№</th><th>Start</th><th>Map</th><th class="r">Length</th><th class="r">Halves</th><th class="r">Demos</th></tr></thead>
+          <tbody><tr><td>1</td><td>13:19</td><td class="map">dod_armory_b6</td><td class="r">45 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>2</td><td>13:25</td><td class="map">dod_armory_b6</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>3</td><td>13:26</td><td class="map">dod_armory_b6</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>4</td><td>13:26</td><td class="map">dod_armory_b6</td><td class="r">43 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>5</td><td>13:27</td><td class="map">dod_armory_b6</td><td class="r">46 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>6</td><td>14:35</td><td class="map">dod_thunder2</td><td class="r">42 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>7</td><td>14:37</td><td class="map">dod_thunder2</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>8</td><td>14:39</td><td class="map">dod_thunder2</td><td class="r">43 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>9</td><td>14:39</td><td class="map">dod_thunder2</td><td class="r">45 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>10</td><td>14:40</td><td class="map">dod_thunder2</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>11</td><td>15:43</td><td class="map">dod_lennon5_b1</td><td class="r">42 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>12</td><td>15:45</td><td class="map">dod_lennon5_b1</td><td class="r">— min</td><td class="r">1</td><td class="r">3</td></tr>
+          <tr><td>13</td><td>15:47</td><td class="map">dod_lennon5_b1</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>14</td><td>15:47</td><td class="map">dod_lennon5_b1</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>15</td><td>15:50</td><td class="map">dod_lennon5_b1</td><td class="r">42 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>16</td><td>15:52</td><td class="map">dod_lennon5_b1</td><td class="r">42 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>17</td><td>18:10</td><td class="map">dod_saints2_b3e</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>18</td><td>18:16</td><td class="map">dod_saints2_b3e</td><td class="r">46 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>19</td><td>18:16</td><td class="map">dod_saints2_b3e</td><td class="r">43 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>20</td><td>18:23</td><td class="map">dod_saints2_b3e</td><td class="r">46 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>21</td><td>18:23</td><td class="map">dod_saints2_b3e</td><td class="r">49 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>22</td><td>19:27</td><td class="map">dod_harrington</td><td class="r">45 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>23</td><td>19:28</td><td class="map">dod_harrington</td><td class="r">42 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>24</td><td>19:29</td><td class="map">dod_harrington</td><td class="r">43 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>25</td><td>19:32</td><td class="map">dod_harrington</td><td class="r">47 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>26</td><td>19:35</td><td class="map">dod_harrington</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>27</td><td>20:45</td><td class="map">dod_anzio</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>28</td><td>20:46</td><td class="map">dod_anzio</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>29</td><td>20:47</td><td class="map">dod_anzio</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>30</td><td>20:51</td><td class="map">dod_anzio</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>31</td><td>21:08</td><td class="map">dod_anzio</td><td class="r">44 min</td><td class="r">2</td><td class="r">3</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary>Sunday match log <span class="n">27 matches · seven maps · finals by evening</span></summary>
+      <div class="body scrollbox">
+        <table class="logtable">
+          <thead><tr><th>№</th><th>Start</th><th>Map</th><th class="r">Length</th><th class="r">Halves</th><th class="r">Demos</th></tr></thead>
+          <tbody><tr><td>1</td><td>11:07</td><td class="map">dod_railroad2_s9a</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>2</td><td>11:33</td><td class="map">dod_armory_b6</td><td class="r">42 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>3</td><td>12:22</td><td class="map">dod_lennon5_b1</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>4</td><td>12:29</td><td class="map">dod_armory_b6</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>5</td><td>12:36</td><td class="map">dod_harrington</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>6</td><td>12:45</td><td class="map">dod_harrington</td><td class="r">— min</td><td class="r">1</td><td class="r">2</td></tr>
+          <tr><td>7</td><td>12:45</td><td class="map">dod_saints2_b3e</td><td class="r">45 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>8</td><td>12:47</td><td class="map">dod_harrington</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>9</td><td>13:30</td><td class="map">dod_saints2_b3e</td><td class="r">44 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>10</td><td>13:39</td><td class="map">dod_railroad2_s9a</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>11</td><td>13:43</td><td class="map">dod_saints2_b3e</td><td class="r">45 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>12</td><td>13:50</td><td class="map">dod_railroad2_s9a</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>13</td><td>15:12</td><td class="map">dod_thunder2</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>14</td><td>15:34</td><td class="map">dod_railroad2_s9a</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>15</td><td>15:38</td><td class="map">dod_lennon5_b1</td><td class="r">42 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>16</td><td>15:56</td><td class="map">dod_lennon5_b1</td><td class="r">45 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>17</td><td>16:13</td><td class="map">dod_lennon5_b1</td><td class="r">50 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>18</td><td>16:39</td><td class="map">dod_saints2_b3e</td><td class="r">43 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>19</td><td>16:47</td><td class="map">dod_armory_b6</td><td class="r">44 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>20</td><td>16:54</td><td class="map">dod_harrington</td><td class="r">51 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>21</td><td>17:34</td><td class="map">dod_saints2_b3e</td><td class="r">43 min</td><td class="r">2</td><td class="r">3</td></tr>
+          <tr><td>22</td><td>18:34</td><td class="map">dod_railroad2_s9a</td><td class="r">43 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>23</td><td>18:39</td><td class="map">dod_armory_b6</td><td class="r">42 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>24</td><td>19:01</td><td class="map">dod_armory_b6</td><td class="r">45 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>25</td><td>19:59</td><td class="map">dod_railroad2_s9a</td><td class="r">46 min</td><td class="r">2</td><td class="r">2</td></tr>
+          <tr><td>26</td><td>20:12</td><td class="map">dod_harrington</td><td class="r">— min</td><td class="r">1</td><td class="r">4</td></tr>
+          <tr><td>27</td><td>21:39</td><td class="map">dod_anzio</td><td class="r">44 min</td><td class="r">2</td><td class="r">2</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <!-- ============================ STATS ============================ -->
+  <section id="stats">
+    <div class="sec-head"><h2>Player stats</h2>
+      <span class="meta">HLStatsX + broadcast HUD · tournament (.ktp) matches only</span></div>
+
+    <div class="note-box">
+      <b>KTPR is rated within a single day.</b> Each player is measured against the field
+      average of the day they played — and Sunday's field is thinned by eliminations, so the
+      two days have different baselines. A Saturday 1.20 and a Sunday 1.20 are
+      <b>not the same number</b>, which is why the two boards below never merge.
+    </div>
+
+    <div class="daytabs" role="group" aria-label="Choose a day's board">
+      <button class="daytab" id="tab-0" aria-pressed="true">
+        <b>Saturday · Aug 1</b>
+        <span>group play · 31 matches · rated against Saturday's field</span>
+      </button>
+      <button class="daytab" id="tab-1" aria-pressed="false">
+        <b>Sunday · Aug 2</b>
+        <span>playoffs &amp; finals · 27 matches · rated against Sunday's field</span>
+      </button>
+    </div>
+
+    <div class="baseline" id="baseline"></div>
+
+    <div class="mapchips" id="mapchips" role="group" aria-label="Filter by map"></div>
+
+    <div class="panel">
+      <div class="head" id="board-head">Leaderboard</div>
+      <div class="body scrollbox">
+        <table class="leader" id="leader"></table>
+        <div class="showall"><button class="btn ghost" id="showall">Show all 61 players</button></div>
+      </div>
+    </div>
+
+    <p class="status-foot"><b>Positions</b> are the league's four — Rifle, Heavy, 3rd, Sniper —
+      read from each player's Axis class (dashed pill = inferred; solid = declared on roster).
+      <b>KTPR</b> = (K/D + kills-per-half + ¼·flags-per-half), each term normalized to the
+      day's field average, so 1.00 is exactly average. Click <b>detail</b> on any row for
+      hitboxes, class spawns and the rest of the ledger.</p>
+  </section>
+
+  <!-- ============================ RULES ============================ -->
+  <section id="rules">
+    <div class="sec-head"><h2>Rules</h2>
+      <span class="meta">as enforced on the weekend · captains held the authoritative copy</span></div>
+
+    <details class="panel">
+      <summary>Rules of engagement <span class="n">match rules · abridged</span></summary>
+      <div class="body reglist">
+        <h4>General conduct</h4>
+        <div class="reg"><span class="no">1.1</span><span>LAN admins may modify rules as needed for the good continuation of the tournament.</span></div>
+        <div class="reg"><span class="no">1.2</span><span>Matches require the correct map, config file and LAN server. No exceptions.</span></div>
+        <div class="reg"><span class="no">1.3</span><span><b>Server crash protocol.</b> Down inside the first five minutes of a half: full restart. After five minutes: resume with score restored and clock rounded up. No substitutions during recovery.</span></div>
+        <div class="reg"><span class="no">1.4</span><span><b>Pixel-walking forbidden</b> — accessing, occupying or hanging in an area reachable only by pixel walking (e.g. harrington ladder) draws suspension and/or forfeiture.</span></div>
+        <div class="reg"><span class="no">1.5</span><span>Tied matches go to two five-minute overtime halves. Failure to complete overtime is a loss for both teams.</span></div>
+        <div class="reg"><span class="no">1.7</span><span>Seating assignments are final; staff may modify for operational reasons.</span></div>
+        <h4>Cheating, penalties &amp; disputes</h4>
+        <div class="reg"><span class="no">2.4</span><span><b>Prohibited tooling:</b> visual player-location aids, recoil control, target acquisition, modified game files, null binds, monitor/software crosshairs, mouse-acceleration programs.</span></div>
+        <div class="reg"><span class="no">2.5</span><span>Default game files only unless approved or provided by staff. Approved scoreboard modifiers and custom crosshairs (except sniper) allowed.</span></div>
+        <div class="reg"><span class="no">2.6</span><span>Spectating after a match goes live is cheating. Spec hopping only during full-map captures or stuck-player situations.</span></div>
+        <h4>Players &amp; captains</h4>
+        <div class="reg"><span class="no">3.1</span><span>Pass file and cvar checks, record POV demos each half, screenshot scoreboards, remain through match conclusion.</span></div>
+        <div class="reg"><span class="no">3.3</span><span>Boosting is allowed if the destination is reachable by a single player without boosting.</span></div>
+        <div class="reg"><span class="no">3.5</span><span>Prohibited binds: actions coupled with attack, duck-scrollwheel macros, automated attack or movement scripts, weapon-spawn exploits.</span></div>
+        <div class="reg"><span class="no">4.1</span><span>Captains submit final scores with legible scoreboard and rcon-status screenshots to the shared drive.</span></div>
+        <h4>Pauses</h4>
+        <div class="reg"><span class="no">5.1</span><span>One two-minute pause per team per half, callable only immediately after a cap-out. Captains only, except technical crashes.</span></div>
+        <div class="reg"><span class="no">5.5</span><span>Unauthorized pause: first offense awards the opposing team cap-out points; second is immediate forfeiture.</span></div>
+        <div class="fineprint">Abridged transcription. In any conflict the original wording on
+          file at WSDoD command governs; captains were issued the authoritative copy on the day.</div>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary>Code of conduct <span class="n">adult competitors, in good faith</span></summary>
+      <div class="body reglist">
+        <h4>Sportsmanship &amp; respect</h4>
+        <div class="reg"><span class="no">1.1</span><span>Toxicity is common online — do better in person. <b>Harassment, abuse or discrimination, in any form, is not tolerated.</b></span></div>
+        <div class="reg"><span class="no">1.2</span><span>Win or lose with dignity. A little taunting is normal in this community — keep it within reason.</span></div>
+        <h4>Fair play</h4>
+        <div class="reg"><span class="no">2.1</span><span><b>No cheating or exploiting of any kind.</b> KTP rules apply wherever applicable, including the cvar checker on all LAN servers.</span></div>
+        <div class="reg"><span class="no">2.2</span><span>Third-party software, scripts, exploits or tampered game files — outside approved submissions — is immediate disqualification.</span></div>
+        <h4>During matches</h4>
+        <div class="reg"><span class="no">3.2</span><span>Matches start no later than <b>10 minutes</b> after schedule regardless of who's ready. Ringers only in extenuating circumstances at staff discretion.</span></div>
+        <div class="reg"><span class="no">3.4</span><span><b>Stream sniping is prohibited</b> and can forfeit the match.</span></div>
+        <div class="reg"><span class="no">3.5</span><span>Mumble (or in-game voice) is the only authorized comms tool.</span></div>
+        <div class="reg"><span class="no">3.7</span><span>Play under the alias you signed up with. <b>Aliasing is prohibited.</b></span></div>
+        <h4>Equipment &amp; etiquette</h4>
+        <div class="reg"><span class="no">5.2</span><span>Your equipment is your responsibility — neither the venue nor staff is liable for lost items.</span></div>
+        <div class="reg"><span class="no">5.7</span><span>PC changes limited to what your peripherals need, subject to staff review — <b>including Snap Tap</b>. If unsure, ask first.</span></div>
+        <h4>Penalties</h4>
+        <div class="reg"><span class="no">7.1</span><span>Warnings → match or round forfeiture → removal from the tournament → ban from future events, by severity and frequency.</span></div>
+        <div class="fineprint">Operative copy, condensed for the page. Participation is agreement;
+          ignorance of the rules is not a defense.</div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ============================ STAFF ============================ -->
+  <section id="staff-sec">
+    <div class="sec-head"><h2>LAN command</h2>
+      <span class="meta">tournament staff · floor decisions are final · competing staff recuse on their own teams</span></div>
+    <div class="staffgrid">
+      <div class="staffcard"><b>nein</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>las1k64</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>kanguh</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>kr0d</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>twist</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>cK</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>seanality</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>shmaltz</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>stealthlol</b><span>LAN staff</span></div>
+      <div class="staffcard"><b>chi</b><span>LAN staff</span></div>
+    </div>
+  </section>
+
+  <!-- ============================ ARCHIVE ============================ -->
+  <section id="archive">
+    <div class="sec-head"><h2>Archive</h2>
+      <span class="meta">the record of the weekend</span></div>
+    <div class="twocol">
+      <div class="panel">
+        <div class="head">Demos</div>
+        <div class="body prose">
+          <p><b>242 HLTV demos</b> were recorded across the weekend — every match, every half —
+            plus per-player POV demos filed under the match rules. The public archive location
+            publishes here once staff finish the pass.</p>
+          <p class="hint mt8">League demos live at
+            <a href="https://fastdl.ktpdod.com/demos/">fastdl.ktpdod.com/demos</a>.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="head">Broadcast</div>
+        <div class="body prose">
+          <p>Two casting positions ran through the weekend — <b>Corey Marko</b> (lead) and
+            <b>Alopex</b>. VOD links publish here when the channels post them.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="split">
+    <div class="col">
+      <h4>What this is</h4>
+      <p>The World Series of Day of Defeat — a LAN for competitive DoD 1.3.
+        Philadelphia, second year running, on the KTP stack.</p>
+    </div>
+    <div class="col">
+      <h4>Elsewhere</h4>
+      <p><a href="https://discord.gg/bDw2NmEFj2">WSDoD Discord</a> ·
+        <a href="https://ktpdod.com/">KTP — Keep the Practice</a></p>
+      <p class="mt8"><span class="accent">See you at the next one.</span></p>
+    </div>
+  </footer>
+
+</div>
+
+<!-- MOCKUP-ONLY: demonstrates the lan_stats_publication gate (published=0).
+     In production this is server-side — unpublished stats ship no markup at all. -->
+<div class="mock">
+  <span class="tag">Mockup only — stats gate</span>
+  <div class="btns">
+    <button id="mock-on" aria-pressed="true">published</button>
+    <button id="mock-off" aria-pressed="false">unpublished</button>
+  </div>
+</div>
+
+<script id="lan-data" type="application/json">{"days":[{"key":"08-01","label":"Saturday","avg":{"kd":1.0315,"kph":23.3588,"fph":4.1228,"pool":61},"players":[{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":1.388,"m":6,"h":12,"k":305,"d":160,"kd":1.906,"kph":25.42,"fl":37,"fph":3.08,"as":11,"dm":47684,"hs":33,"hits":362,"hsh":39,"caps":36,"cb":1,"obj":61,"st":12,"nk":0,"gk":310,"pr":259,"hb":{"Left arm":[234,24445],"Stomach":[115,14838],"Right arm":[105,12771],"Head":[79,22220],"Chest":[66,8950],"Right leg":[39,4626],"Generic":[35,570],"Left leg":[33,3213]},"cl":{"Scharf (K98 scoped)":116,"Springfield":102}},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.299,"m":6,"h":12,"k":341,"d":229,"kd":1.489,"kph":28.42,"fl":52,"fph":4.33,"as":36,"dm":50703,"hs":75,"hits":686,"hsh":87,"caps":52,"cb":3,"obj":60,"st":13,"nk":29,"gk":313,"pr":311,"hb":{"Left arm":[415,23324],"Right arm":[209,12116],"Head":[170,26580],"Stomach":[157,12340],"Generic":[140,10557],"Right leg":[115,5992],"Chest":[108,7520],"Left leg":[88,5888]},"cl":{"BAR":142,"STG (MP44)":134}},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.274,"m":5,"h":10,"k":306,"d":238,"kd":1.286,"kph":30.6,"fl":51,"fph":5.1,"as":52,"dm":46756,"hs":52,"hits":685,"hsh":55,"caps":51,"cb":6,"obj":58,"st":7,"nk":42,"gk":271,"pr":321,"hb":{"Left arm":[436,21605],"Generic":[208,17837],"Stomach":[167,11884],"Right arm":[157,8298],"Left leg":[137,7061],"Head":[121,18980],"Right leg":[116,6364],"Chest":[108,6947]},"cl":{"STG (MP44)":155,"BAR":145}},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.223,"m":6,"h":12,"k":324,"d":257,"kd":1.261,"kph":27.0,"fl":74,"fph":6.17,"as":59,"dm":53644,"hs":27,"hits":534,"hsh":35,"caps":74,"cb":2,"obj":98,"st":14,"nk":59,"gk":267,"pr":328,"hb":{"Left arm":[320,28729],"Generic":[298,21147],"Right arm":[141,13013],"Stomach":[121,14113],"Chest":[99,9889],"Head":[98,21716],"Right leg":[76,6653],"Left leg":[61,5631]},"cl":{"Garand":156,"Stoss (K43)":82,"K98":72}},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":1.199,"m":6,"h":12,"k":340,"d":256,"kd":1.328,"kph":28.33,"fl":39,"fph":3.25,"as":66,"dm":56919,"hs":32,"hits":538,"hsh":33,"caps":37,"cb":1,"obj":51,"st":10,"nk":85,"gk":249,"pr":334,"hb":{"Generic":[360,29791],"Left arm":[247,22060],"Right arm":[121,11059],"Stomach":[101,12441],"Head":[79,21395],"Chest":[74,8730],"Left leg":[55,4885],"Right leg":[43,4367]},"cl":{"Garand":163,"K98":75,"Stoss (K43)":74}},{"n":"[bb] Polak rides Twist's boat","role":"Rifle","rs":"inferred","ktpr":1.169,"m":5,"h":10,"k":247,"d":200,"kd":1.235,"kph":24.7,"fl":62,"fph":6.2,"as":39,"dm":40176,"hs":21,"hits":383,"hsh":24,"caps":60,"cb":2,"obj":81,"st":12,"nk":37,"gk":218,"pr":321,"hb":{"Left arm":[171,14750],"Generic":[170,12810],"Stomach":[97,11344],"Left leg":[83,7881],"Right arm":[72,5317],"Right leg":[71,6792],"Chest":[68,7500],"Head":[62,13908]},"cl":{"Garand":127,"K98":103,"Stoss (K43)":30,"BAR":4,"Unter (MP40)":1,"Carbine":1}},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.163,"m":6,"h":12,"k":310,"d":249,"kd":1.245,"kph":25.83,"fl":60,"fph":5.0,"as":49,"dm":43678,"hs":52,"hits":687,"hsh":55,"caps":58,"cb":9,"obj":66,"st":8,"nk":21,"gk":291,"pr":352,"hb":{"Left arm":[500,24791],"Stomach":[221,14645],"Right arm":[219,10807],"Head":[157,25708],"Chest":[148,9974],"Right leg":[145,7469],"Generic":[139,11496],"Left leg":[135,6816]},"cl":{"BAR":156,"Unter (MP40)":122,"STG (MP44)":27}},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.158,"m":6,"h":12,"k":335,"d":269,"kd":1.245,"kph":27.92,"fl":40,"fph":3.33,"as":66,"dm":55438,"hs":26,"hits":509,"hsh":31,"caps":38,"cb":2,"obj":51,"st":10,"nk":63,"gk":275,"pr":328,"hb":{"Generic":[287,21624],"Left arm":[254,24024],"Right arm":[154,14635],"Stomach":[98,12557],"Chest":[72,8534],"Head":[70,18104],"Left leg":[58,5746],"Right leg":[48,4220]},"cl":{"Garand":176,"K98":144}},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.152,"m":6,"h":12,"k":332,"d":290,"kd":1.145,"kph":27.67,"fl":59,"fph":4.92,"as":59,"dm":56175,"hs":39,"hits":549,"hsh":45,"caps":58,"cb":2,"obj":85,"st":6,"nk":37,"gk":298,"pr":367,"hb":{"Left arm":[381,31376],"Generic":[265,17214],"Right arm":[215,16902],"Stomach":[159,17461],"Head":[145,31044],"Chest":[138,13015],"Right leg":[75,6996],"Left leg":[72,6393]},"cl":{"Garand":187,"K98":162}},{"n":"iH.monday","role":"Heavy","rs":"inferred","ktpr":1.148,"m":6,"h":12,"k":295,"d":238,"kd":1.239,"kph":24.58,"fl":65,"fph":5.42,"as":56,"dm":42403,"hs":50,"hits":599,"hsh":47,"caps":61,"cb":0,"obj":71,"st":9,"nk":23,"gk":264,"pr":324,"hb":{"Left arm":[353,19388],"Stomach":[161,12341],"Right arm":[158,9127],"Generic":[139,9807],"Left leg":[119,6726],"Head":[119,18990],"Right leg":[111,6102],"Chest":[95,6382]},"cl":{"BAR":141,"STG (MP44)":103,"Unter (MP40)":58}},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.147,"m":6,"h":12,"k":316,"d":251,"kd":1.259,"kph":26.33,"fl":46,"fph":3.83,"as":46,"dm":41764,"hs":32,"hits":458,"hsh":34,"caps":41,"cb":0,"obj":63,"st":6,"nk":44,"gk":210,"pr":360,"hb":{"Generic":[359,25245],"Left arm":[296,25134],"Right arm":[172,14298],"Stomach":[137,15911],"Head":[105,19929],"Chest":[83,8319],"Left leg":[66,6053],"Right leg":[39,4049]},"cl":{"K98":161,"Garand":142}},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.147,"m":6,"h":12,"k":318,"d":256,"kd":1.242,"kph":26.5,"fl":48,"fph":4.0,"as":53,"dm":45545,"hs":26,"hits":454,"hsh":32,"caps":43,"cb":1,"obj":68,"st":6,"nk":51,"gk":219,"pr":372,"hb":{"Generic":[389,30385],"Left arm":[256,23104],"Stomach":[169,20864],"Right arm":[131,11139],"Chest":[82,9060],"Head":[79,17999],"Right leg":[63,6154],"Left leg":[47,4713]},"cl":{"K98":160,"Garand":153}},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":1.127,"m":6,"h":12,"k":337,"d":298,"kd":1.131,"kph":28.08,"fl":47,"fph":3.92,"as":53,"dm":55570,"hs":36,"hits":543,"hsh":46,"caps":47,"cb":2,"obj":67,"st":7,"nk":40,"gk":298,"pr":362,"hb":{"Generic":[332,21133],"Left arm":[288,27081],"Right arm":[129,11273],"Stomach":[108,12737],"Head":[101,21911],"Chest":[80,8908],"Left leg":[63,6114],"Right leg":[58,5010]},"cl":{"Garand":181,"K98":168}},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":1.122,"m":6,"h":12,"k":315,"d":272,"kd":1.158,"kph":26.25,"fl":55,"fph":4.58,"as":69,"dm":49273,"hs":46,"hits":490,"hsh":46,"caps":51,"cb":6,"obj":68,"st":8,"nk":42,"gk":236,"pr":360,"hb":{"Left arm":[358,27389],"Generic":[271,18135],"Right arm":[168,12823],"Stomach":[139,15024],"Head":[119,26995],"Chest":[79,7714],"Left leg":[55,4882],"Right leg":[44,3441]},"cl":{"Garand":154,"Stoss (K43)":136,"K98":34}},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":1.097,"m":6,"h":12,"k":313,"d":254,"kd":1.232,"kph":26.08,"fl":31,"fph":2.58,"as":12,"dm":44532,"hs":32,"hits":331,"hsh":30,"caps":27,"cb":2,"obj":45,"st":10,"nk":0,"gk":289,"pr":341,"hb":{"Left arm":[240,26571],"Stomach":[131,16545],"Right arm":[123,12708],"Generic":[71,966],"Chest":[67,9145],"Head":[62,19668],"Right leg":[50,4377],"Left leg":[45,4109]},"cl":{"Scharf (K98 scoped)":159,"Springfield":130,"Tommy (Thompson)":6,"Carbine":5}},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":1.097,"m":6,"h":12,"k":309,"d":268,"kd":1.153,"kph":25.75,"fl":49,"fph":4.08,"as":47,"dm":49130,"hs":28,"hits":457,"hsh":27,"caps":47,"cb":5,"obj":71,"st":7,"nk":52,"gk":241,"pr":358,"hb":{"Generic":[282,22602],"Left arm":[269,24125],"Right arm":[140,13348],"Stomach":[116,13773],"Chest":[81,9531],"Head":[77,21903],"Left leg":[53,4773],"Right leg":[46,4395]},"cl":{"Garand":160,"K98":155}},{"n":"****JTM   ian","role":"Sniper","rs":"inferred","ktpr":1.097,"m":6,"h":12,"k":279,"d":200,"kd":1.395,"kph":23.25,"fl":24,"fph":2.0,"as":13,"dm":42169,"hs":22,"hits":327,"hsh":27,"caps":24,"cb":0,"obj":42,"st":11,"nk":0,"gk":279,"pr":245,"hb":{"Left arm":[171,18393],"Stomach":[116,16497],"Right arm":[99,10562],"Generic":[70,1086],"Chest":[57,6883],"Right leg":[56,5766],"Left leg":[47,4648],"Head":[47,11002]},"cl":{"Springfield":131,"Scharf (K98 scoped)":110}},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":1.088,"m":6,"h":12,"k":302,"d":238,"kd":1.269,"kph":25.17,"fl":28,"fph":2.33,"as":62,"dm":50659,"hs":32,"hits":519,"hsh":34,"caps":28,"cb":5,"obj":46,"st":10,"nk":68,"gk":238,"pr":314,"hb":{"Generic":[307,23185],"Left arm":[245,19570],"Stomach":[132,15147],"Right arm":[100,7960],"Chest":[74,6899],"Head":[60,12766],"Right leg":[52,5172],"Left leg":[42,3587]},"cl":{"K98":137,"Garand":137,"Tommy (Thompson)":2}},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":1.086,"m":6,"h":12,"k":288,"d":234,"kd":1.231,"kph":24.0,"fl":44,"fph":3.67,"as":62,"dm":44135,"hs":32,"hits":591,"hsh":36,"caps":42,"cb":1,"obj":55,"st":9,"nk":52,"gk":232,"pr":356,"hb":{"Left arm":[320,17075],"Generic":[243,19107],"Stomach":[178,13500],"Right arm":[149,8535],"Right leg":[133,7340],"Left leg":[127,6957],"Chest":[101,7753],"Head":[82,13703]},"cl":{"BAR":150,"STG (MP44)":129,"Unter (MP40)":17}},{"n":"NoSo ! CrankinHawg","role":"Heavy","rs":"inferred","ktpr":1.064,"m":6,"h":12,"k":299,"d":259,"kd":1.154,"kph":24.92,"fl":41,"fph":3.42,"as":54,"dm":44148,"hs":62,"hits":594,"hsh":69,"caps":41,"cb":3,"obj":51,"st":10,"nk":29,"gk":269,"pr":328,"hb":{"Left arm":[347,18758],"Generic":[210,14578],"Right arm":[156,8840],"Stomach":[145,11919],"Head":[120,18756],"Right leg":[98,5432],"Left leg":[95,5403],"Chest":[92,6368]},"cl":{"BAR":153,"STG (MP44)":89,"Unter (MP40)":68}},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":1.062,"m":6,"h":12,"k":304,"d":271,"kd":1.122,"kph":25.33,"fl":43,"fph":3.58,"as":63,"dm":50671,"hs":17,"hits":505,"hsh":22,"caps":42,"cb":7,"obj":61,"st":8,"nk":69,"gk":244,"pr":355,"hb":{"Generic":[336,26188],"Left arm":[235,21769],"Stomach":[132,16137],"Right arm":[102,9479],"Right leg":[84,8140],"Left leg":[79,7743],"Chest":[77,8579],"Head":[43,11716]},"cl":{"Garand":168,"K98":161}},{"n":"dicE[: :]stealthlol＃kingCOOP","role":"Sniper","rs":"inferred","ktpr":1.062,"m":6,"h":12,"k":295,"d":253,"kd":1.166,"kph":24.58,"fl":41,"fph":3.42,"as":18,"dm":39418,"hs":33,"hits":295,"hsh":26,"caps":37,"cb":1,"obj":53,"st":10,"nk":1,"gk":241,"pr":334,"hb":{"Left arm":[257,26810],"Stomach":[146,19086],"Right arm":[127,13288],"Generic":[104,3127],"Chest":[88,11885],"Head":[78,24436],"Left leg":[65,7149],"Right leg":[48,4786]},"cl":{"Springfield":155,"Scharf (K98 scoped)":138,"STG (MP44)":6,"Unter (MP40)":5,"Carbine":3,"Tommy (Thompson)":3,"Stoss (K43)":1}},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":1.053,"m":6,"h":12,"k":285,"d":249,"kd":1.145,"kph":23.75,"fl":48,"fph":4.0,"as":42,"dm":41223,"hs":68,"hits":537,"hsh":74,"caps":46,"cb":5,"obj":58,"st":6,"nk":36,"gk":234,"pr":351,"hb":{"Left arm":[361,19294],"Generic":[206,15857],"Right arm":[168,9026],"Head":[151,26840],"Stomach":[133,9367],"Right leg":[113,6599],"Left leg":[84,4531],"Chest":[76,5578]},"cl":{"STG (MP44)":161,"BAR":147}},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":1.05,"m":6,"h":12,"k":314,"d":316,"kd":0.994,"kph":26.17,"fl":55,"fph":4.58,"as":69,"dm":48669,"hs":51,"hits":670,"hsh":56,"caps":54,"cb":10,"obj":61,"st":9,"nk":39,"gk":276,"pr":377,"hb":{"Left arm":[451,25169],"Generic":[227,17663],"Right arm":[215,12346],"Stomach":[198,16252],"Head":[135,20742],"Chest":[121,8845],"Left leg":[120,6963],"Right leg":[106,6405]},"cl":{"BAR":184,"STG (MP44)":184,"Unter (MP40)":5}},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":1.047,"m":6,"h":12,"k":299,"d":313,"kd":0.955,"kph":24.92,"fl":72,"fph":6.0,"as":58,"dm":47080,"hs":55,"hits":708,"hsh":61,"caps":68,"cb":4,"obj":79,"st":8,"nk":39,"gk":271,"pr":408,"hb":{"Left arm":[466,22704],"Generic":[249,18607],"Stomach":[186,12124],"Right arm":[178,8721],"Left leg":[142,7057],"Right leg":[141,7330],"Head":[125,19444],"Chest":[103,6717]},"cl":{"BAR":196,"STG (MP44)":183}},{"n":"[$] cory 4 rdk,jkimbro,liah","role":"Rifle","rs":"inferred","ktpr":1.041,"m":6,"h":12,"k":315,"d":308,"kd":1.023,"kph":26.25,"fl":45,"fph":3.75,"as":48,"dm":52989,"hs":37,"hits":478,"hsh":44,"caps":44,"cb":5,"obj":63,"st":8,"nk":36,"gk":278,"pr":400,"hb":{"Left arm":[236,23535],"Generic":[217,17138],"Stomach":[148,18133],"Right arm":[136,12715],"Right leg":[92,8786],"Head":[88,22542],"Chest":[71,8585],"Left leg":[65,6785]},"cl":{"Garand":184,"K98":182}},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":1.033,"m":5,"h":10,"k":249,"d":251,"kd":0.992,"kph":24.9,"fl":49,"fph":4.9,"as":48,"dm":41349,"hs":29,"hits":399,"hsh":35,"caps":45,"cb":2,"obj":63,"st":6,"nk":25,"gk":220,"pr":353,"hb":{"Left arm":[258,19196],"Generic":[187,14140],"Stomach":[132,14024],"Right arm":[131,10626],"Head":[91,19009],"Chest":[82,7800],"Left leg":[60,4933],"Right leg":[46,3444]},"cl":{"Garand":156,"K98":135,"Stoss (K43)":22,"STG (MP44)":1,"Unter (MP40)":1}},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":1.033,"m":6,"h":12,"k":309,"d":294,"kd":1.051,"kph":25.75,"fl":40,"fph":3.33,"as":60,"dm":49750,"hs":22,"hits":501,"hsh":24,"caps":39,"cb":4,"obj":61,"st":7,"nk":64,"gk":243,"pr":389,"hb":{"Generic":[360,26615],"Left arm":[261,23815],"Right arm":[149,13527],"Stomach":[143,18197],"Chest":[98,10356],"Head":[68,15602],"Left leg":[61,5552],"Right leg":[35,3546]},"cl":{"K98":175,"Garand":172,"Tommy (Thompson)":3}},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":1.023,"m":6,"h":12,"k":266,"d":224,"kd":1.188,"kph":22.17,"fl":40,"fph":3.33,"as":45,"dm":41155,"hs":23,"hits":406,"hsh":23,"caps":36,"cb":11,"obj":55,"st":6,"nk":55,"gk":201,"pr":365,"hb":{"Generic":[278,21655],"Left arm":[214,18634],"Stomach":[108,13372],"Right arm":[105,8770],"Chest":[76,7425],"Head":[64,15663],"Left leg":[55,4715],"Right leg":[52,4645]},"cl":{"Garand":155,"K98":100,"Stoss (K43)":20,"Unter (MP40)":2}},{"n":"****JTM   omenayr 4 jGaleZ","role":"Heavy","rs":"inferred","ktpr":1.022,"m":7,"h":13,"k":302,"d":277,"kd":1.09,"kph":23.23,"fl":53,"fph":4.08,"as":46,"dm":34835,"hs":51,"hits":526,"hsh":43,"caps":44,"cb":6,"obj":52,"st":8,"nk":37,"gk":194,"pr":389,"hb":{"Left arm":[368,18718],"Generic":[233,16707],"Right arm":[161,9161],"Stomach":[146,10357],"Head":[121,18600],"Chest":[102,6953],"Right leg":[89,5191],"Left leg":[80,4724]},"cl":{"BAR":142,"STG (MP44)":89,"Unter (MP40)":53,"Garand":32,"Stoss (K43)":15}},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":1.02,"m":6,"h":12,"k":276,"d":247,"kd":1.117,"kph":23.0,"fl":45,"fph":3.75,"as":66,"dm":40743,"hs":50,"hits":636,"hsh":60,"caps":43,"cb":5,"obj":51,"st":7,"nk":31,"gk":239,"pr":362,"hb":{"Left arm":[424,19619],"Generic":[231,15878],"Right arm":[196,9680],"Stomach":[180,11530],"Head":[140,19474],"Right leg":[116,5755],"Left leg":[110,5925],"Chest":[100,6193]},"cl":{"BAR":157,"Unter (MP40)":145}},{"n":"uR[TM]* Ke:>^1.de <3 FUN","role":"Heavy","rs":"inferred","ktpr":1.009,"m":6,"h":12,"k":335,"d":400,"kd":0.838,"kph":27.92,"fl":52,"fph":4.33,"as":39,"dm":47434,"hs":67,"hits":588,"hsh":59,"caps":49,"cb":4,"obj":55,"st":9,"nk":50,"gk":251,"pr":501,"hb":{"Left arm":[270,15287],"Generic":[229,18225],"Head":[130,22293],"Right arm":[120,7292],"Stomach":[116,8917],"Left leg":[83,4485],"Chest":[74,5124],"Right leg":[48,2823]},"cl":{"STG (MP44)":203,"BAR":196,"K98":37,"Garand":34,"Stoss (K43)":6}},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":1.0,"m":6,"h":12,"k":275,"d":290,"kd":0.948,"kph":22.92,"fl":69,"fph":5.75,"as":77,"dm":46192,"hs":20,"hits":493,"hsh":25,"caps":68,"cb":5,"obj":89,"st":9,"nk":56,"gk":227,"pr":364,"hb":{"Left arm":[264,20659],"Generic":[247,18306],"Right arm":[128,9447],"Stomach":[120,12189],"Head":[86,16602],"Left leg":[78,6058],"Chest":[71,6546],"Right leg":[65,5219]},"cl":{"Garand":184,"Stoss (K43)":138,"K98":26}},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.996,"m":6,"h":12,"k":264,"d":241,"kd":1.095,"kph":22.0,"fl":47,"fph":3.92,"as":41,"dm":43999,"hs":24,"hits":431,"hsh":25,"caps":46,"cb":4,"obj":72,"st":6,"nk":38,"gk":229,"pr":305,"hb":{"Left arm":[247,20681],"Generic":[244,15355],"Stomach":[147,18292],"Right arm":[107,9220],"Head":[73,15971],"Right leg":[70,6940],"Chest":[68,6908],"Left leg":[58,5699]},"cl":{"Garand":151,"K98":118,"Stoss (K43)":28}},{"n":"[$] billymanbrewing","role":"3rd","rs":"inferred","ktpr":0.996,"m":6,"h":12,"k":294,"d":340,"kd":0.865,"kph":24.5,"fl":70,"fph":5.83,"as":50,"dm":43697,"hs":78,"hits":631,"hsh":87,"caps":69,"cb":8,"obj":94,"st":7,"nk":38,"gk":255,"pr":444,"hb":{"Left arm":[394,18365],"Generic":[215,13547],"Right arm":[181,9766],"Head":[159,20758],"Stomach":[135,9581],"Chest":[102,6400],"Left leg":[75,3646],"Right leg":[72,4068]},"cl":{"Unter (MP40)":166,"Garand":106,"Tommy (Thompson)":90,"Stoss (K43)":32}},{"n":"[bb] bR0M ＃4BIGDAWG","role":"3rd","rs":"roster","ktpr":0.983,"m":5,"h":10,"k":211,"d":206,"kd":1.024,"kph":21.1,"fl":52,"fph":5.2,"as":41,"dm":32927,"hs":47,"hits":501,"hsh":50,"caps":50,"cb":7,"obj":72,"st":7,"nk":41,"gk":172,"pr":342,"hb":{"Generic":[247,17623],"Left arm":[215,13206],"Right arm":[111,6064],"Stomach":[94,7406],"Head":[78,14936],"Chest":[67,4577],"Left leg":[48,3023],"Right leg":[39,2191]},"cl":{"Tommy (Thompson)":52,"Unter (MP40)":49,"Garand":46,"Stoss (K43)":45,"STG (MP44)":32,"BAR":24,"Carbine":4,"Scharf (K98 scoped)":3}},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.97,"m":6,"h":12,"k":278,"d":253,"kd":1.099,"kph":23.17,"fl":25,"fph":2.08,"as":12,"dm":44811,"hs":39,"hits":311,"hsh":37,"caps":23,"cb":1,"obj":37,"st":10,"nk":0,"gk":270,"pr":349,"hb":{"Left arm":[222,25152],"Right arm":[105,11822],"Stomach":[101,13314],"Head":[70,23162],"Chest":[56,7602],"Left leg":[44,5277],"Right leg":[43,4572],"Generic":[29,508]},"cl":{"Scharf (K98 scoped)":165,"Springfield":143}},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.959,"m":6,"h":12,"k":249,"d":247,"kd":1.008,"kph":20.75,"fl":58,"fph":4.83,"as":51,"dm":37226,"hs":36,"hits":475,"hsh":41,"caps":55,"cb":0,"obj":70,"st":7,"nk":20,"gk":224,"pr":323,"hb":{"Left arm":[329,19716],"Generic":[193,11590],"Stomach":[171,13082],"Right arm":[141,8482],"Left leg":[103,6162],"Right leg":[94,6219],"Head":[79,12835],"Chest":[78,6179]},"cl":{"BAR":138,"STG (MP44)":135,"Unter (MP40)":27}},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":0.956,"m":6,"h":12,"k":264,"d":269,"kd":0.981,"kph":22.0,"fl":51,"fph":4.25,"as":18,"dm":36540,"hs":24,"hits":315,"hsh":30,"caps":48,"cb":0,"obj":72,"st":7,"nk":0,"gk":235,"pr":355,"hb":{"Left arm":[222,22211],"Stomach":[132,16662],"Right arm":[127,11278],"Head":[83,20407],"Chest":[70,8000],"Right leg":[68,6169],"Left leg":[59,5164],"Generic":[52,1364]},"cl":{"Scharf (K98 scoped)":166,"Springfield":136,"Tommy (Thompson)":16,"Unter (MP40)":4}},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.953,"m":6,"h":12,"k":278,"d":290,"kd":0.959,"kph":23.17,"fl":44,"fph":3.67,"as":54,"dm":49943,"hs":43,"hits":441,"hsh":44,"caps":44,"cb":1,"obj":67,"st":6,"nk":48,"gk":230,"pr":374,"hb":{"Generic":[377,23759],"Left arm":[228,21020],"Stomach":[113,13855],"Right arm":[108,9620],"Head":[80,22005],"Chest":[70,8234],"Left leg":[64,6021],"Right leg":[39,4137]},"cl":{"K98":173,"Garand":172}},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":0.95,"m":6,"h":11,"k":247,"d":266,"kd":0.929,"kph":22.45,"fl":50,"fph":4.55,"as":36,"dm":37114,"hs":17,"hits":369,"hsh":14,"caps":44,"cb":7,"obj":58,"st":7,"nk":75,"gk":162,"pr":347,"hb":{"Generic":[380,33809],"Left arm":[169,14647],"Stomach":[108,12392],"Right arm":[86,6884],"Right leg":[86,7742],"Left leg":[60,5621],"Head":[48,10894],"Chest":[38,4141]},"cl":{"Garand":165,"K98":103,"Stoss (K43)":41,"STG (MP44)":9,"Scharf (K98 scoped)":1,"Unter (MP40)":1}},{"n":"b.   e p y o n ＃Twistanic","role":"Heavy","rs":"inferred","ktpr":0.933,"m":6,"h":12,"k":246,"d":261,"kd":0.943,"kph":20.5,"fl":61,"fph":5.08,"as":45,"dm":36117,"hs":63,"hits":543,"hsh":64,"caps":53,"cb":2,"obj":65,"st":8,"nk":16,"gk":222,"pr":365,"hb":{"Left arm":[263,12332],"Right arm":[133,7169],"Stomach":[107,7283],"Generic":[104,6186],"Head":[93,14172],"Right leg":[75,3618],"Chest":[64,4421],"Left leg":[47,2366]},"cl":{"BAR":160,"STG (MP44)":156,"Unter (MP40)":8}},{"n":"b.   o[bb]y","role":"Rifle","rs":"inferred","ktpr":0.928,"m":6,"h":12,"k":303,"d":392,"kd":0.773,"kph":25.25,"fl":51,"fph":4.25,"as":34,"dm":51090,"hs":28,"hits":452,"hsh":36,"caps":49,"cb":5,"obj":75,"st":8,"nk":15,"gk":294,"pr":499,"hb":{"Left arm":[210,21658],"Right arm":[99,9094],"Stomach":[83,9952],"Generic":[80,6022],"Head":[64,16430],"Chest":[64,6954],"Right leg":[40,3788],"Left leg":[34,3004]},"cl":{"Garand":243,"K98":223}},{"n":"[bb] reppoĦ＃tuckitin","role":"Heavy","rs":"roster","ktpr":0.927,"m":6,"h":12,"k":241,"d":240,"kd":1.004,"kph":20.08,"fl":50,"fph":4.17,"as":49,"dm":39168,"hs":52,"hits":570,"hsh":60,"caps":49,"cb":8,"obj":64,"st":8,"nk":22,"gk":227,"pr":383,"hb":{"Left arm":[295,14022],"Generic":[190,11793],"Right arm":[135,6879],"Stomach":[129,9317],"Head":[94,15574],"Chest":[86,5478],"Right leg":[85,4508],"Left leg":[70,3233]},"cl":{"BAR":145,"Unter (MP40)":87,"STG (MP44)":60,"Tommy (Thompson)":11,"Stoss (K43)":8}},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":0.921,"m":6,"h":12,"k":267,"d":327,"kd":0.817,"kph":22.25,"fl":65,"fph":5.42,"as":47,"dm":44971,"hs":52,"hits":451,"hsh":60,"caps":57,"cb":2,"obj":87,"st":6,"nk":27,"gk":224,"pr":419,"hb":{"Left arm":[225,17063],"Generic":[146,7960],"Right arm":[105,7647],"Head":[86,19130],"Stomach":[85,9064],"Chest":[65,6256],"Right leg":[37,3086],"Left leg":[27,2241]},"cl":{"Garand":200,"Stoss (K43)":192}},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":0.909,"m":6,"h":12,"k":253,"d":250,"kd":1.012,"kph":21.08,"fl":32,"fph":2.67,"as":16,"dm":39387,"hs":38,"hits":334,"hsh":39,"caps":29,"cb":2,"obj":46,"st":8,"nk":0,"gk":246,"pr":352,"hb":{"Left arm":[261,23753],"Right arm":[136,12323],"Stomach":[120,14122],"Head":[101,24600],"Chest":[93,9592],"Right leg":[61,5545],"Generic":[45,746],"Left leg":[43,3861]},"cl":{"Springfield":158,"Scharf (K98 scoped)":155}},{"n":"[bb] 3SidedQuarter＃4 Bobby","role":"Sniper","rs":"inferred","ktpr":0.891,"m":5,"h":10,"k":194,"d":206,"kd":0.942,"kph":19.4,"fl":43,"fph":4.3,"as":8,"dm":26638,"hs":16,"hits":231,"hsh":14,"caps":37,"cb":1,"obj":57,"st":7,"nk":1,"gk":176,"pr":297,"hb":{"Left arm":[172,17182],"Stomach":[89,11347],"Right arm":[79,6990],"Generic":[64,1143],"Chest":[43,5261],"Right leg":[42,3971],"Left leg":[37,3890],"Head":[35,9755]},"cl":{"Springfield":133,"Scharf (K98 scoped)":132,"STG (MP44)":5,"Garand":3,"Tommy (Thompson)":1}},{"n":"****JTM   mogers ＃ky","role":"3rd","rs":"inferred","ktpr":0.881,"m":6,"h":12,"k":234,"d":235,"kd":0.996,"kph":19.5,"fl":36,"fph":3.0,"as":56,"dm":39715,"hs":42,"hits":411,"hsh":42,"caps":31,"cb":2,"obj":43,"st":6,"nk":44,"gk":175,"pr":292,"hb":{"Generic":[250,17831],"Left arm":[209,16277],"Right arm":[107,7441],"Stomach":[88,9235],"Head":[75,17664],"Chest":[57,5675],"Left leg":[42,3141],"Right leg":[36,3012]},"cl":{"Garand":127,"Stoss (K43)":106,"BAR":28,"STG (MP44)":22,"Unter (MP40)":1}},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":0.881,"m":6,"h":12,"k":267,"d":309,"kd":0.864,"kph":22.25,"fl":38,"fph":3.17,"as":6,"dm":40447,"hs":23,"hits":313,"hsh":24,"caps":36,"cb":4,"obj":57,"st":9,"nk":0,"gk":265,"pr":406,"hb":{"Left arm":[198,20092],"Right arm":[97,10017],"Stomach":[69,9221],"Chest":[45,6636],"Head":[38,12073],"Generic":[34,435],"Left leg":[21,2058],"Right leg":[18,2381]},"cl":{"Springfield":196,"Scharf (K98 scoped)":175,"Tommy (Thompson)":1}},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":0.864,"m":6,"h":12,"k":270,"d":357,"kd":0.756,"kph":22.5,"fl":49,"fph":4.08,"as":65,"dm":39026,"hs":45,"hits":613,"hsh":48,"caps":47,"cb":4,"obj":60,"st":7,"nk":25,"gk":231,"pr":440,"hb":{"Left arm":[327,17185],"Stomach":[143,9792],"Right arm":[137,7498],"Generic":[107,6750],"Chest":[83,6067],"Left leg":[81,4520],"Head":[79,11388],"Right leg":[63,3499]},"cl":{"BAR":218,"STG (MP44)":110,"Unter (MP40)":101}},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.855,"m":6,"h":12,"k":260,"d":324,"kd":0.802,"kph":21.67,"fl":43,"fph":3.58,"as":76,"dm":40731,"hs":53,"hits":547,"hsh":52,"caps":40,"cb":5,"obj":49,"st":6,"nk":30,"gk":222,"pr":456,"hb":{"Left arm":[344,19229],"Generic":[194,14693],"Right arm":[173,10103],"Stomach":[139,10524],"Chest":[108,7711],"Head":[96,17683],"Right leg":[84,4781],"Left leg":[77,4415]},"cl":{"BAR":193,"STG (MP44)":161,"Unter (MP40)":25}},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.833,"m":6,"h":12,"k":247,"d":330,"kd":0.748,"kph":20.58,"fl":53,"fph":4.42,"as":54,"dm":38925,"hs":61,"hits":574,"hsh":66,"caps":52,"cb":2,"obj":57,"st":6,"nk":30,"gk":218,"pr":394,"hb":{"Left arm":[376,18341],"Generic":[240,13293],"Right arm":[161,7789],"Head":[130,21145],"Stomach":[114,7543],"Chest":[96,6525],"Left leg":[51,2543],"Right leg":[50,2736]},"cl":{"BAR":189,"STG (MP44)":185}},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.798,"m":6,"h":12,"k":220,"d":315,"kd":0.698,"kph":18.33,"fl":66,"fph":5.5,"as":58,"dm":34209,"hs":26,"hits":338,"hsh":29,"caps":56,"cb":2,"obj":73,"st":8,"nk":32,"gk":151,"pr":376,"hb":{"Generic":[276,20521],"Left arm":[226,20087],"Chest":[84,8709],"Right arm":[80,6480],"Stomach":[78,9237],"Head":[65,13548],"Right leg":[62,5330],"Left leg":[52,4388]},"cl":{"Garand":185,"Stoss (K43)":184,"Unter (MP40)":1}},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.795,"m":6,"h":12,"k":244,"d":342,"kd":0.713,"kph":20.33,"fl":45,"fph":3.75,"as":32,"dm":41192,"hs":26,"hits":359,"hsh":34,"caps":45,"cb":2,"obj":56,"st":5,"nk":24,"gk":223,"pr":421,"hb":{"Left arm":[162,15773],"Generic":[106,6455],"Stomach":[66,8517],"Right arm":[64,5870],"Chest":[52,7048],"Head":[45,11527],"Left leg":[31,3086],"Right leg":[19,1869]},"cl":{"K98":217,"Garand":199}},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":0.794,"m":6,"h":12,"k":237,"d":297,"kd":0.798,"kph":19.75,"fl":33,"fph":2.75,"as":14,"dm":37567,"hs":24,"hits":324,"hsh":25,"caps":31,"cb":0,"obj":39,"st":6,"nk":0,"gk":239,"pr":384,"hb":{"Left arm":[173,17343],"Right arm":[100,8888],"Stomach":[81,9281],"Head":[44,12993],"Chest":[33,4283],"Right leg":[32,2961],"Generic":[24,389],"Left leg":[19,2138]},"cl":{"Scharf (K98 scoped)":165,"Springfield":137,"STG (MP44)":31,"BAR":24,"Unter (MP40)":10}},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.791,"m":6,"h":12,"k":236,"d":385,"kd":0.613,"kph":19.67,"fl":68,"fph":5.67,"as":32,"dm":40180,"hs":29,"hits":335,"hsh":31,"caps":64,"cb":2,"obj":81,"st":4,"nk":18,"gk":208,"pr":499,"hb":{"Left arm":[137,13992],"Generic":[110,7044],"Right arm":[67,6725],"Stomach":[59,7908],"Head":[45,13241],"Chest":[44,5272],"Left leg":[35,3513],"Right leg":[28,2490]},"cl":{"K98":206,"Garand":186,"Scharf (K98 scoped)":34,"Springfield":29}},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.736,"m":6,"h":12,"k":218,"d":325,"kd":0.671,"kph":18.17,"fl":45,"fph":3.75,"as":48,"dm":37027,"hs":21,"hits":352,"hsh":22,"caps":41,"cb":1,"obj":56,"st":6,"nk":32,"gk":177,"pr":385,"hb":{"Generic":[154,10453],"Left arm":[120,11708],"Right arm":[74,6716],"Stomach":[54,6910],"Chest":[42,4286],"Head":[33,10350],"Left leg":[31,2699],"Right leg":[27,2347]},"cl":{"Garand":195,"K98":185}},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.727,"m":6,"h":12,"k":206,"d":313,"kd":0.658,"kph":17.17,"fl":52,"fph":4.33,"as":51,"dm":35492,"hs":23,"hits":372,"hsh":23,"caps":50,"cb":3,"obj":74,"st":5,"nk":67,"gk":128,"pr":381,"hb":{"Generic":[399,26945],"Left arm":[197,17108],"Right arm":[128,10022],"Stomach":[95,10458],"Head":[68,17023],"Chest":[68,7102],"Right leg":[42,3451],"Left leg":[40,3040]},"cl":{"Stoss (K43)":179,"Garand":160,"Carbine":17,"Tommy (Thompson)":3,"STG (MP44)":2,"Scharf (K98 scoped)":1,"Unter (MP40)":1}},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.708,"m":6,"h":12,"k":192,"d":308,"kd":0.623,"kph":16.0,"fl":60,"fph":5.0,"as":58,"dm":30874,"hs":32,"hits":434,"hsh":42,"caps":58,"cb":1,"obj":70,"st":4,"nk":26,"gk":168,"pr":398,"hb":{"Left arm":[290,15377],"Generic":[217,12702],"Right arm":[131,6698],"Stomach":[126,9147],"Head":[125,18062],"Left leg":[104,6163],"Right leg":[96,5281],"Chest":[82,5057]},"cl":{"BAR":187,"STG (MP44)":174,"Stoss (K43)":14}},{"n":"uR[TM]* Jee＃minou.exe","role":"Heavy","rs":"inferred","ktpr":0.7,"m":6,"h":12,"k":215,"d":325,"kd":0.662,"kph":17.92,"fl":33,"fph":2.75,"as":45,"dm":31716,"hs":26,"hits":529,"hsh":29,"caps":33,"cb":5,"obj":36,"st":6,"nk":15,"gk":201,"pr":425,"hb":{"Left arm":[233,10492],"Stomach":[116,8251],"Generic":[91,6317],"Right arm":[83,5073],"Right leg":[73,3545],"Left leg":[72,3554],"Head":[50,7469],"Chest":[45,2777]},"cl":{"STG (MP44)":208,"BAR":193}},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.666,"m":6,"h":12,"k":188,"d":296,"kd":0.635,"kph":15.67,"fl":42,"fph":3.5,"as":45,"dm":29412,"hs":27,"hits":382,"hsh":25,"caps":40,"cb":2,"obj":56,"st":5,"nk":38,"gk":130,"pr":552,"hb":{"Generic":[209,15392],"Left arm":[128,8175],"Stomach":[72,6262],"Right arm":[58,3770],"Left leg":[49,3002],"Chest":[44,3470],"Right leg":[38,2114],"Head":[35,7793]},"cl":{"Garand":147,"Stoss (K43)":116,"Unter (MP40)":73,"Tommy (Thompson)":29,"Carbine":7,"Scharf (K98 scoped)":2}}],"maps":{"dod_armory_b6":[{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":2.2,"h":2,"k":54,"d":15,"kd":3.6,"fl":10,"as":2,"dm":7923},{"n":"iH.monday","role":"Heavy","rs":"inferred","ktpr":1.726,"h":2,"k":71,"d":32,"kd":2.219,"fl":7,"as":13,"dm":9583},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.705,"h":2,"k":66,"d":33,"kd":2.0,"fl":16,"as":8,"dm":9729},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":1.618,"h":2,"k":75,"d":42,"kd":1.786,"fl":10,"as":12,"dm":12566},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.555,"h":2,"k":68,"d":36,"kd":1.889,"fl":7,"as":14,"dm":11389},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.533,"h":2,"k":68,"d":37,"kd":1.838,"fl":7,"as":5,"dm":9506},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":1.499,"h":2,"k":68,"d":38,"kd":1.789,"fl":6,"as":14,"dm":10836},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.452,"h":2,"k":60,"d":34,"kd":1.765,"fl":9,"as":8,"dm":7889},{"n":"dicE[: :]stealthlol＃kingCOOP","role":"Sniper","rs":"inferred","ktpr":1.386,"h":2,"k":62,"d":36,"kd":1.722,"fl":4,"as":5,"dm":11402},{"n":"****JTM   ian <3 h1sey","role":"Sniper","rs":"inferred","ktpr":1.362,"h":2,"k":52,"d":28,"kd":1.857,"fl":5,"as":3,"dm":7892},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.346,"h":2,"k":54,"d":34,"kd":1.588,"fl":11,"as":11,"dm":9592},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":1.316,"h":2,"k":55,"d":36,"kd":1.528,"fl":10,"as":9,"dm":7934},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.287,"h":2,"k":61,"d":42,"kd":1.452,"fl":6,"as":6,"dm":4350},{"n":"[NATO] baiko","role":"3rd","rs":"inferred","ktpr":1.272,"h":2,"k":61,"d":45,"kd":1.356,"fl":8,"as":4,"dm":5234},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":1.212,"h":2,"k":62,"d":47,"kd":1.319,"fl":4,"as":12,"dm":9857},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":1.201,"h":2,"k":58,"d":44,"kd":1.318,"fl":6,"as":11,"dm":9098},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":1.2,"h":2,"k":58,"d":43,"kd":1.349,"fl":5,"as":6,"dm":8694},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":1.19,"h":2,"k":52,"d":40,"kd":1.3,"fl":10,"as":10,"dm":7548},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.186,"h":2,"k":60,"d":51,"kd":1.176,"fl":8,"as":11,"dm":8602},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.127,"h":2,"k":56,"d":47,"kd":1.191,"fl":6,"as":8,"dm":9164},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":1.121,"h":2,"k":56,"d":41,"kd":1.366,"fl":0,"as":1,"dm":8828},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":1.068,"h":2,"k":52,"d":41,"kd":1.268,"fl":2,"as":3,"dm":7227},{"n":"NoSo ! CrankinHawg","role":"Heavy","rs":"inferred","ktpr":1.044,"h":2,"k":52,"d":44,"kd":1.182,"fl":3,"as":6,"dm":7107},{"n":"[bb] reppoĦ ＃4bigbird","role":"Heavy","rs":"roster","ktpr":1.035,"h":2,"k":49,"d":41,"kd":1.195,"fl":4,"as":9,"dm":7741},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":1.014,"h":2,"k":50,"d":50,"kd":1.0,"fl":8,"as":9,"dm":7144},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":1.013,"h":2,"k":49,"d":44,"kd":1.114,"fl":5,"as":5,"dm":7886},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":1.008,"h":2,"k":47,"d":41,"kd":1.146,"fl":5,"as":12,"dm":7780},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.988,"h":2,"k":55,"d":51,"kd":1.078,"fl":0,"as":5,"dm":9189},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":0.951,"h":2,"k":47,"d":57,"kd":0.825,"fl":11,"as":17,"dm":7646},{"n":"****JTM   omenayr.mp3","role":"Heavy","rs":"inferred","ktpr":0.95,"h":2,"k":45,"d":44,"kd":1.023,"fl":6,"as":10,"dm":6936},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":0.937,"h":2,"k":49,"d":49,"kd":1.0,"fl":3,"as":1,"dm":7511},{"n":"****JTM   mogers <3 h1sey","role":"3rd","rs":"inferred","ktpr":0.926,"h":2,"k":41,"d":40,"kd":1.025,"fl":7,"as":10,"dm":6384},{"n":"[bb] bR0M ＃4petey<3","role":"3rd","rs":"roster","ktpr":0.905,"h":2,"k":45,"d":49,"kd":0.918,"fl":6,"as":16,"dm":8387},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":0.904,"h":2,"k":49,"d":55,"kd":0.891,"fl":4,"as":11,"dm":8402},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.895,"h":2,"k":41,"d":46,"kd":0.891,"fl":9,"as":8,"dm":5974},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":0.883,"h":2,"k":47,"d":55,"kd":0.855,"fl":5,"as":8,"dm":8199},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":0.852,"h":2,"k":48,"d":63,"kd":0.762,"fl":5,"as":3,"dm":3931},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":0.851,"h":2,"k":44,"d":52,"kd":0.846,"fl":5,"as":6,"dm":6755},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.832,"h":2,"k":41,"d":44,"kd":0.932,"fl":3,"as":5,"dm":4217},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.831,"h":2,"k":44,"d":51,"kd":0.863,"fl":3,"as":5,"dm":7407},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.802,"h":2,"k":44,"d":60,"kd":0.733,"fl":5,"as":4,"dm":6737},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":0.788,"h":2,"k":48,"d":65,"kd":0.738,"fl":1,"as":8,"dm":6394},{"n":"[$] cory 4 hvk","role":"Rifle","rs":"inferred","ktpr":0.784,"h":2,"k":41,"d":50,"kd":0.82,"fl":3,"as":4,"dm":6164},{"n":"uR[TM]* Ke:>^1.de","role":"Heavy","rs":"inferred","ktpr":0.778,"h":2,"k":44,"d":68,"kd":0.647,"fl":6,"as":7,"dm":5998},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.753,"h":2,"k":36,"d":47,"kd":0.766,"fl":6,"as":15,"dm":7339},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":0.721,"h":2,"k":35,"d":47,"kd":0.745,"fl":5,"as":15,"dm":5610},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.711,"h":2,"k":38,"d":53,"kd":0.717,"fl":3,"as":15,"dm":5836},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.708,"h":2,"k":37,"d":58,"kd":0.638,"fl":6,"as":10,"dm":6248},{"n":"b.   e p y o n","role":"Heavy","rs":"inferred","ktpr":0.688,"h":2,"k":31,"d":41,"kd":0.756,"fl":5,"as":6,"dm":4611},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.686,"h":2,"k":34,"d":52,"kd":0.654,"fl":6,"as":8,"dm":3170},{"n":"b.   reptaR","role":"Rifle","rs":"inferred","ktpr":0.678,"h":2,"k":39,"d":70,"kd":0.557,"fl":5,"as":7,"dm":6377},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.666,"h":2,"k":34,"d":56,"kd":0.607,"fl":6,"as":6,"dm":5291},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":0.647,"h":2,"k":37,"d":66,"kd":0.561,"fl":4,"as":12,"dm":5682},{"n":"[bb] 3SidedQuarter ＃4 -|Ea|-","role":"Sniper","rs":"inferred","ktpr":0.605,"h":2,"k":32,"d":53,"kd":0.604,"fl":3,"as":3,"dm":2440},{"n":"b.   hey hi","role":"3rd","rs":"inferred","ktpr":0.605,"h":2,"k":33,"d":60,"kd":0.55,"fl":4,"as":5,"dm":5867},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.534,"h":2,"k":31,"d":63,"kd":0.492,"fl":2,"as":9,"dm":5568},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.522,"h":2,"k":27,"d":55,"kd":0.491,"fl":4,"as":8,"dm":4256},{"n":"uR[TM]* Jee＃minou.exe","role":"Heavy","rs":"inferred","ktpr":0.482,"h":2,"k":28,"d":64,"kd":0.438,"fl":2,"as":9,"dm":4396},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":0.417,"h":2,"k":25,"d":60,"kd":0.417,"fl":0,"as":1,"dm":4007},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.361,"h":2,"k":20,"d":60,"kd":0.333,"fl":2,"as":9,"dm":3895}],"dod_thunder2":[{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":2.898,"h":2,"k":67,"d":13,"kd":5.154,"fl":3,"as":0,"dm":10598},{"n":"dicE[: :]stealthlol＃kingCOOP","role":"Sniper","rs":"inferred","ktpr":1.937,"h":2,"k":75,"d":27,"kd":2.778,"fl":2,"as":1,"dm":5912},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.665,"h":2,"k":72,"d":34,"kd":2.118,"fl":5,"as":10,"dm":11859},{"n":"****JTM   ian","role":"Sniper","rs":"inferred","ktpr":1.549,"h":2,"k":49,"d":20,"kd":2.45,"fl":2,"as":2,"dm":7851},{"n":"****JTM   omenayr.mp3","role":"Heavy","rs":"inferred","ktpr":1.434,"h":2,"k":61,"d":34,"kd":1.794,"fl":6,"as":5,"dm":4849},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":1.422,"h":2,"k":60,"d":33,"kd":1.818,"fl":5,"as":11,"dm":10210},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":1.414,"h":2,"k":63,"d":37,"kd":1.703,"fl":6,"as":13,"dm":11413},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.402,"h":2,"k":64,"d":38,"kd":1.684,"fl":5,"as":11,"dm":10679},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.378,"h":2,"k":61,"d":36,"kd":1.694,"fl":5,"as":11,"dm":10998},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":1.273,"h":2,"k":54,"d":33,"kd":1.636,"fl":4,"as":2,"dm":7733},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.212,"h":2,"k":60,"d":43,"kd":1.395,"fl":3,"as":9,"dm":9695},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":1.212,"h":2,"k":51,"d":32,"kd":1.594,"fl":3,"as":1,"dm":8512},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":1.199,"h":2,"k":46,"d":28,"kd":1.643,"fl":4,"as":9,"dm":8940},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.116,"h":2,"k":55,"d":44,"kd":1.25,"fl":4,"as":9,"dm":9246},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":1.068,"h":2,"k":48,"d":38,"kd":1.263,"fl":5,"as":15,"dm":8998},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":1.062,"h":2,"k":51,"d":42,"kd":1.214,"fl":4,"as":6,"dm":8049},{"n":"[bb] Aderlak // el forko","role":"Rifle","rs":"inferred","ktpr":1.058,"h":2,"k":46,"d":35,"kd":1.314,"fl":4,"as":3,"dm":7502},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.043,"h":2,"k":45,"d":33,"kd":1.364,"fl":2,"as":7,"dm":6142},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":1.01,"h":2,"k":40,"d":28,"kd":1.429,"fl":1,"as":11,"dm":5876},{"n":"[$] cory 4 hvk","role":"Rifle","rs":"inferred","ktpr":0.993,"h":2,"k":46,"d":43,"kd":1.07,"fl":7,"as":8,"dm":7866},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":0.984,"h":2,"k":48,"d":45,"kd":1.067,"fl":5,"as":9,"dm":7346},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.972,"h":2,"k":39,"d":30,"kd":1.3,"fl":3,"as":6,"dm":6264},{"n":"iH.monday","role":"Heavy","rs":"inferred","ktpr":0.96,"h":2,"k":39,"d":34,"kd":1.147,"fl":7,"as":11,"dm":6224},{"n":"[bb] 3SidedQuarter ＃4 -|Ea|-","role":"Sniper","rs":"inferred","ktpr":0.94,"h":2,"k":40,"d":36,"kd":1.111,"fl":6,"as":0,"dm":5356},{"n":"NoSo ! CrankinHawg","role":"Heavy","rs":"inferred","ktpr":0.897,"h":2,"k":44,"d":42,"kd":1.048,"fl":2,"as":3,"dm":5976},{"n":"[bb] reppoĦ ＃4bigbird","role":"Heavy","rs":"roster","ktpr":0.861,"h":2,"k":37,"d":34,"kd":1.088,"fl":3,"as":7,"dm":5757},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":0.844,"h":2,"k":44,"d":51,"kd":0.863,"fl":4,"as":9,"dm":7015},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":0.841,"h":2,"k":41,"d":43,"kd":0.953,"fl":3,"as":8,"dm":6412},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":0.831,"h":2,"k":37,"d":40,"kd":0.925,"fl":6,"as":9,"dm":4872},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.821,"h":2,"k":34,"d":33,"kd":1.03,"fl":4,"as":6,"dm":5425},{"n":"b.   e p y o n","role":"Heavy","rs":"inferred","ktpr":0.819,"h":2,"k":35,"d":36,"kd":0.972,"fl":5,"as":6,"dm":6475},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":0.797,"h":2,"k":41,"d":52,"kd":0.788,"fl":5,"as":11,"dm":6899},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.789,"h":2,"k":42,"d":54,"kd":0.778,"fl":4,"as":5,"dm":3833},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":0.783,"h":2,"k":38,"d":43,"kd":0.884,"fl":3,"as":8,"dm":6738},{"n":"****JTM   mogers <3 h1sey","role":"3rd","rs":"inferred","ktpr":0.774,"h":2,"k":38,"d":41,"kd":0.927,"fl":1,"as":17,"dm":7869},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.774,"h":2,"k":35,"d":39,"kd":0.897,"fl":4,"as":7,"dm":7165},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":0.766,"h":2,"k":40,"d":50,"kd":0.8,"fl":3,"as":14,"dm":7779},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.746,"h":2,"k":38,"d":54,"kd":0.704,"fl":6,"as":6,"dm":5900},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":0.746,"h":2,"k":34,"d":37,"kd":0.919,"fl":2,"as":8,"dm":5719},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":0.732,"h":2,"k":37,"d":47,"kd":0.787,"fl":3,"as":2,"dm":5876},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":0.715,"h":2,"k":33,"d":38,"kd":0.868,"fl":2,"as":5,"dm":2325},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":0.712,"h":2,"k":32,"d":39,"kd":0.821,"fl":4,"as":3,"dm":4561},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":0.708,"h":2,"k":39,"d":52,"kd":0.75,"fl":1,"as":8,"dm":6426},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.703,"h":2,"k":35,"d":44,"kd":0.795,"fl":2,"as":11,"dm":7352},{"n":"[bb] bR0M ＃4BIGDAWG","role":"3rd","rs":"roster","ktpr":0.697,"h":2,"k":28,"d":32,"kd":0.875,"fl":4,"as":8,"dm":5675},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":0.69,"h":2,"k":38,"d":52,"kd":0.731,"fl":1,"as":9,"dm":5868},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":0.676,"h":2,"k":37,"d":59,"kd":0.627,"fl":4,"as":6,"dm":3539},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":0.659,"h":2,"k":37,"d":57,"kd":0.649,"fl":2,"as":9,"dm":7811},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":0.652,"h":2,"k":33,"d":42,"kd":0.786,"fl":0,"as":1,"dm":2896},{"n":"b.   reptaR","role":"Rifle","rs":"inferred","ktpr":0.64,"h":2,"k":37,"d":68,"kd":0.544,"fl":4,"as":5,"dm":7355},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.637,"h":2,"k":31,"d":39,"kd":0.795,"fl":0,"as":5,"dm":5112},{"n":"uR[TM]* Ke:>^1.de","role":"Heavy","rs":"inferred","ktpr":0.611,"h":2,"k":36,"d":68,"kd":0.529,"fl":3,"as":3,"dm":3477},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":0.607,"h":2,"k":32,"d":50,"kd":0.64,"fl":2,"as":3,"dm":5319},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.603,"h":2,"k":34,"d":65,"kd":0.523,"fl":4,"as":5,"dm":6168},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.589,"h":2,"k":30,"d":58,"kd":0.517,"fl":6,"as":9,"dm":5664},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.58,"h":2,"k":30,"d":46,"kd":0.652,"fl":1,"as":5,"dm":4652},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.514,"h":2,"k":24,"d":40,"kd":0.6,"fl":2,"as":5,"dm":2099},{"n":"uR[TM]* Jee＃minou.exe","role":"Heavy","rs":"inferred","ktpr":0.461,"h":2,"k":26,"d":56,"kd":0.464,"fl":1,"as":6,"dm":3798},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.349,"h":2,"k":16,"d":44,"kd":0.364,"fl":3,"as":15,"dm":3904},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.297,"h":2,"k":15,"d":57,"kd":0.263,"fl":3,"as":5,"dm":3615}],"dod_lennon5_b1":[{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":1.902,"h":2,"k":77,"d":38,"kd":2.026,"fl":22,"as":3,"dm":10035},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.801,"h":2,"k":73,"d":37,"kd":1.973,"fl":19,"as":10,"dm":11868},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":1.605,"h":2,"k":70,"d":46,"kd":1.522,"fl":21,"as":20,"dm":11302},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":1.602,"h":2,"k":77,"d":46,"kd":1.674,"fl":11,"as":11,"dm":12269},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":1.462,"h":2,"k":57,"d":37,"kd":1.541,"fl":19,"as":11,"dm":9910},{"n":"[$] cory 4 hvk","role":"Rifle","rs":"inferred","ktpr":1.441,"h":2,"k":72,"d":51,"kd":1.412,"fl":11,"as":8,"dm":11639},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.425,"h":2,"k":69,"d":49,"kd":1.408,"fl":12,"as":15,"dm":12315},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.41,"h":2,"k":64,"d":39,"kd":1.641,"fl":7,"as":12,"dm":9793},{"n":"b.   e p y o n","role":"Heavy","rs":"inferred","ktpr":1.382,"h":2,"k":61,"d":47,"kd":1.298,"fl":18,"as":12,"dm":7908},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":1.373,"h":2,"k":67,"d":46,"kd":1.457,"fl":8,"as":20,"dm":12013},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":1.368,"h":2,"k":63,"d":53,"kd":1.189,"fl":19,"as":10,"dm":8576},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.342,"h":2,"k":59,"d":45,"kd":1.311,"fl":16,"as":8,"dm":8486},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.303,"h":2,"k":61,"d":48,"kd":1.271,"fl":13,"as":10,"dm":9562},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":1.266,"h":2,"k":60,"d":51,"kd":1.176,"fl":14,"as":17,"dm":9103},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":1.265,"h":2,"k":47,"d":28,"kd":1.679,"fl":7,"as":3,"dm":8576},{"n":"b.   reptaR","role":"Rifle","rs":"inferred","ktpr":1.242,"h":2,"k":66,"d":61,"kd":1.082,"fl":11,"as":8,"dm":9471},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":1.235,"h":2,"k":56,"d":51,"kd":1.098,"fl":17,"as":11,"dm":9976},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.211,"h":2,"k":56,"d":48,"kd":1.167,"fl":13,"as":13,"dm":8824},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":1.21,"h":2,"k":63,"d":54,"kd":1.167,"fl":8,"as":9,"dm":8402},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.2,"h":2,"k":55,"d":46,"kd":1.196,"fl":12,"as":7,"dm":7934},{"n":"uR[TM]* Ke:>^1.de","role":"Heavy","rs":"inferred","ktpr":1.162,"h":2,"k":68,"d":77,"kd":0.883,"fl":10,"as":9,"dm":8840},{"n":"iH.monday","role":"Heavy","rs":"inferred","ktpr":1.156,"h":2,"k":49,"d":40,"kd":1.225,"fl":12,"as":9,"dm":7474},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":1.156,"h":2,"k":53,"d":41,"kd":1.293,"fl":7,"as":0,"dm":6602},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":1.112,"h":2,"k":56,"d":56,"kd":1.0,"fl":11,"as":8,"dm":7773},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":1.093,"h":2,"k":53,"d":59,"kd":0.898,"fl":15,"as":9,"dm":7953},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":1.093,"h":2,"k":52,"d":53,"kd":0.981,"fl":13,"as":7,"dm":7058},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.089,"h":2,"k":53,"d":54,"kd":0.981,"fl":12,"as":11,"dm":8349},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":1.08,"h":2,"k":47,"d":43,"kd":1.093,"fl":12,"as":9,"dm":5784},{"n":"[bb] Polak needs some tox","role":"Rifle","rs":"inferred","ktpr":1.058,"h":2,"k":48,"d":47,"kd":1.021,"fl":12,"as":6,"dm":6929},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":1.044,"h":2,"k":39,"d":50,"kd":0.78,"fl":25,"as":3,"dm":5309},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":1.02,"h":2,"k":51,"d":47,"kd":1.085,"fl":5,"as":9,"dm":7470},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":1.017,"h":2,"k":45,"d":44,"kd":1.023,"fl":11,"as":6,"dm":7206},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":1.008,"h":2,"k":44,"d":43,"kd":1.023,"fl":11,"as":12,"dm":6680},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":0.979,"h":2,"k":51,"d":57,"kd":0.895,"fl":8,"as":7,"dm":8350},{"n":"****JTM   mogers <3 h1sey","role":"3rd","rs":"inferred","ktpr":0.975,"h":2,"k":39,"d":38,"kd":1.026,"fl":12,"as":7,"dm":7162},{"n":"****JTM   omenayr.mp3","role":"Heavy","rs":"inferred","ktpr":0.971,"h":3,"k":59,"d":54,"kd":1.093,"fl":14,"as":10,"dm":8690},{"n":"[bb] bR0M ＃4BIGDAWG","role":"3rd","rs":"roster","ktpr":0.954,"h":2,"k":38,"d":38,"kd":1.0,"fl":12,"as":2,"dm":5357},{"n":"NoSo ! CrankinHawg","role":"Heavy","rs":"inferred","ktpr":0.948,"h":2,"k":46,"d":51,"kd":0.902,"fl":9,"as":15,"dm":7254},{"n":"****JTM   ian","role":"Sniper","rs":"inferred","ktpr":0.945,"h":2,"k":37,"d":32,"kd":1.156,"fl":7,"as":4,"dm":5419},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":0.941,"h":2,"k":43,"d":50,"kd":0.86,"fl":12,"as":2,"dm":5781},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.936,"h":2,"k":46,"d":64,"kd":0.719,"fl":14,"as":11,"dm":6974},{"n":"dicE[: :]stealthlol＃kingCOOP","role":"Sniper","rs":"inferred","ktpr":0.916,"h":2,"k":38,"d":39,"kd":0.974,"fl":10,"as":6,"dm":4659},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":0.912,"h":2,"k":49,"d":65,"kd":0.754,"fl":9,"as":11,"dm":7701},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.887,"h":2,"k":48,"d":70,"kd":0.686,"fl":10,"as":3,"dm":8232},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":0.883,"h":2,"k":47,"d":53,"kd":0.887,"fl":4,"as":11,"dm":7415},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.867,"h":2,"k":43,"d":51,"kd":0.843,"fl":7,"as":6,"dm":6807},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.837,"h":2,"k":36,"d":53,"kd":0.679,"fl":15,"as":8,"dm":4825},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.808,"h":2,"k":39,"d":61,"kd":0.639,"fl":12,"as":9,"dm":7564},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.798,"h":2,"k":35,"d":52,"kd":0.673,"fl":13,"as":12,"dm":5333},{"n":"[bb] reppoĦ ＃4Yaso_","role":"Heavy","rs":"roster","ktpr":0.785,"h":2,"k":33,"d":46,"kd":0.717,"fl":12,"as":5,"dm":4658},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":0.739,"h":2,"k":32,"d":46,"kd":0.696,"fl":10,"as":5,"dm":5282},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.726,"h":2,"k":34,"d":52,"kd":0.654,"fl":9,"as":3,"dm":5280},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":0.721,"h":2,"k":35,"d":63,"kd":0.556,"fl":11,"as":10,"dm":5325},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.719,"h":2,"k":37,"d":65,"kd":0.569,"fl":9,"as":8,"dm":6698},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.712,"h":2,"k":35,"d":53,"kd":0.66,"fl":7,"as":7,"dm":4847},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":0.71,"h":2,"k":35,"d":51,"kd":0.686,"fl":6,"as":3,"dm":5161},{"n":"uR[TM]* Jee＃minou.exe","role":"Heavy","rs":"inferred","ktpr":0.709,"h":2,"k":36,"d":60,"kd":0.6,"fl":8,"as":11,"dm":5937},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":0.706,"h":2,"k":39,"d":57,"kd":0.684,"fl":3,"as":9,"dm":7072},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":0.676,"h":3,"k":42,"d":60,"kd":0.7,"fl":12,"as":7,"dm":6859},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.658,"h":2,"k":34,"d":61,"kd":0.557,"fl":7,"as":13,"dm":6548}],"dod_saints2_b3e":[{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.523,"h":2,"k":61,"d":32,"kd":1.906,"fl":9,"as":2,"dm":8410},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":1.39,"h":2,"k":65,"d":39,"kd":1.667,"fl":4,"as":1,"dm":8763},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":1.376,"h":2,"k":64,"d":41,"kd":1.561,"fl":7,"as":0,"dm":10992},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":1.26,"h":2,"k":59,"d":43,"kd":1.372,"fl":8,"as":13,"dm":10041},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":1.254,"h":2,"k":55,"d":35,"kd":1.571,"fl":4,"as":3,"dm":8074},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":1.212,"h":2,"k":66,"d":55,"kd":1.2,"fl":5,"as":23,"dm":11067},{"n":"NoSo ! CrankinHawg","role":"Heavy","rs":"inferred","ktpr":1.201,"h":2,"k":55,"d":38,"kd":1.447,"fl":4,"as":9,"dm":8334},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":1.198,"h":2,"k":59,"d":52,"kd":1.135,"fl":11,"as":12,"dm":11161},{"n":"uR[TM]* Ke:>^1.de","role":"Heavy","rs":"inferred","ktpr":1.191,"h":2,"k":66,"d":59,"kd":1.119,"fl":6,"as":9,"dm":9922},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":1.185,"h":2,"k":60,"d":44,"kd":1.364,"fl":2,"as":3,"dm":10019},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":1.167,"h":2,"k":57,"d":43,"kd":1.326,"fl":4,"as":9,"dm":9497},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":1.142,"h":2,"k":53,"d":40,"kd":1.325,"fl":5,"as":14,"dm":9720},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.133,"h":2,"k":54,"d":48,"kd":1.125,"fl":10,"as":13,"dm":8869},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":1.115,"h":2,"k":49,"d":40,"kd":1.225,"fl":9,"as":13,"dm":8503},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.038,"h":2,"k":53,"d":52,"kd":1.019,"fl":7,"as":5,"dm":8864},{"n":"****JTM   mogers <3h","role":"3rd","rs":"inferred","ktpr":1.037,"h":2,"k":49,"d":37,"kd":1.324,"fl":0,"as":11,"dm":8941},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.022,"h":2,"k":50,"d":45,"kd":1.111,"fl":5,"as":11,"dm":7897},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":1.017,"h":2,"k":46,"d":46,"kd":1.0,"fl":11,"as":12,"dm":8631},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":1.009,"h":2,"k":41,"d":32,"kd":1.281,"fl":5,"as":7,"dm":7871},{"n":"[$] cory 4 swiss","role":"Rifle","rs":"inferred","ktpr":1.008,"h":2,"k":57,"d":56,"kd":1.018,"fl":2,"as":8,"dm":9494},{"n":"****JTM   ian","role":"Sniper","rs":"inferred","ktpr":1.003,"h":2,"k":49,"d":45,"kd":1.089,"fl":5,"as":2,"dm":7001},{"n":"b.   e p y o n","role":"Heavy","rs":"inferred","ktpr":0.999,"h":2,"k":46,"d":45,"kd":1.022,"fl":9,"as":11,"dm":7554},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":0.984,"h":2,"k":48,"d":45,"kd":1.067,"fl":5,"as":11,"dm":7839},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":0.974,"h":2,"k":48,"d":46,"kd":1.043,"fl":5,"as":7,"dm":3777},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":0.971,"h":2,"k":42,"d":39,"kd":1.077,"fl":8,"as":10,"dm":8186},{"n":"b.   reptaR","role":"Rifle","rs":"inferred","ktpr":0.97,"h":2,"k":47,"d":56,"kd":0.839,"fl":12,"as":6,"dm":7974},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.961,"h":2,"k":46,"d":41,"kd":1.122,"fl":3,"as":12,"dm":6673},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":0.952,"h":2,"k":44,"d":46,"kd":0.957,"fl":9,"as":9,"dm":8895},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":0.951,"h":2,"k":48,"d":47,"kd":1.021,"fl":4,"as":10,"dm":8006},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":0.946,"h":2,"k":45,"d":43,"kd":1.047,"fl":5,"as":16,"dm":6526},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":0.935,"h":2,"k":45,"d":47,"kd":0.957,"fl":7,"as":12,"dm":9839},{"n":"iH.monday","role":"Heavy","rs":"inferred","ktpr":0.908,"h":2,"k":44,"d":48,"kd":0.917,"fl":7,"as":9,"dm":6374},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":0.906,"h":2,"k":46,"d":53,"kd":0.868,"fl":7,"as":9,"dm":6307},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.906,"h":2,"k":43,"d":46,"kd":0.935,"fl":7,"as":13,"dm":7388},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":0.905,"h":2,"k":46,"d":45,"kd":1.022,"fl":2,"as":2,"dm":5234},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.901,"h":2,"k":47,"d":49,"kd":0.959,"fl":3,"as":11,"dm":7911},{"n":"[bb] Polak","role":"Rifle","rs":"inferred","ktpr":0.888,"h":2,"k":41,"d":41,"kd":1.0,"fl":5,"as":12,"dm":7736},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":0.876,"h":2,"k":44,"d":47,"kd":0.936,"fl":4,"as":17,"dm":7517},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.872,"h":2,"k":44,"d":57,"kd":0.772,"fl":9,"as":4,"dm":8835},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":0.863,"h":2,"k":44,"d":44,"kd":1.0,"fl":1,"as":12,"dm":8118},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":0.858,"h":2,"k":44,"d":51,"kd":0.863,"fl":5,"as":7,"dm":7596},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":0.857,"h":2,"k":45,"d":58,"kd":0.776,"fl":7,"as":10,"dm":7071},{"n":"uR[TM]* Jee＃minou.exe","role":"Heavy","rs":"inferred","ktpr":0.857,"h":2,"k":43,"d":47,"kd":0.915,"fl":4,"as":10,"dm":6860},{"n":"dicE[: :]stealthlol＃kingCOOP","role":"Sniper","rs":"inferred","ktpr":0.855,"h":2,"k":42,"d":52,"kd":0.808,"fl":8,"as":2,"dm":6262},{"n":"****JTM   omenayr 4 jGaleZ","role":"Heavy","rs":"inferred","ktpr":0.844,"h":2,"k":41,"d":51,"kd":0.804,"fl":8,"as":11,"dm":3963},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.834,"h":2,"k":42,"d":43,"kd":0.977,"fl":1,"as":6,"dm":6631},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.831,"h":2,"k":37,"d":43,"kd":0.86,"fl":8,"as":5,"dm":5865},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":0.823,"h":2,"k":41,"d":45,"kd":0.911,"fl":3,"as":2,"dm":3241},{"n":"[bb] reppoĦ","role":"Heavy","rs":"roster","ktpr":0.796,"h":2,"k":37,"d":37,"kd":1.0,"fl":1,"as":7,"dm":6524},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.79,"h":2,"k":40,"d":45,"kd":0.889,"fl":2,"as":2,"dm":4999},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.781,"h":2,"k":42,"d":53,"kd":0.792,"fl":3,"as":13,"dm":6483},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.75,"h":2,"k":39,"d":62,"kd":0.629,"fl":8,"as":6,"dm":5996},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":0.748,"h":2,"k":39,"d":52,"kd":0.75,"fl":4,"as":9,"dm":6802},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.736,"h":2,"k":38,"d":49,"kd":0.776,"fl":3,"as":18,"dm":7848},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.73,"h":2,"k":39,"d":55,"kd":0.709,"fl":4,"as":11,"dm":5919},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.702,"h":2,"k":39,"d":53,"kd":0.736,"fl":1,"as":7,"dm":5710},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":0.681,"h":2,"k":29,"d":37,"kd":0.784,"fl":5,"as":5,"dm":6241},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":0.658,"h":2,"k":38,"d":64,"kd":0.594,"fl":3,"as":7,"dm":5526},{"n":"[bb] 3SidedQuarter ＃4 -|Ea|-","role":"Sniper","rs":"inferred","ktpr":0.643,"h":2,"k":28,"d":39,"kd":0.718,"fl":5,"as":3,"dm":5574},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.557,"h":2,"k":30,"d":56,"kd":0.536,"fl":3,"as":5,"dm":3497}],"dod_harrington":[{"n":"[bb] Polak ty for Coors <3","role":"Rifle","rs":"inferred","ktpr":1.585,"h":2,"k":59,"d":37,"kd":1.595,"fl":25,"as":8,"dm":9550},{"n":"[$] nomistizzle <3 kev","role":"Rifle","rs":"inferred","ktpr":1.548,"h":2,"k":80,"d":54,"kd":1.481,"fl":11,"as":12,"dm":12354},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":1.516,"h":2,"k":62,"d":54,"kd":1.148,"fl":32,"as":6,"dm":10319},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":1.455,"h":2,"k":57,"d":51,"kd":1.118,"fl":32,"as":11,"dm":9449},{"n":"uR[TM]* Ke:>^1.de <3 nomis","role":"Heavy","rs":"inferred","ktpr":1.425,"h":2,"k":72,"d":66,"kd":1.091,"fl":20,"as":3,"dm":10585},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":1.413,"h":2,"k":65,"d":52,"kd":1.25,"fl":19,"as":8,"dm":10083},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.399,"h":2,"k":69,"d":55,"kd":1.255,"fl":15,"as":9,"dm":11431},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":1.387,"h":2,"k":67,"d":48,"kd":1.396,"fl":11,"as":17,"dm":11281},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":1.371,"h":2,"k":64,"d":47,"kd":1.362,"fl":13,"as":9,"dm":10719},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":1.329,"h":2,"k":51,"d":50,"kd":1.02,"fl":30,"as":11,"dm":7602},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":1.304,"h":2,"k":58,"d":38,"kd":1.526,"fl":7,"as":8,"dm":8578},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.298,"h":2,"k":56,"d":50,"kd":1.12,"fl":21,"as":2,"dm":9019},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.297,"h":2,"k":58,"d":46,"kd":1.261,"fl":15,"as":10,"dm":8830},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.284,"h":2,"k":64,"d":51,"kd":1.255,"fl":10,"as":9,"dm":10196},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":1.278,"h":2,"k":70,"d":65,"kd":1.077,"fl":11,"as":10,"dm":10493},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":1.259,"h":2,"k":55,"d":54,"kd":1.019,"fl":22,"as":7,"dm":8732},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.257,"h":2,"k":64,"d":51,"kd":1.255,"fl":8,"as":10,"dm":7865},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":1.246,"h":2,"k":63,"d":48,"kd":1.312,"fl":6,"as":1,"dm":9930},{"n":"b.   reptaR","role":"Rifle","rs":"inferred","ktpr":1.243,"h":2,"k":69,"d":70,"kd":0.986,"fl":12,"as":3,"dm":11526},{"n":"[bb] bR0M ＃4BIGDAWG","role":"3rd","rs":"roster","ktpr":1.227,"h":2,"k":51,"d":44,"kd":1.159,"fl":18,"as":7,"dm":7309},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":1.218,"h":2,"k":54,"d":59,"kd":0.915,"fl":23,"as":5,"dm":5504},{"n":"[$] cory 4 swiss","role":"Rifle","rs":"inferred","ktpr":1.187,"h":2,"k":58,"d":56,"kd":1.036,"fl":14,"as":12,"dm":10125},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":1.183,"h":2,"k":48,"d":70,"kd":0.686,"fl":32,"as":8,"dm":8345},{"n":"****JTM   omenayr 4 jGaleZ","role":"Heavy","rs":"inferred","ktpr":1.138,"h":2,"k":58,"d":57,"kd":1.018,"fl":11,"as":2,"dm":4938},{"n":"[bb] reppoĦ","role":"Heavy","rs":"roster","ktpr":1.121,"h":2,"k":49,"d":44,"kd":1.114,"fl":13,"as":10,"dm":8257},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":1.118,"h":2,"k":52,"d":50,"kd":1.04,"fl":13,"as":11,"dm":8025},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":1.102,"h":2,"k":49,"d":40,"kd":1.225,"fl":8,"as":1,"dm":8433},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":1.096,"h":2,"k":56,"d":53,"kd":1.057,"fl":8,"as":9,"dm":9249},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":1.095,"h":2,"k":55,"d":56,"kd":0.982,"fl":11,"as":21,"dm":10359},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":1.086,"h":2,"k":51,"d":50,"kd":1.02,"fl":12,"as":1,"dm":8137},{"n":"iH.monday","role":"Heavy","rs":"inferred","ktpr":1.063,"h":2,"k":46,"d":44,"kd":1.045,"fl":13,"as":11,"dm":7325},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":1.056,"h":2,"k":52,"d":56,"kd":0.929,"fl":12,"as":10,"dm":8156},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":1.023,"h":2,"k":49,"d":50,"kd":0.98,"fl":10,"as":12,"dm":7890},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":1.008,"h":2,"k":53,"d":54,"kd":0.981,"fl":6,"as":4,"dm":8258},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":1.0,"h":2,"k":47,"d":60,"kd":0.783,"fl":16,"as":7,"dm":7923},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":0.998,"h":2,"k":50,"d":46,"kd":1.087,"fl":4,"as":7,"dm":8269},{"n":"****JTM   mogers <3h","role":"3rd","rs":"inferred","ktpr":0.996,"h":2,"k":41,"d":41,"kd":1.0,"fl":13,"as":5,"dm":4627},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":0.989,"h":2,"k":48,"d":52,"kd":0.923,"fl":10,"as":13,"dm":8561},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.986,"h":2,"k":51,"d":60,"kd":0.85,"fl":10,"as":8,"dm":8856},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":0.972,"h":2,"k":47,"d":43,"kd":1.093,"fl":4,"as":9,"dm":7013},{"n":"NoSo ! CrankinHawg","role":"Heavy","rs":"inferred","ktpr":0.971,"h":2,"k":47,"d":52,"kd":0.904,"fl":10,"as":13,"dm":7493},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.955,"h":2,"k":42,"d":46,"kd":0.913,"fl":12,"as":6,"dm":7561},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.942,"h":2,"k":45,"d":53,"kd":0.849,"fl":11,"as":12,"dm":8079},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.938,"h":2,"k":49,"d":58,"kd":0.845,"fl":8,"as":10,"dm":7766},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":0.934,"h":2,"k":46,"d":57,"kd":0.807,"fl":11,"as":3,"dm":6278},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":0.933,"h":2,"k":48,"d":49,"kd":0.98,"fl":4,"as":12,"dm":8119},{"n":"uR[TM]* Jee＃minou.exe","role":"Heavy","rs":"inferred","ktpr":0.924,"h":2,"k":45,"d":50,"kd":0.9,"fl":8,"as":6,"dm":6064},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":0.915,"h":2,"k":45,"d":53,"kd":0.849,"fl":9,"as":11,"dm":7243},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.909,"h":2,"k":49,"d":63,"kd":0.778,"fl":8,"as":3,"dm":8324},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.895,"h":2,"k":34,"d":59,"kd":0.576,"fl":24,"as":8,"dm":6236},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":0.89,"h":2,"k":41,"d":45,"kd":0.911,"fl":8,"as":5,"dm":5883},{"n":"b.   e p y o n","role":"Heavy","rs":"inferred","ktpr":0.879,"h":2,"k":38,"d":46,"kd":0.826,"fl":12,"as":6,"dm":5183},{"n":"****JTM   ian","role":"Sniper","rs":"inferred","ktpr":0.87,"h":2,"k":47,"d":53,"kd":0.887,"fl":3,"as":1,"dm":6266},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.862,"h":2,"k":35,"d":41,"kd":0.854,"fl":12,"as":9,"dm":5443},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":0.859,"h":2,"k":41,"d":40,"kd":1.025,"fl":2,"as":2,"dm":5917},{"n":"[bb] 3SidedQuarter","role":"Sniper","rs":"inferred","ktpr":0.854,"h":2,"k":40,"d":49,"kd":0.816,"fl":9,"as":1,"dm":5678},{"n":"dicE[: :]stealthlol＃kingCOOP","role":"Sniper","rs":"inferred","ktpr":0.844,"h":2,"k":43,"d":59,"kd":0.729,"fl":9,"as":2,"dm":6374},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":0.836,"h":2,"k":45,"d":57,"kd":0.789,"fl":5,"as":3,"dm":6975},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":0.749,"h":2,"k":40,"d":60,"kd":0.667,"fl":6,"as":9,"dm":6816},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":0.724,"h":2,"k":39,"d":65,"kd":0.6,"fl":7,"as":0,"dm":6668}],"dod_anzio":[{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.805,"h":2,"k":79,"d":42,"kd":1.881,"fl":18,"as":8,"dm":11241},{"n":"[bb] 3SidedQuarter＃4 Bobby","role":"Sniper","rs":"inferred","ktpr":1.586,"h":2,"k":54,"d":29,"kd":1.862,"fl":20,"as":1,"dm":7590},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":1.553,"h":2,"k":65,"d":35,"kd":1.857,"fl":10,"as":9,"dm":10158},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":1.518,"h":2,"k":66,"d":37,"kd":1.784,"fl":9,"as":2,"dm":10404},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":1.482,"h":2,"k":62,"d":42,"kd":1.476,"fl":19,"as":11,"dm":8850},{"n":"NoSo ! CrankinHawg","role":"Heavy","rs":"inferred","ktpr":1.439,"h":2,"k":55,"d":32,"kd":1.719,"fl":13,"as":8,"dm":7984},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":1.404,"h":2,"k":44,"d":27,"kd":1.63,"fl":21,"as":10,"dm":6966},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":1.343,"h":2,"k":55,"d":36,"kd":1.528,"fl":12,"as":8,"dm":9926},{"n":"****JTM   ian","role":"Sniper","rs":"inferred","ktpr":1.336,"h":2,"k":45,"d":22,"kd":2.045,"fl":2,"as":1,"dm":7740},{"n":"[bb] Polak rides Twist's boat","role":"Rifle","rs":"inferred","ktpr":1.291,"h":2,"k":53,"d":40,"kd":1.325,"fl":16,"as":10,"dm":8459},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":1.257,"h":2,"k":52,"d":42,"kd":1.238,"fl":17,"as":7,"dm":6733},{"n":"iH.monday","role":"Heavy","rs":"inferred","ktpr":1.189,"h":2,"k":46,"d":40,"kd":1.15,"fl":19,"as":3,"dm":5423},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":1.147,"h":2,"k":41,"d":29,"kd":1.414,"fl":11,"as":1,"dm":6596},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":1.146,"h":2,"k":49,"d":33,"kd":1.485,"fl":3,"as":0,"dm":8398},{"n":"[bb] bR0M ＃4BIGDAWG","role":"3rd","rs":"roster","ktpr":1.119,"h":2,"k":49,"d":43,"kd":1.14,"fl":12,"as":8,"dm":6199},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":1.118,"h":2,"k":42,"d":31,"kd":1.355,"fl":10,"as":7,"dm":7395},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.108,"h":2,"k":44,"d":35,"kd":1.257,"fl":11,"as":7,"dm":7111},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.102,"h":2,"k":44,"d":43,"kd":1.023,"fl":18,"as":9,"dm":7217},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":1.095,"h":2,"k":51,"d":49,"kd":1.041,"fl":12,"as":7,"dm":8414},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":1.09,"h":2,"k":45,"d":41,"kd":1.098,"fl":14,"as":8,"dm":7323},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.082,"h":2,"k":52,"d":42,"kd":1.238,"fl":4,"as":11,"dm":9095},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":1.076,"h":2,"k":47,"d":41,"kd":1.146,"fl":10,"as":7,"dm":7086},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.054,"h":2,"k":46,"d":40,"kd":1.15,"fl":9,"as":6,"dm":4559},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":1.048,"h":2,"k":46,"d":47,"kd":0.979,"fl":14,"as":16,"dm":8316},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":1.042,"h":2,"k":41,"d":36,"kd":1.139,"fl":12,"as":8,"dm":6216},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.024,"h":2,"k":42,"d":38,"kd":1.105,"fl":11,"as":7,"dm":6024},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":1.008,"h":2,"k":40,"d":36,"kd":1.111,"fl":11,"as":3,"dm":6210},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":1.004,"h":2,"k":38,"d":35,"kd":1.086,"fl":13,"as":9,"dm":4180},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.003,"h":2,"k":41,"d":43,"kd":0.953,"fl":15,"as":8,"dm":7557},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":0.989,"h":2,"k":41,"d":37,"kd":1.108,"fl":9,"as":7,"dm":7574},{"n":"[bb] reppoĦ＃tuckitin","role":"Heavy","rs":"roster","ktpr":0.98,"h":2,"k":36,"d":38,"kd":0.947,"fl":17,"as":11,"dm":6231},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":0.956,"h":2,"k":35,"d":37,"kd":0.946,"fl":16,"as":7,"dm":6214},{"n":"****JTM   omenayr 4 jGaleZ","role":"Heavy","rs":"inferred","ktpr":0.912,"h":2,"k":38,"d":37,"kd":1.027,"fl":8,"as":8,"dm":5459},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":0.909,"h":2,"k":41,"d":43,"kd":0.953,"fl":8,"as":9,"dm":6307},{"n":"uR[TM]* Ke:>^1.de <3 FUN","role":"Heavy","rs":"inferred","ktpr":0.901,"h":2,"k":49,"d":62,"kd":0.79,"fl":7,"as":8,"dm":8612},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.866,"h":2,"k":41,"d":48,"kd":0.854,"fl":8,"as":6,"dm":5881},{"n":"[$] cory 4 rdk,jkimbro,liah","role":"Rifle","rs":"inferred","ktpr":0.838,"h":2,"k":41,"d":52,"kd":0.788,"fl":8,"as":8,"dm":7701},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":0.836,"h":2,"k":40,"d":46,"kd":0.87,"fl":6,"as":6,"dm":7339},{"n":"[$] billymanbrewing","role":"3rd","rs":"inferred","ktpr":0.836,"h":2,"k":39,"d":53,"kd":0.736,"fl":11,"as":10,"dm":5867},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.831,"h":2,"k":38,"d":47,"kd":0.809,"fl":9,"as":5,"dm":5403},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":0.828,"h":2,"k":33,"d":35,"kd":0.943,"fl":8,"as":1,"dm":5244},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":0.825,"h":2,"k":41,"d":54,"kd":0.759,"fl":8,"as":5,"dm":7182},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":0.823,"h":2,"k":35,"d":55,"kd":0.636,"fl":16,"as":10,"dm":4759},{"n":"b.   e p y o n ＃Twistanic","role":"Heavy","rs":"inferred","ktpr":0.823,"h":2,"k":35,"d":46,"kd":0.761,"fl":12,"as":4,"dm":4386},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.822,"h":2,"k":36,"d":56,"kd":0.643,"fl":15,"as":9,"dm":5997},{"n":"uR[TM]* Jee＃minou.exe","role":"Heavy","rs":"inferred","ktpr":0.819,"h":2,"k":37,"d":48,"kd":0.771,"fl":10,"as":3,"dm":4661},{"n":"dicE[: :]stealthlol＃kingCOOP","role":"Sniper","rs":"inferred","ktpr":0.818,"h":2,"k":35,"d":40,"kd":0.875,"fl":8,"as":2,"dm":4809},{"n":"b.   o[bb]y","role":"Rifle","rs":"inferred","ktpr":0.812,"h":2,"k":45,"d":67,"kd":0.672,"fl":7,"as":5,"dm":8387},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":0.805,"h":2,"k":36,"d":38,"kd":0.947,"fl":4,"as":6,"dm":5854},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":0.794,"h":2,"k":40,"d":54,"kd":0.741,"fl":7,"as":0,"dm":4176},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.786,"h":2,"k":36,"d":55,"kd":0.655,"fl":12,"as":1,"dm":5871},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.762,"h":2,"k":32,"d":38,"kd":0.842,"fl":7,"as":5,"dm":4906},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":0.753,"h":2,"k":34,"d":39,"kd":0.872,"fl":4,"as":9,"dm":5424},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.733,"h":2,"k":32,"d":43,"kd":0.744,"fl":8,"as":7,"dm":4698},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.718,"h":2,"k":31,"d":39,"kd":0.795,"fl":6,"as":6,"dm":5778},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":0.688,"h":2,"k":29,"d":45,"kd":0.644,"fl":10,"as":4,"dm":4367},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.666,"h":2,"k":27,"d":47,"kd":0.574,"fl":12,"as":7,"dm":4627},{"n":"****JTM   mogers ＃ky","role":"3rd","rs":"inferred","ktpr":0.583,"h":2,"k":26,"d":38,"kd":0.684,"fl":3,"as":6,"dm":4732},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.503,"h":2,"k":15,"d":55,"kd":0.273,"fl":18,"as":7,"dm":2574},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.5,"h":2,"k":23,"d":53,"kd":0.434,"fl":7,"as":9,"dm":4577}]}},{"key":"08-02","label":"Sunday","avg":{"kd":1.0163,"kph":23.9196,"fph":4.1049,"pool":61},"players":[{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.413,"m":6,"h":11,"k":366,"d":240,"kd":1.525,"kph":33.27,"fl":52,"fph":4.73,"as":39,"dm":60971,"hs":33,"hits":558,"hsh":37,"caps":51,"cb":2,"obj":68,"st":9,"nk":81,"gk":293,"pr":363,"hb":{"Generic":[389,30385],"Left arm":[256,23104],"Stomach":[169,20864],"Right arm":[131,11139],"Chest":[82,9060],"Head":[79,17999],"Right leg":[63,6154],"Left leg":[47,4713]},"cl":{"Garand":168,"K98":138}},{"n":"[bb] bR0M ＃wetya","role":"3rd","rs":"roster","ktpr":1.349,"m":3,"h":6,"k":180,"d":139,"kd":1.295,"kph":30.0,"fl":50,"fph":8.33,"as":26,"dm":28248,"hs":26,"hits":287,"hsh":23,"caps":46,"cb":0,"obj":60,"st":8,"nk":36,"gk":129,"pr":207,"hb":{"Generic":[247,17623],"Left arm":[215,13206],"Right arm":[111,6064],"Stomach":[94,7406],"Head":[78,14936],"Chest":[67,4577],"Left leg":[48,3023],"Right leg":[39,2191]},"cl":{"Garand":92,"Stoss (K43)":81}},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":1.266,"m":2,"h":4,"k":126,"d":101,"kd":1.248,"kph":31.5,"fl":20,"fph":5.0,"as":17,"dm":18189,"hs":19,"hits":259,"hsh":19,"caps":19,"cb":1,"obj":21,"st":7,"nk":2,"gk":123,"pr":130,"hb":{"Left arm":[327,17185],"Stomach":[143,9792],"Right arm":[137,7498],"Generic":[107,6750],"Chest":[83,6067],"Left leg":[81,4520],"Head":[79,11388],"Right leg":[63,3499]},"cl":{"BAR":65,"STG (MP44)":46,"Unter (MP40)":5}},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.242,"m":6,"h":11,"k":285,"d":226,"kd":1.261,"kph":25.91,"fl":85,"fph":7.73,"as":48,"dm":46610,"hs":34,"hits":460,"hsh":40,"caps":79,"cb":1,"obj":94,"st":11,"nk":34,"gk":245,"pr":309,"hb":{"Left arm":[320,28729],"Generic":[298,21147],"Right arm":[141,13013],"Stomach":[121,14113],"Chest":[99,9889],"Head":[98,21716],"Right leg":[76,6653],"Left leg":[61,5631]},"cl":{"Garand":162,"Stoss (K43)":89,"K98":47}},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.24,"m":5,"h":10,"k":309,"d":287,"kd":1.077,"kph":30.9,"fl":72,"fph":7.2,"as":47,"dm":40618,"hs":56,"hits":603,"hsh":52,"caps":67,"cb":4,"obj":72,"st":10,"nk":42,"gk":238,"pr":360,"hb":{"Left arm":[436,21605],"Generic":[208,17837],"Stomach":[167,11884],"Right arm":[157,8298],"Left leg":[137,7061],"Head":[121,18980],"Right leg":[116,6364],"Chest":[108,6947]},"cl":{"STG (MP44)":171,"BAR":166}},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.22,"m":5,"h":10,"k":285,"d":218,"kd":1.307,"kph":28.5,"fl":44,"fph":4.4,"as":31,"dm":29126,"hs":57,"hits":390,"hsh":47,"caps":31,"cb":4,"obj":37,"st":7,"nk":9,"gk":190,"pr":290,"hb":{"Left arm":[415,23324],"Right arm":[209,12116],"Head":[170,26580],"Stomach":[157,12340],"Generic":[140,10557],"Right leg":[115,5992],"Chest":[108,7520],"Left leg":[88,5888]},"cl":{"STG (MP44)":138,"BAR":121}},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":1.195,"m":5,"h":10,"k":313,"d":274,"kd":1.142,"kph":31.3,"fl":42,"fph":4.2,"as":38,"dm":39664,"hs":22,"hits":390,"hsh":11,"caps":36,"cb":0,"obj":46,"st":10,"nk":75,"gk":187,"pr":369,"hb":{"Generic":[380,33809],"Left arm":[169,14647],"Stomach":[108,12392],"Right arm":[86,6884],"Right leg":[86,7742],"Left leg":[60,5621],"Head":[48,10894],"Chest":[38,4141]},"cl":{"K98":162,"Garand":136,"Tommy (Thompson)":17}},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":1.192,"m":6,"h":12,"k":345,"d":268,"kd":1.287,"kph":28.75,"fl":42,"fph":3.5,"as":33,"dm":51421,"hs":38,"hits":445,"hsh":44,"caps":37,"cb":4,"obj":50,"st":9,"nk":51,"gk":252,"pr":357,"hb":{"Generic":[282,22602],"Left arm":[269,24125],"Right arm":[140,13348],"Stomach":[116,13773],"Chest":[81,9531],"Head":[77,21903],"Left leg":[53,4773],"Right leg":[46,4395]},"cl":{"Garand":162,"K98":156}},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.177,"m":7,"h":14,"k":418,"d":356,"kd":1.174,"kph":29.86,"fl":56,"fph":4.0,"as":52,"dm":67676,"hs":70,"hits":697,"hsh":75,"caps":55,"cb":4,"obj":74,"st":10,"nk":46,"gk":375,"pr":458,"hb":{"Left arm":[381,31376],"Generic":[265,17214],"Right arm":[215,16902],"Stomach":[159,17461],"Head":[145,31044],"Chest":[138,13015],"Right leg":[75,6996],"Left leg":[72,6393]},"cl":{"K98":198,"Garand":164,"Carbine":82}},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":1.172,"m":2,"h":4,"k":112,"d":100,"kd":1.12,"kph":28.0,"fl":24,"fph":6.0,"as":21,"dm":19357,"hs":15,"hits":203,"hsh":20,"caps":24,"cb":0,"obj":25,"st":8,"nk":3,"gk":108,"pr":114,"hb":{"Left arm":[225,17063],"Generic":[146,7960],"Right arm":[105,7647],"Head":[86,19130],"Stomach":[85,9064],"Chest":[65,6256],"Right leg":[37,3086],"Left leg":[27,2241]},"cl":{"Stoss (K43)":58,"Garand":54}},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.169,"m":7,"h":13,"k":336,"d":246,"kd":1.366,"kph":25.85,"fl":44,"fph":3.38,"as":48,"dm":57552,"hs":42,"hits":550,"hsh":57,"caps":42,"cb":2,"obj":73,"st":8,"nk":67,"gk":272,"pr":332,"hb":{"Generic":[359,25245],"Left arm":[296,25134],"Right arm":[172,14298],"Stomach":[137,15911],"Head":[105,19929],"Chest":[83,8319],"Left leg":[66,6053],"Right leg":[39,4049]},"cl":{"K98":169,"Garand":133,"Scharf (K98 scoped)":3,"Tommy (Thompson)":1}},{"n":"iH.monday","role":"3rd","rs":"inferred","ktpr":1.169,"m":6,"h":11,"k":271,"d":213,"kd":1.272,"kph":24.64,"fl":63,"fph":5.73,"as":45,"dm":40304,"hs":51,"hits":554,"hsh":56,"caps":63,"cb":5,"obj":71,"st":8,"nk":19,"gk":259,"pr":298,"hb":{"Left arm":[353,19388],"Stomach":[161,12341],"Right arm":[158,9127],"Generic":[139,9807],"Left leg":[119,6726],"Head":[119,18990],"Right leg":[111,6102],"Chest":[95,6382]},"cl":{"BAR":144,"Unter (MP40)":108,"STG (MP44)":24}},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":1.165,"m":6,"h":11,"k":229,"d":149,"kd":1.537,"kph":20.82,"fl":43,"fph":3.91,"as":12,"dm":40081,"hs":31,"hits":276,"hsh":35,"caps":43,"cb":1,"obj":66,"st":8,"nk":0,"gk":232,"pr":269,"hb":{"Left arm":[234,24445],"Stomach":[115,14838],"Right arm":[105,12771],"Head":[79,22220],"Chest":[66,8950],"Right leg":[39,4626],"Generic":[35,570],"Left leg":[33,3213]},"cl":{"Scharf (K98 scoped)":109,"Springfield":102}},{"n":"b.   e p y o n","role":"3rd","rs":"inferred","ktpr":1.155,"m":2,"h":4,"k":105,"d":91,"kd":1.154,"kph":26.25,"fl":24,"fph":6.0,"as":17,"dm":15229,"hs":18,"hits":236,"hsh":21,"caps":23,"cb":2,"obj":24,"st":7,"nk":7,"gk":97,"pr":123,"hb":{"Left arm":[263,12332],"Right arm":[133,7169],"Stomach":[107,7283],"Generic":[104,6186],"Head":[93,14172],"Right leg":[75,3618],"Chest":[64,4421],"Left leg":[47,2366]},"cl":{"BAR":48,"Unter (MP40)":42,"STG (MP44)":13}},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":1.151,"m":2,"h":4,"k":123,"d":105,"kd":1.171,"kph":30.75,"fl":10,"fph":2.5,"as":2,"dm":18198,"hs":8,"hits":142,"hsh":8,"caps":10,"cb":3,"obj":14,"st":6,"nk":0,"gk":123,"pr":122,"hb":{"Left arm":[198,20092],"Right arm":[97,10017],"Stomach":[69,9221],"Chest":[45,6636],"Head":[38,12073],"Generic":[34,435],"Left leg":[21,2058],"Right leg":[18,2381]},"cl":{"Scharf (K98 scoped)":60,"Springfield":60}},{"n":"uR[TM]* Ke:>^1.de","role":"Heavy","rs":"inferred","ktpr":1.15,"m":2,"h":4,"k":125,"d":128,"kd":0.977,"kph":31.25,"fl":21,"fph":5.25,"as":18,"dm":20129,"hs":38,"hits":246,"hsh":41,"caps":19,"cb":0,"obj":20,"st":4,"nk":17,"gk":108,"pr":148,"hb":{"Left arm":[270,15287],"Generic":[229,18225],"Head":[130,22293],"Right arm":[120,7292],"Stomach":[116,8917],"Left leg":[83,4485],"Chest":[74,5124],"Right leg":[48,2823]},"cl":{"BAR":73,"STG (MP44)":68,"Unter (MP40)":2}},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.143,"m":7,"h":14,"k":374,"d":313,"kd":1.195,"kph":26.71,"fl":64,"fph":4.57,"as":67,"dm":53489,"hs":89,"hits":805,"hsh":89,"caps":60,"cb":5,"obj":67,"st":7,"nk":18,"gk":335,"pr":454,"hb":{"Left arm":[500,24791],"Stomach":[221,14645],"Right arm":[219,10807],"Head":[157,25708],"Chest":[148,9974],"Right leg":[145,7469],"Generic":[139,11496],"Left leg":[135,6816]},"cl":{"BAR":209,"Unter (MP40)":172,"STG (MP44)":1,"Carbine":1}},{"n":"[bb] Polak","role":"Rifle","rs":"inferred","ktpr":1.139,"m":4,"h":8,"k":206,"d":181,"kd":1.138,"kph":25.75,"fl":48,"fph":6.0,"as":23,"dm":32229,"hs":22,"hits":308,"hsh":28,"caps":47,"cb":3,"obj":58,"st":11,"nk":30,"gk":175,"pr":256,"hb":{"Left arm":[171,14750],"Generic":[170,12810],"Stomach":[97,11344],"Left leg":[83,7881],"Right arm":[72,5317],"Right leg":[71,6792],"Chest":[68,7500],"Head":[62,13908]},"cl":{"Garand":111,"K98":99,"Stoss (K43)":14}},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":1.117,"m":5,"h":10,"k":240,"d":174,"kd":1.379,"kph":24.0,"fl":25,"fph":2.5,"as":25,"dm":28961,"hs":19,"hits":308,"hsh":18,"caps":23,"cb":0,"obj":33,"st":11,"nk":27,"gk":159,"pr":215,"hb":{"Generic":[307,23185],"Left arm":[245,19570],"Stomach":[132,15147],"Right arm":[100,7960],"Chest":[74,6899],"Head":[60,12766],"Right leg":[52,5172],"Left leg":[42,3587]},"cl":{"K98":103,"Garand":103,"Carbine":1}},{"n":"ßℓυ†н | SilverPlayer","role":"Rifle","rs":"inferred","ktpr":1.088,"m":6,"h":12,"k":326,"d":284,"kd":1.148,"kph":27.17,"fl":36,"fph":3.0,"as":50,"dm":51476,"hs":20,"hits":493,"hsh":21,"caps":36,"cb":9,"obj":49,"st":8,"nk":62,"gk":267,"pr":347,"hb":{"Generic":[336,26188],"Left arm":[235,21769],"Stomach":[132,16137],"Right arm":[102,9479],"Right leg":[84,8140],"Left leg":[79,7743],"Chest":[77,8579],"Head":[43,11716]},"cl":{"Garand":166,"K98":163}},{"n":"dicE[: :]stealthlol","role":"Sniper","rs":"inferred","ktpr":1.068,"m":7,"h":14,"k":350,"d":295,"kd":1.186,"kph":25.0,"fl":44,"fph":3.14,"as":15,"dm":54379,"hs":38,"hits":409,"hsh":37,"caps":43,"cb":5,"obj":61,"st":8,"nk":0,"gk":347,"pr":425,"hb":{"Left arm":[257,26810],"Stomach":[146,19086],"Right arm":[127,13288],"Generic":[104,3127],"Chest":[88,11885],"Head":[78,24436],"Left leg":[65,7149],"Right leg":[48,4786]},"cl":{"Springfield":187,"Scharf (K98 scoped)":173,"Tommy (Thompson)":19,"STG (MP44)":1}},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.064,"m":5,"h":10,"k":265,"d":231,"kd":1.147,"kph":26.5,"fl":26,"fph":2.6,"as":30,"dm":39646,"hs":28,"hits":373,"hsh":28,"caps":24,"cb":2,"obj":36,"st":11,"nk":35,"gk":206,"pr":298,"hb":{"Generic":[287,21624],"Left arm":[254,24024],"Right arm":[154,14635],"Stomach":[98,12557],"Chest":[72,8534],"Head":[70,18104],"Left leg":[58,5746],"Right leg":[48,4220]},"cl":{"K98":143,"Garand":138}},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":1.052,"m":6,"h":11,"k":253,"d":231,"kd":1.095,"kph":23.0,"fl":59,"fph":5.36,"as":66,"dm":37550,"hs":32,"hits":546,"hsh":33,"caps":56,"cb":6,"obj":64,"st":9,"nk":37,"gk":208,"pr":355,"hb":{"Left arm":[320,17075],"Generic":[243,19107],"Stomach":[178,13500],"Right arm":[149,8535],"Right leg":[133,7340],"Left leg":[127,6957],"Chest":[101,7753],"Head":[82,13703]},"cl":{"BAR":159,"STG (MP44)":98,"Unter (MP40)":38}},{"n":"[$] cory <3 liah,jkimbro,rdk","role":"Rifle","rs":"inferred","ktpr":1.051,"m":6,"h":12,"k":315,"d":317,"kd":0.994,"kph":26.25,"fl":57,"fph":4.75,"as":50,"dm":52210,"hs":29,"hits":451,"hsh":33,"caps":56,"cb":2,"obj":68,"st":9,"nk":26,"gk":287,"pr":400,"hb":{"Left arm":[236,23535],"Generic":[217,17138],"Stomach":[148,18133],"Right arm":[136,12715],"Right leg":[92,8786],"Head":[88,22542],"Chest":[71,8585],"Left leg":[65,6785]},"cl":{"K98":203,"Garand":174}},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":1.048,"m":6,"h":12,"k":322,"d":348,"kd":0.925,"kph":26.83,"fl":64,"fph":5.33,"as":53,"dm":44483,"hs":45,"hits":706,"hsh":51,"caps":61,"cb":7,"obj":66,"st":6,"nk":46,"gk":267,"pr":432,"hb":{"Left arm":[466,22704],"Generic":[249,18607],"Stomach":[186,12124],"Right arm":[178,8721],"Left leg":[142,7057],"Right leg":[141,7330],"Head":[125,19444],"Chest":[103,6717]},"cl":{"BAR":201,"STG (MP44)":177,"Unter (MP40)":27}},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":1.042,"m":6,"h":12,"k":289,"d":238,"kd":1.214,"kph":24.08,"fl":28,"fph":2.33,"as":25,"dm":46665,"hs":39,"hits":383,"hsh":49,"caps":28,"cb":0,"obj":50,"st":6,"nk":0,"gk":292,"pr":338,"hb":{"Left arm":[261,23753],"Right arm":[136,12323],"Stomach":[120,14122],"Head":[101,24600],"Chest":[93,9592],"Right leg":[61,5545],"Generic":[45,746],"Left leg":[43,3861]},"cl":{"Scharf (K98 scoped)":145,"Springfield":143}},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":1.041,"m":7,"h":13,"k":304,"d":267,"kd":1.139,"kph":23.38,"fl":52,"fph":4.0,"as":62,"dm":56582,"hs":47,"hits":593,"hsh":61,"caps":52,"cb":5,"obj":72,"st":8,"nk":38,"gk":293,"pr":392,"hb":{"Left arm":[358,27389],"Generic":[271,18135],"Right arm":[168,12823],"Stomach":[139,15024],"Head":[119,26995],"Chest":[79,7714],"Left leg":[55,4882],"Right leg":[44,3441]},"cl":{"Garand":152,"Stoss (K43)":147,"Unter (MP40)":23}},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":1.02,"m":6,"h":11,"k":262,"d":238,"kd":1.101,"kph":23.82,"fl":39,"fph":3.55,"as":50,"dm":46391,"hs":28,"hits":430,"hsh":32,"caps":38,"cb":1,"obj":52,"st":10,"nk":64,"gk":200,"pr":334,"hb":{"Generic":[360,29791],"Left arm":[247,22060],"Right arm":[121,11059],"Stomach":[101,12441],"Head":[79,21395],"Chest":[74,8730],"Left leg":[55,4885],"Right leg":[43,4367]},"cl":{"Garand":171,"K98":75,"Stoss (K43)":49}},{"n":"****JTM   1337$k337","role":"Heavy","rs":"inferred","ktpr":1.017,"m":5,"h":10,"k":234,"d":202,"kd":1.158,"kph":23.4,"fl":28,"fph":2.8,"as":43,"dm":24634,"hs":47,"hits":344,"hsh":36,"caps":21,"cb":1,"obj":28,"st":7,"nk":18,"gk":141,"pr":307,"hb":{"Left arm":[368,18718],"Generic":[233,16707],"Right arm":[161,9161],"Stomach":[146,10357],"Head":[121,18600],"Chest":[102,6953],"Right leg":[89,5191],"Left leg":[80,4724]},"cl":{"BAR":119,"STG (MP44)":61,"Unter (MP40)":52}},{"n":"b.   o[bb]y","role":"Rifle","rs":"inferred","ktpr":1.003,"m":2,"h":4,"k":113,"d":136,"kd":0.831,"kph":28.25,"fl":17,"fph":4.25,"as":12,"dm":19305,"hs":19,"hits":167,"hsh":23,"caps":17,"cb":0,"obj":25,"st":4,"nk":2,"gk":111,"pr":158,"hb":{"Left arm":[210,21658],"Right arm":[99,9094],"Stomach":[83,9952],"Generic":[80,6022],"Head":[64,16430],"Chest":[64,6954],"Right leg":[40,3788],"Left leg":[34,3004]},"cl":{"K98":72,"Garand":72,"Tommy (Thompson)":2}},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":0.993,"m":5,"h":10,"k":253,"d":274,"kd":0.923,"kph":25.3,"fl":44,"fph":4.4,"as":33,"dm":33068,"hs":41,"hits":365,"hsh":40,"caps":36,"cb":1,"obj":48,"st":7,"nk":24,"gk":181,"pr":366,"hb":{"Left arm":[258,19196],"Generic":[187,14140],"Stomach":[132,14024],"Right arm":[131,10626],"Head":[91,19009],"Chest":[82,7800],"Left leg":[60,4933],"Right leg":[46,3444]},"cl":{"Garand":79,"Stoss (K43)":40,"K98":39,"BAR":38,"Unter (MP40)":32,"STG (MP44)":29,"Springfield":26,"Scharf (K98 scoped)":21,"Tommy (Thompson)":18}},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":0.978,"m":2,"h":4,"k":103,"d":94,"kd":1.096,"kph":25.75,"fl":3,"fph":0.75,"as":5,"dm":15775,"hs":12,"hits":119,"hsh":12,"caps":3,"cb":0,"obj":6,"st":9,"nk":0,"gk":101,"pr":114,"hb":{"Left arm":[173,17343],"Right arm":[100,8888],"Stomach":[81,9281],"Head":[44,12993],"Chest":[33,4283],"Right leg":[32,2961],"Generic":[24,389],"Left leg":[19,2138]},"cl":{"Springfield":59,"Scharf (K98 scoped)":52,"Unter (MP40)":1}},{"n":"dicE[: :]Gorilla[bc] ＃6-32","role":"Rifle","rs":"inferred","ktpr":0.973,"m":7,"h":14,"k":330,"d":337,"kd":0.979,"kph":23.57,"fl":55,"fph":3.93,"as":46,"dm":51722,"hs":22,"hits":506,"hsh":27,"caps":51,"cb":2,"obj":65,"st":6,"nk":56,"gk":265,"pr":468,"hb":{"Generic":[360,26615],"Left arm":[261,23815],"Right arm":[149,13527],"Stomach":[143,18197],"Chest":[98,10356],"Head":[68,15602],"Left leg":[61,5552],"Right leg":[35,3546]},"cl":{"Garand":216,"K98":193,"Springfield":11}},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.968,"m":6,"h":12,"k":269,"d":260,"kd":1.035,"kph":22.42,"fl":44,"fph":3.67,"as":47,"dm":37134,"hs":26,"hits":521,"hsh":30,"caps":39,"cb":5,"obj":39,"st":8,"nk":23,"gk":230,"pr":341,"hb":{"Left arm":[329,19716],"Generic":[193,11590],"Stomach":[171,13082],"Right arm":[141,8482],"Left leg":[103,6162],"Right leg":[94,6219],"Head":[79,12835],"Chest":[78,6179]},"cl":{"BAR":152,"STG (MP44)":106,"Unter (MP40)":60}},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":0.956,"m":7,"h":14,"k":303,"d":285,"kd":1.063,"kph":21.64,"fl":46,"fph":3.29,"as":61,"dm":44406,"hs":64,"hits":706,"hsh":72,"caps":45,"cb":7,"obj":50,"st":6,"nk":34,"gk":264,"pr":420,"hb":{"Left arm":[424,19619],"Generic":[231,15878],"Right arm":[196,9680],"Stomach":[180,11530],"Head":[140,19474],"Right leg":[116,5755],"Left leg":[110,5925],"Chest":[100,6193]},"cl":{"BAR":187,"Unter (MP40)":169}},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":0.954,"m":7,"h":13,"k":314,"d":324,"kd":0.969,"kph":24.15,"fl":39,"fph":3.0,"as":57,"dm":50320,"hs":45,"hits":666,"hsh":58,"caps":37,"cb":2,"obj":40,"st":6,"nk":38,"gk":285,"pr":429,"hb":{"Left arm":[451,25169],"Generic":[227,17663],"Right arm":[215,12346],"Stomach":[198,16252],"Head":[135,20742],"Chest":[121,8845],"Left leg":[120,6963],"Right leg":[106,6405]},"cl":{"STG (MP44)":214,"BAR":186}},{"n":"NoSo ! AlleyWayHandies","role":"Heavy","rs":"inferred","ktpr":0.945,"m":6,"h":12,"k":271,"d":267,"kd":1.015,"kph":22.58,"fl":36,"fph":3.0,"as":53,"dm":40614,"hs":39,"hits":561,"hsh":41,"caps":36,"cb":7,"obj":40,"st":6,"nk":42,"gk":233,"pr":336,"hb":{"Left arm":[347,18758],"Generic":[210,14578],"Right arm":[156,8840],"Stomach":[145,11919],"Head":[120,18756],"Right leg":[98,5432],"Left leg":[95,5403],"Chest":[92,6368]},"cl":{"BAR":150,"STG (MP44)":123,"Unter (MP40)":44}},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":0.935,"m":6,"h":12,"k":273,"d":258,"kd":1.058,"kph":22.75,"fl":22,"fph":1.83,"as":15,"dm":37015,"hs":26,"hits":290,"hsh":23,"caps":18,"cb":2,"obj":26,"st":7,"nk":0,"gk":235,"pr":336,"hb":{"Left arm":[240,26571],"Stomach":[131,16545],"Right arm":[123,12708],"Generic":[71,966],"Chest":[67,9145],"Head":[62,19668],"Right leg":[50,4377],"Left leg":[45,4109]},"cl":{"Scharf (K98 scoped)":155,"Springfield":152}},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.931,"m":6,"h":12,"k":268,"d":271,"kd":0.989,"kph":22.33,"fl":37,"fph":3.08,"as":54,"dm":43561,"hs":23,"hits":400,"hsh":23,"caps":37,"cb":3,"obj":52,"st":7,"nk":47,"gk":211,"pr":363,"hb":{"Generic":[377,23759],"Left arm":[228,21020],"Stomach":[113,13855],"Right arm":[108,9620],"Head":[80,22005],"Chest":[70,8234],"Left leg":[64,6021],"Right leg":[39,4137]},"cl":{"K98":170,"Garand":162}},{"n":"****JTM   bonchon","role":"Sniper","rs":"inferred","ktpr":0.91,"m":5,"h":10,"k":197,"d":180,"kd":1.094,"kph":19.7,"fl":24,"fph":2.4,"as":7,"dm":27625,"hs":14,"hits":225,"hsh":19,"caps":21,"cb":0,"obj":35,"st":8,"nk":0,"gk":190,"pr":233,"hb":{"Left arm":[171,18393],"Stomach":[116,16497],"Right arm":[99,10562],"Generic":[70,1086],"Chest":[57,6883],"Right leg":[56,5766],"Left leg":[47,4648],"Head":[47,11002]},"cl":{"Scharf (K98 scoped)":109,"Springfield":98}},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":0.905,"m":6,"h":12,"k":305,"d":387,"kd":0.788,"kph":25.42,"fl":39,"fph":3.25,"as":48,"dm":50557,"hs":43,"hits":498,"hsh":51,"caps":38,"cb":2,"obj":45,"st":5,"nk":46,"gk":258,"pr":461,"hb":{"Generic":[332,21133],"Left arm":[288,27081],"Right arm":[129,11273],"Stomach":[108,12737],"Head":[101,21911],"Chest":[80,8908],"Left leg":[63,6114],"Right leg":[58,5010]},"cl":{"K98":224,"Garand":223}},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.888,"m":7,"h":13,"k":267,"d":267,"kd":1.0,"kph":20.54,"fl":33,"fph":2.54,"as":36,"dm":44816,"hs":27,"hits":439,"hsh":32,"caps":33,"cb":4,"obj":47,"st":7,"nk":33,"gk":249,"pr":339,"hb":{"Left arm":[247,20681],"Generic":[244,15355],"Stomach":[147,18292],"Right arm":[107,9220],"Head":[73,15971],"Right leg":[70,6940],"Chest":[68,6908],"Left leg":[58,5699]},"cl":{"K98":170,"Garand":158}},{"n":"****JTM   sp00kyskull <3 s0v","role":"3rd","rs":"inferred","ktpr":0.887,"m":5,"h":10,"k":191,"d":190,"kd":1.005,"kph":19.1,"fl":34,"fph":3.4,"as":27,"dm":23857,"hs":25,"hits":248,"hsh":18,"caps":25,"cb":0,"obj":35,"st":6,"nk":33,"gk":108,"pr":240,"hb":{"Generic":[250,17831],"Left arm":[209,16277],"Right arm":[107,7441],"Stomach":[88,9235],"Head":[75,17664],"Chest":[57,5675],"Left leg":[42,3141],"Right leg":[36,3012]},"cl":{"Garand":107,"Stoss (K43)":98,"Unter (MP40)":9,"STG (MP44)":8}},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":0.877,"m":6,"h":12,"k":240,"d":253,"kd":0.949,"kph":20.0,"fl":40,"fph":3.33,"as":38,"dm":38950,"hs":25,"hits":393,"hsh":26,"caps":39,"cb":9,"obj":63,"st":8,"nk":43,"gk":192,"pr":367,"hb":{"Generic":[278,21655],"Left arm":[214,18634],"Stomach":[108,13372],"Right arm":[105,8770],"Chest":[76,7425],"Head":[64,15663],"Left leg":[55,4715],"Right leg":[52,4645]},"cl":{"Garand":145,"K98":133,"Stoss (K43)":11,"Unter (MP40)":11}},{"n":"[bb]3SidedQuarter","role":"Sniper","rs":"inferred","ktpr":0.869,"m":4,"h":8,"k":164,"d":189,"kd":0.868,"kph":20.5,"fl":32,"fph":4.0,"as":4,"dm":17477,"hs":10,"hits":151,"hsh":9,"caps":27,"cb":0,"obj":33,"st":5,"nk":1,"gk":122,"pr":264,"hb":{"Left arm":[172,17182],"Stomach":[89,11347],"Right arm":[79,6990],"Generic":[64,1143],"Chest":[43,5261],"Right leg":[42,3971],"Left leg":[37,3890],"Head":[35,9755]},"cl":{"Springfield":114,"Scharf (K98 scoped)":114,"Tommy (Thompson)":2,"Unter (MP40)":1}},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.867,"m":7,"h":13,"k":261,"d":271,"kd":0.963,"kph":20.08,"fl":35,"fph":2.69,"as":55,"dm":41971,"hs":52,"hits":549,"hsh":59,"caps":33,"cb":2,"obj":47,"st":7,"nk":37,"gk":234,"pr":443,"hb":{"Left arm":[361,19294],"Generic":[206,15857],"Right arm":[168,9026],"Head":[151,26840],"Stomach":[133,9367],"Right leg":[113,6599],"Left leg":[84,4531],"Chest":[76,5578]},"cl":{"STG (MP44)":197,"BAR":150,"Scharf (K98 scoped)":4}},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.861,"m":6,"h":12,"k":233,"d":319,"kd":0.73,"kph":19.42,"fl":80,"fph":6.67,"as":42,"dm":32178,"hs":20,"hits":331,"hsh":22,"caps":65,"cb":1,"obj":75,"st":6,"nk":23,"gk":159,"pr":387,"hb":{"Generic":[276,20521],"Left arm":[226,20087],"Chest":[84,8709],"Right arm":[80,6480],"Stomach":[78,9237],"Head":[65,13548],"Right leg":[62,5330],"Left leg":[52,4388]},"cl":{"Stoss (K43)":192,"Garand":185}},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.858,"m":6,"h":12,"k":249,"d":362,"kd":0.688,"kph":20.75,"fl":76,"fph":6.33,"as":49,"dm":38327,"hs":51,"hits":561,"hsh":69,"caps":73,"cb":3,"obj":78,"st":8,"nk":20,"gk":229,"pr":446,"hb":{"Left arm":[290,15377],"Generic":[217,12702],"Right arm":[131,6698],"Stomach":[126,9147],"Head":[125,18062],"Left leg":[104,6163],"Right leg":[96,5281],"Chest":[82,5057]},"cl":{"STG (MP44)":227,"BAR":194,"Stoss (K43)":9}},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.845,"m":2,"h":4,"k":78,"d":88,"kd":0.886,"kph":19.5,"fl":14,"fph":3.5,"as":6,"dm":9981,"hs":7,"hits":79,"hsh":6,"caps":13,"cb":0,"obj":19,"st":5,"nk":9,"gk":52,"pr":102,"hb":{"Generic":[154,10453],"Left arm":[120,11708],"Right arm":[74,6716],"Stomach":[54,6910],"Chest":[42,4286],"Head":[33,10350],"Left leg":[31,2699],"Right leg":[27,2347]},"cl":{"K98":53,"Garand":49}},{"n":"[bb] reppoĦ","role":"Heavy","rs":"roster","ktpr":0.841,"m":4,"h":8,"k":162,"d":215,"kd":0.753,"kph":20.25,"fl":40,"fph":5.0,"as":27,"dm":17789,"hs":24,"hits":284,"hsh":18,"caps":29,"cb":1,"obj":38,"st":6,"nk":20,"gk":101,"pr":282,"hb":{"Left arm":[295,14022],"Generic":[190,11793],"Right arm":[135,6879],"Stomach":[129,9317],"Head":[94,15574],"Chest":[86,5478],"Right leg":[85,4508],"Left leg":[70,3233]},"cl":{"BAR":129,"Unter (MP40)":78,"STG (MP44)":39}},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":0.834,"m":6,"h":12,"k":237,"d":380,"kd":0.624,"kph":19.75,"fl":86,"fph":7.17,"as":47,"dm":35871,"hs":55,"hits":590,"hsh":59,"caps":84,"cb":3,"obj":98,"st":8,"nk":24,"gk":210,"pr":488,"hb":{"Left arm":[394,18365],"Generic":[215,13547],"Right arm":[181,9766],"Head":[159,20758],"Stomach":[135,9581],"Chest":[102,6400],"Left leg":[75,3646],"Right leg":[72,4068]},"cl":{"Unter (MP40)":174,"Tommy (Thompson)":118,"Garand":84,"Stoss (K43)":64}},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.831,"m":7,"h":14,"k":248,"d":333,"kd":0.745,"kph":17.71,"fl":91,"fph":6.5,"as":51,"dm":44302,"hs":24,"hits":438,"hsh":27,"caps":85,"cb":3,"obj":105,"st":7,"nk":55,"gk":194,"pr":457,"hb":{"Generic":[399,26945],"Left arm":[197,17108],"Right arm":[128,10022],"Stomach":[95,10458],"Head":[68,17023],"Chest":[68,7102],"Right leg":[42,3451],"Left leg":[40,3040]},"cl":{"Garand":215,"Stoss (K43)":189,"Carbine":7,"Tommy (Thompson)":1}},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.829,"m":6,"h":12,"k":269,"d":363,"kd":0.741,"kph":22.42,"fl":39,"fph":3.25,"as":10,"dm":41755,"hs":22,"hits":305,"hsh":25,"caps":36,"cb":0,"obj":53,"st":7,"nk":2,"gk":267,"pr":465,"hb":{"Left arm":[222,25152],"Right arm":[105,11822],"Stomach":[101,13314],"Head":[70,23162],"Chest":[56,7602],"Left leg":[44,5277],"Right leg":[43,4572],"Generic":[29,508]},"cl":{"Springfield":212,"Scharf (K98 scoped)":206,"Stoss (K43)":11}},{"n":"ßℓυ†н | p12 ＃7-33","role":"3rd","rs":"inferred","ktpr":0.827,"m":6,"h":12,"k":251,"d":315,"kd":0.797,"kph":20.92,"fl":40,"fph":3.33,"as":67,"dm":43972,"hs":52,"hits":507,"hsh":60,"caps":40,"cb":3,"obj":58,"st":8,"nk":27,"gk":226,"pr":395,"hb":{"Left arm":[264,20659],"Generic":[247,18306],"Right arm":[128,9447],"Stomach":[120,12189],"Head":[86,16602],"Left leg":[78,6058],"Chest":[71,6546],"Right leg":[65,5219]},"cl":{"Garand":162,"Stoss (K43)":89,"Unter (MP40)":57,"K98":32,"BAR":28}},{"n":"[NATO] Ho0liii","role":"Sniper","rs":"inferred","ktpr":0.798,"m":7,"h":13,"k":230,"d":269,"kd":0.855,"kph":17.69,"fl":46,"fph":3.54,"as":11,"dm":35588,"hs":31,"hits":295,"hsh":26,"caps":45,"cb":0,"obj":70,"st":6,"nk":1,"gk":231,"pr":380,"hb":{"Left arm":[222,22211],"Stomach":[132,16662],"Right arm":[127,11278],"Head":[83,20407],"Chest":[70,8000],"Right leg":[68,6169],"Left leg":[59,5164],"Generic":[52,1364]},"cl":{"Scharf (K98 scoped)":154,"Springfield":139,"Unter (MP40)":26,"Tommy (Thompson)":8,"Stoss (K43)":6,"K98":2}},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.797,"m":6,"h":12,"k":251,"d":338,"kd":0.743,"kph":20.92,"fl":37,"fph":3.08,"as":55,"dm":37590,"hs":34,"hits":502,"hsh":34,"caps":36,"cb":3,"obj":46,"st":5,"nk":25,"gk":218,"pr":461,"hb":{"Left arm":[344,19229],"Generic":[194,14693],"Right arm":[173,10103],"Stomach":[139,10524],"Chest":[108,7711],"Head":[96,17683],"Right leg":[84,4781],"Left leg":[77,4415]},"cl":{"BAR":171,"STG (MP44)":161,"Garand":30,"Stoss (K43)":14,"Unter (MP40)":8,"Carbine":1}},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.795,"m":6,"h":12,"k":246,"d":365,"kd":0.674,"kph":20.5,"fl":53,"fph":4.42,"as":56,"dm":37796,"hs":60,"hits":544,"hsh":63,"caps":49,"cb":0,"obj":53,"st":5,"nk":19,"gk":227,"pr":442,"hb":{"Left arm":[376,18341],"Generic":[240,13293],"Right arm":[161,7789],"Head":[130,21145],"Stomach":[114,7543],"Chest":[96,6525],"Left leg":[51,2543],"Right leg":[50,2736]},"cl":{"STG (MP44)":216,"BAR":196}},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.705,"m":2,"h":4,"k":68,"d":101,"kd":0.673,"kph":17.0,"fl":14,"fph":3.5,"as":19,"dm":11668,"hs":6,"hits":122,"hsh":6,"caps":12,"cb":0,"obj":18,"st":4,"nk":12,"gk":54,"pr":150,"hb":{"Generic":[209,15392],"Left arm":[128,8175],"Stomach":[72,6262],"Right arm":[58,3770],"Left leg":[49,3002],"Chest":[44,3470],"Right leg":[38,2114],"Head":[35,7793]},"cl":{"Stoss (K43)":58,"Garand":55,"Tommy (Thompson)":1}},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.698,"m":2,"h":4,"k":80,"d":132,"kd":0.606,"kph":20.0,"fl":9,"fph":2.25,"as":12,"dm":12739,"hs":9,"hits":114,"hsh":9,"caps":7,"cb":0,"obj":14,"st":4,"nk":2,"gk":74,"pr":165,"hb":{"Left arm":[137,13992],"Generic":[110,7044],"Right arm":[67,6725],"Stomach":[59,7908],"Head":[45,13241],"Chest":[44,5272],"Left leg":[35,3513],"Right leg":[28,2490]},"cl":{"K98":74,"Garand":73}},{"n":"uR[TM]* Jee ＃22e＃minou","role":"Heavy","rs":"inferred","ktpr":0.696,"m":2,"h":4,"k":76,"d":134,"kd":0.567,"kph":19.0,"fl":14,"fph":3.5,"as":18,"dm":11542,"hs":16,"hits":159,"hsh":16,"caps":14,"cb":1,"obj":14,"st":4,"nk":9,"gk":67,"pr":146,"hb":{"Left arm":[233,10492],"Stomach":[116,8251],"Generic":[91,6317],"Right arm":[83,5073],"Right leg":[73,3545],"Left leg":[72,3554],"Head":[50,7469],"Chest":[45,2777]},"cl":{"STG (MP44)":74,"BAR":72}},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.636,"m":2,"h":4,"k":63,"d":114,"kd":0.553,"kph":15.75,"fl":15,"fph":3.75,"as":11,"dm":7765,"hs":6,"hits":69,"hsh":3,"caps":8,"cb":1,"obj":9,"st":3,"nk":3,"gk":39,"pr":135,"hb":{"Left arm":[162,15773],"Generic":[106,6455],"Stomach":[66,8517],"Right arm":[64,5870],"Chest":[52,7048],"Head":[45,11527],"Left leg":[31,3086],"Right leg":[19,1869]},"cl":{"Garand":73,"K98":62}}],"maps":{"dod_railroad2_s9a":[{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.915,"h":2,"k":83,"d":37,"kd":2.243,"fl":12,"as":4,"dm":13962},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.627,"h":2,"k":70,"d":41,"kd":1.707,"fl":17,"as":11,"dm":11981},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":1.508,"h":2,"k":61,"d":31,"kd":1.968,"fl":6,"as":4,"dm":9544},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.493,"h":4,"k":125,"d":71,"kd":1.761,"fl":21,"as":11,"dm":14491},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":1.325,"h":2,"k":60,"d":39,"kd":1.538,"fl":7,"as":6,"dm":10254},{"n":"[$] cory? <3 HVK","role":"Rifle","rs":"inferred","ktpr":1.253,"h":4,"k":119,"d":89,"kd":1.337,"fl":17,"as":21,"dm":21275},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.244,"h":4,"k":132,"d":109,"kd":1.211,"fl":15,"as":11,"dm":20742},{"n":"****JTM   1337$k337","role":"Heavy","rs":"inferred","ktpr":1.223,"h":4,"k":98,"d":63,"kd":1.556,"fl":13,"as":18,"dm":12059},{"n":"ßℓυ†н | SilverPlayer","role":"Rifle","rs":"inferred","ktpr":1.21,"h":2,"k":59,"d":49,"kd":1.204,"fl":10,"as":5,"dm":10305},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.18,"h":4,"k":115,"d":86,"kd":1.337,"fl":9,"as":8,"dm":15155},{"n":"b.   o[bb]y","role":"Rifle","rs":"inferred","ktpr":1.153,"h":2,"k":66,"d":69,"kd":0.957,"fl":9,"as":6,"dm":11710},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.153,"h":4,"k":102,"d":83,"kd":1.229,"fl":21,"as":18,"dm":10609},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":1.147,"h":4,"k":92,"d":63,"kd":1.46,"fl":12,"as":9,"dm":9558},{"n":"iH.monday","role":"3rd","rs":"inferred","ktpr":1.118,"h":2,"k":43,"d":33,"kd":1.303,"fl":11,"as":5,"dm":6018},{"n":"dicE[: :]stealthlol","role":"Sniper","rs":"inferred","ktpr":1.1,"h":4,"k":109,"d":93,"kd":1.172,"fl":12,"as":3,"dm":15099},{"n":"ßℓυ†н | p12 ＃7-33","role":"3rd","rs":"inferred","ktpr":1.092,"h":2,"k":54,"d":57,"kd":0.947,"fl":13,"as":12,"dm":8478},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":1.058,"h":2,"k":51,"d":40,"kd":1.275,"fl":2,"as":2,"dm":8516},{"n":"b.   e p y o n","role":"3rd","rs":"inferred","ktpr":1.022,"h":2,"k":45,"d":46,"kd":0.978,"fl":13,"as":4,"dm":6568},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":1.017,"h":2,"k":56,"d":59,"kd":0.949,"fl":6,"as":1,"dm":9127},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":1.012,"h":2,"k":47,"d":44,"kd":1.068,"fl":8,"as":6,"dm":8080},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":1.011,"h":2,"k":46,"d":51,"kd":0.902,"fl":14,"as":7,"dm":7917},{"n":"iH.kanguhhh?! ＃bigsalsa","role":"Heavy","rs":"inferred","ktpr":0.997,"h":2,"k":44,"d":39,"kd":1.128,"fl":7,"as":12,"dm":6906},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.986,"h":4,"k":102,"d":96,"kd":1.062,"fl":7,"as":4,"dm":16836},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":0.984,"h":4,"k":95,"d":90,"kd":1.056,"fl":12,"as":6,"dm":14543},{"n":"dicE[: :]Gorilla[bc] ＃6-32","role":"Rifle","rs":"inferred","ktpr":0.968,"h":4,"k":97,"d":102,"kd":0.951,"fl":15,"as":8,"dm":14034},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":0.966,"h":4,"k":85,"d":84,"kd":1.012,"fl":19,"as":9,"dm":10289},{"n":"****JTM   sp00kyskull <3 s0v","role":"3rd","rs":"inferred","ktpr":0.966,"h":4,"k":73,"d":64,"kd":1.141,"fl":19,"as":9,"dm":10485},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":0.926,"h":2,"k":49,"d":57,"kd":0.86,"fl":7,"as":5,"dm":5894},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.915,"h":4,"k":80,"d":97,"kd":0.825,"fl":27,"as":14,"dm":8644},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.911,"h":4,"k":74,"d":94,"kd":0.787,"fl":33,"as":12,"dm":11760},{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":0.906,"h":2,"k":40,"d":47,"kd":0.851,"fl":12,"as":5,"dm":5518},{"n":"****JTM   bonchon","role":"Sniper","rs":"inferred","ktpr":0.897,"h":4,"k":74,"d":64,"kd":1.156,"fl":7,"as":2,"dm":10439},{"n":"[bb]3SidedQuarter","role":"Sniper","rs":"inferred","ktpr":0.877,"h":2,"k":44,"d":48,"kd":0.917,"fl":5,"as":0,"dm":2586},{"n":"[$] bsooodle","role":"3rd","rs":"inferred","ktpr":0.863,"h":4,"k":74,"d":107,"kd":0.692,"fl":32,"as":13,"dm":11479},{"n":"[$] nomistizzle <3 icyhot","role":"Rifle","rs":"inferred","ktpr":0.852,"h":4,"k":94,"d":123,"kd":0.764,"fl":12,"as":11,"dm":15025},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.832,"h":4,"k":84,"d":120,"kd":0.7,"fl":20,"as":20,"dm":12754},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.786,"h":4,"k":69,"d":86,"kd":0.802,"fl":17,"as":10,"dm":10873},{"n":"NoSo ! Where's Jared","role":"Heavy","rs":"inferred","ktpr":0.778,"h":4,"k":73,"d":83,"kd":0.88,"fl":8,"as":16,"dm":11259},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.767,"h":2,"k":38,"d":52,"kd":0.731,"fl":7,"as":5,"dm":6173},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.766,"h":4,"k":75,"d":92,"kd":0.815,"fl":9,"as":12,"dm":13278},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":0.765,"h":2,"k":40,"d":56,"kd":0.714,"fl":6,"as":6,"dm":1926},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":0.73,"h":2,"k":39,"d":50,"kd":0.78,"fl":2,"as":2,"dm":2823},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":0.719,"h":4,"k":73,"d":96,"kd":0.76,"fl":7,"as":5,"dm":9920},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":0.706,"h":2,"k":41,"d":63,"kd":0.651,"fl":3,"as":3,"dm":2677},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.697,"h":4,"k":71,"d":117,"kd":0.607,"fl":15,"as":18,"dm":11507},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.692,"h":2,"k":33,"d":52,"kd":0.635,"fl":8,"as":9,"dm":5424},{"n":"[bb] Polak","role":"Rifle","rs":"inferred","ktpr":0.586,"h":2,"k":28,"d":60,"kd":0.467,"fl":9,"as":3,"dm":4611},{"n":"[bb] reppoĦ","role":"Heavy","rs":"roster","ktpr":0.553,"h":2,"k":26,"d":56,"kd":0.464,"fl":8,"as":2,"dm":1842}],"dod_armory_b6":[{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":1.628,"h":4,"k":153,"d":80,"kd":1.913,"fl":12,"as":13,"dm":24391},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.592,"h":2,"k":76,"d":42,"kd":1.81,"fl":7,"as":11,"dm":11308},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":1.367,"h":4,"k":118,"d":70,"kd":1.686,"fl":12,"as":21,"dm":17053},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.335,"h":2,"k":66,"d":46,"kd":1.435,"fl":7,"as":10,"dm":9294},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.285,"h":2,"k":68,"d":52,"kd":1.308,"fl":6,"as":11,"dm":10095},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":1.255,"h":4,"k":109,"d":76,"kd":1.434,"fl":18,"as":25,"dm":18590},{"n":"NoSo ! AlleyWayHandies","role":"Heavy","rs":"inferred","ktpr":1.223,"h":4,"k":111,"d":81,"kd":1.37,"fl":16,"as":18,"dm":16039},{"n":"iH.kanguhhh?! ＃bigsalsa","role":"Heavy","rs":"inferred","ktpr":1.21,"h":2,"k":52,"d":36,"kd":1.444,"fl":7,"as":19,"dm":7935},{"n":"[bb] Polak ＃Joenzing","role":"Rifle","rs":"inferred","ktpr":1.195,"h":2,"k":55,"d":39,"kd":1.41,"fl":5,"as":2,"dm":7344},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":1.173,"h":4,"k":104,"d":70,"kd":1.486,"fl":6,"as":8,"dm":15929},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":1.123,"h":6,"k":162,"d":122,"kd":1.328,"fl":9,"as":11,"dm":25706},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.092,"h":2,"k":48,"d":39,"kd":1.231,"fl":8,"as":10,"dm":7724},{"n":"iH.monday","role":"3rd","rs":"inferred","ktpr":1.086,"h":2,"k":51,"d":42,"kd":1.214,"fl":6,"as":10,"dm":6739},{"n":"uR[TM]* Kev:>^1.de","role":"Heavy","rs":"inferred","ktpr":1.077,"h":2,"k":56,"d":60,"kd":0.933,"fl":11,"as":6,"dm":8747},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":1.059,"h":2,"k":49,"d":40,"kd":1.225,"fl":5,"as":11,"dm":7841},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":1.038,"h":6,"k":158,"d":171,"kd":0.924,"fl":32,"as":26,"dm":20898},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":1.037,"h":6,"k":161,"d":148,"kd":1.088,"fl":14,"as":28,"dm":24330},{"n":"dicE[: :]stealthlol","role":"Sniper","rs":"inferred","ktpr":1.029,"h":2,"k":52,"d":45,"kd":1.156,"fl":3,"as":2,"dm":9168},{"n":"dicE[: :]Gorilla[bc] ＃6-32","role":"Rifle","rs":"inferred","ktpr":1.028,"h":2,"k":52,"d":49,"kd":1.061,"fl":6,"as":11,"dm":9657},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":1.022,"h":2,"k":55,"d":56,"kd":0.982,"fl":6,"as":7,"dm":8116},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.017,"h":2,"k":50,"d":58,"kd":0.862,"fl":13,"as":12,"dm":7714},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":0.967,"h":2,"k":47,"d":42,"kd":1.119,"fl":3,"as":6,"dm":7094},{"n":"[bb]3SidedQuarter","role":"Sniper","rs":"inferred","ktpr":0.921,"h":2,"k":44,"d":42,"kd":1.048,"fl":4,"as":1,"dm":6076},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":0.865,"h":2,"k":36,"d":34,"kd":1.059,"fl":5,"as":4,"dm":8423},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.845,"h":4,"k":80,"d":94,"kd":0.851,"fl":15,"as":18,"dm":12545},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.836,"h":2,"k":46,"d":59,"kd":0.78,"fl":5,"as":1,"dm":7143},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":0.81,"h":6,"k":120,"d":135,"kd":0.889,"fl":11,"as":13,"dm":18699},{"n":"[$] cory <3 liah,jkimbro,rdk","role":"Rifle","rs":"inferred","ktpr":0.807,"h":2,"k":42,"d":57,"kd":0.737,"fl":7,"as":9,"dm":7393},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":0.795,"h":2,"k":47,"d":62,"kd":0.758,"fl":2,"as":11,"dm":7242},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.779,"h":6,"k":127,"d":172,"kd":0.738,"fl":14,"as":26,"dm":18065},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.771,"h":2,"k":39,"d":50,"kd":0.78,"fl":5,"as":7,"dm":5982},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":0.741,"h":2,"k":38,"d":46,"kd":0.826,"fl":2,"as":2,"dm":6024},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.733,"h":2,"k":41,"d":63,"kd":0.651,"fl":5,"as":3,"dm":5987},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":0.729,"h":2,"k":41,"d":61,"kd":0.672,"fl":4,"as":12,"dm":7968},{"n":"ßℓυ†н | p12 ＃7-33","role":"3rd","rs":"inferred","ktpr":0.721,"h":6,"k":110,"d":156,"kd":0.705,"fl":16,"as":31,"dm":20050},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.701,"h":2,"k":35,"d":52,"kd":0.673,"fl":6,"as":6,"dm":6248},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":0.663,"h":2,"k":37,"d":61,"kd":0.607,"fl":4,"as":12,"dm":6197},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.627,"h":2,"k":34,"d":55,"kd":0.618,"fl":3,"as":4,"dm":5581},{"n":"[bb] reppoĦ＃respectfully","role":"Heavy","rs":"roster","ktpr":0.621,"h":2,"k":35,"d":57,"kd":0.614,"fl":2,"as":10,"dm":5269},{"n":"uR[TM]* Yjeeeeeeeeeee","role":"Heavy","rs":"inferred","ktpr":0.588,"h":2,"k":31,"d":62,"kd":0.5,"fl":6,"as":8,"dm":4213},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.52,"h":2,"k":27,"d":55,"kd":0.491,"fl":4,"as":6,"dm":5014},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.514,"h":2,"k":25,"d":51,"kd":0.49,"fl":5,"as":10,"dm":4942}],"dod_lennon5_b1":[{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.729,"h":2,"k":79,"d":46,"kd":1.717,"fl":18,"as":8,"dm":10926},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":1.677,"h":2,"k":84,"d":51,"kd":1.647,"fl":13,"as":11,"dm":13160},{"n":"[bb] bR0M ＃wetya","role":"3rd","rs":"roster","ktpr":1.551,"h":2,"k":68,"d":44,"kd":1.545,"fl":18,"as":13,"dm":11523},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.481,"h":2,"k":70,"d":44,"kd":1.591,"fl":10,"as":8,"dm":10692},{"n":"[bb] Polak <3 [$] [$] [$]","role":"Rifle","rs":"inferred","ktpr":1.452,"h":2,"k":62,"d":42,"kd":1.476,"fl":17,"as":8,"dm":9963},{"n":"iH.monday","role":"3rd","rs":"inferred","ktpr":1.357,"h":2,"k":50,"d":33,"kd":1.515,"fl":17,"as":4,"dm":8638},{"n":"[bb] reppoĦ＃tuckitin","role":"Heavy","rs":"roster","ktpr":1.309,"h":2,"k":58,"d":47,"kd":1.234,"fl":17,"as":12,"dm":8428},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":1.265,"h":2,"k":50,"d":35,"kd":1.429,"fl":13,"as":2,"dm":7512},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":1.245,"h":4,"k":121,"d":90,"kd":1.344,"fl":14,"as":21,"dm":21241},{"n":"dicE[: :]stealthlol","role":"Sniper","rs":"inferred","ktpr":1.235,"h":2,"k":54,"d":37,"kd":1.459,"fl":7,"as":0,"dm":7900},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.193,"h":2,"k":57,"d":46,"kd":1.239,"fl":9,"as":7,"dm":10505},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.185,"h":2,"k":58,"d":51,"kd":1.137,"fl":11,"as":8,"dm":8632},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":1.183,"h":2,"k":35,"d":22,"kd":1.591,"fl":12,"as":1,"dm":6313},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.155,"h":2,"k":51,"d":38,"kd":1.342,"fl":7,"as":11,"dm":10204},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":1.094,"h":2,"k":53,"d":47,"kd":1.128,"fl":8,"as":10,"dm":8541},{"n":"dicE[: :]Gorilla[bc] ＃6-32","role":"Rifle","rs":"inferred","ktpr":1.074,"h":2,"k":53,"d":49,"kd":1.082,"fl":8,"as":14,"dm":8060},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.019,"h":2,"k":49,"d":47,"kd":1.043,"fl":8,"as":9,"dm":6963},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":1.011,"h":2,"k":46,"d":39,"kd":1.179,"fl":5,"as":5,"dm":6860},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.009,"h":4,"k":94,"d":86,"kd":1.093,"fl":14,"as":20,"dm":16041},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":0.989,"h":4,"k":103,"d":116,"kd":0.888,"fl":18,"as":17,"dm":16154},{"n":"[$] cory <3 liah,jkimbro,rdk","role":"Rifle","rs":"inferred","ktpr":0.97,"h":2,"k":54,"d":61,"kd":0.885,"fl":6,"as":11,"dm":8148},{"n":"****JTM   mogers 4ky <3h","role":"3rd","rs":"inferred","ktpr":0.949,"h":2,"k":43,"d":44,"kd":0.977,"fl":9,"as":7,"dm":7348},{"n":"iH.kanguhhh?! ＃bigsalsa","role":"Heavy","rs":"inferred","ktpr":0.949,"h":2,"k":42,"d":42,"kd":1.0,"fl":9,"as":8,"dm":6990},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":0.942,"h":2,"k":43,"d":42,"kd":1.024,"fl":7,"as":15,"dm":6627},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.898,"h":4,"k":81,"d":90,"kd":0.9,"fl":19,"as":12,"dm":12184},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.881,"h":4,"k":87,"d":93,"kd":0.935,"fl":10,"as":10,"dm":14739},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":0.881,"h":2,"k":43,"d":71,"kd":0.606,"fl":16,"as":9,"dm":6090},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":0.865,"h":2,"k":43,"d":57,"kd":0.754,"fl":10,"as":5,"dm":6455},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.863,"h":2,"k":37,"d":65,"kd":0.569,"fl":20,"as":4,"dm":5508},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":0.843,"h":2,"k":43,"d":67,"kd":0.642,"fl":12,"as":9,"dm":6136},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":0.816,"h":2,"k":35,"d":43,"kd":0.814,"fl":10,"as":9,"dm":7772},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.809,"h":2,"k":43,"d":55,"kd":0.782,"fl":5,"as":8,"dm":6813},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":0.807,"h":2,"k":41,"d":52,"kd":0.788,"fl":6,"as":7,"dm":7126},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.807,"h":2,"k":45,"d":64,"kd":0.703,"fl":6,"as":14,"dm":6155},{"n":"****JTM   ian","role":"Sniper","rs":"inferred","ktpr":0.801,"h":2,"k":36,"d":44,"kd":0.818,"fl":8,"as":1,"dm":4840},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":0.772,"h":2,"k":28,"d":35,"kd":0.8,"fl":12,"as":6,"dm":4948},{"n":"****JTM   omenayr","role":"Heavy","rs":"inferred","ktpr":0.769,"h":2,"k":37,"d":51,"kd":0.725,"fl":8,"as":11,"dm":5854},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":0.738,"h":2,"k":43,"d":73,"kd":0.589,"fl":6,"as":7,"dm":7426},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.732,"h":2,"k":35,"d":49,"kd":0.714,"fl":7,"as":10,"dm":7137},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":0.722,"h":2,"k":35,"d":43,"kd":0.814,"fl":3,"as":7,"dm":5877},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":0.715,"h":4,"k":62,"d":91,"kd":0.681,"fl":19,"as":6,"dm":7931},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":0.69,"h":2,"k":23,"d":32,"kd":0.719,"fl":12,"as":15,"dm":4462}],"dod_harrington":[{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":1.704,"h":2,"k":84,"d":53,"kd":1.585,"fl":17,"as":10,"dm":11721},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":1.598,"h":3,"k":90,"d":62,"kd":1.452,"fl":45,"as":15,"dm":14330},{"n":"iH.monday","role":"3rd","rs":"inferred","ktpr":1.581,"h":3,"k":99,"d":55,"kd":1.8,"fl":20,"as":16,"dm":14877},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":1.558,"h":2,"k":55,"d":41,"kd":1.341,"fl":34,"as":8,"dm":9716},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.553,"h":2,"k":73,"d":58,"kd":1.259,"fl":24,"as":10,"dm":9926},{"n":"[bb] Polak <3 [$] [$] [$]","role":"Rifle","rs":"inferred","ktpr":1.464,"h":2,"k":61,"d":40,"kd":1.525,"fl":17,"as":10,"dm":10311},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":1.45,"h":2,"k":63,"d":40,"kd":1.575,"fl":13,"as":13,"dm":9283},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":1.414,"h":3,"k":71,"d":37,"kd":1.919,"fl":15,"as":0,"dm":12158},{"n":"[bb] bR0M ＃wetya","role":"3rd","rs":"roster","ktpr":1.399,"h":2,"k":62,"d":56,"kd":1.107,"fl":25,"as":10,"dm":11148},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.315,"h":3,"k":94,"d":71,"kd":1.324,"fl":17,"as":11,"dm":14579},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":1.281,"h":3,"k":84,"d":71,"kd":1.183,"fl":27,"as":22,"dm":13023},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":1.267,"h":2,"k":63,"d":61,"kd":1.033,"fl":17,"as":13,"dm":9469},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":1.246,"h":3,"k":90,"d":70,"kd":1.286,"fl":14,"as":18,"dm":15834},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.205,"h":2,"k":60,"d":59,"kd":1.017,"fl":15,"as":11,"dm":9521},{"n":"dicE[: :]stealthlol","role":"Sniper","rs":"inferred","ktpr":1.188,"h":2,"k":50,"d":42,"kd":1.19,"fl":15,"as":4,"dm":8827},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":1.163,"h":2,"k":53,"d":51,"kd":1.039,"fl":16,"as":2,"dm":8087},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":1.137,"h":2,"k":54,"d":53,"kd":1.019,"fl":14,"as":11,"dm":9325},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.097,"h":2,"k":50,"d":44,"kd":1.136,"fl":10,"as":8,"dm":8653},{"n":"[bb]3SidedQuarter","role":"Sniper","rs":"inferred","ktpr":1.091,"h":2,"k":50,"d":50,"kd":1.0,"fl":14,"as":2,"dm":7362},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":1.07,"h":2,"k":53,"d":48,"kd":1.104,"fl":7,"as":2,"dm":8144},{"n":"[$] cory <3 liah,jkimbro,rdk","role":"Rifle","rs":"inferred","ktpr":1.045,"h":4,"k":100,"d":110,"kd":0.909,"fl":27,"as":9,"dm":15394},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":1.036,"h":2,"k":39,"d":71,"kd":0.549,"fl":32,"as":6,"dm":7550},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.021,"h":1,"k":27,"d":24,"kd":1.125,"fl":1,"as":3,"dm":4868},{"n":"[$] hypnotik_ 0_x","role":"Heavy","rs":"inferred","ktpr":1.007,"h":4,"k":88,"d":120,"kd":0.733,"fl":41,"as":16,"dm":13856},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.994,"h":2,"k":47,"d":52,"kd":0.904,"fl":12,"as":8,"dm":6266},{"n":"[$] nomistizzle","role":"Rifle","rs":"inferred","ktpr":0.992,"h":4,"k":113,"d":135,"kd":0.837,"fl":15,"as":23,"dm":19990},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":0.984,"h":1,"k":23,"d":19,"kd":1.211,"fl":1,"as":5,"dm":3767},{"n":"[$] nein_","role":"Heavy","rs":"inferred","ktpr":0.902,"h":4,"k":91,"d":134,"kd":0.679,"fl":27,"as":17,"dm":14152},{"n":"[$] billbsod","role":"3rd","rs":"inferred","ktpr":0.873,"h":4,"k":83,"d":141,"kd":0.589,"fl":34,"as":13,"dm":12105},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.866,"h":2,"k":45,"d":58,"kd":0.776,"fl":8,"as":12,"dm":7622},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":0.866,"h":1,"k":18,"d":23,"kd":0.783,"fl":7,"as":3,"dm":2975},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.823,"h":1,"k":20,"d":22,"kd":0.909,"fl":2,"as":5,"dm":3297},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.812,"h":1,"k":19,"d":22,"kd":0.864,"fl":3,"as":2,"dm":2686},{"n":"NoSo ! CrankinHawg","role":"Heavy","rs":"inferred","ktpr":0.805,"h":2,"k":39,"d":49,"kd":0.796,"fl":7,"as":12,"dm":6843},{"n":"[$] tokih","role":"Sniper","rs":"inferred","ktpr":0.694,"h":4,"k":84,"d":143,"kd":0.587,"fl":7,"as":1,"dm":12268},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":0.67,"h":1,"k":18,"d":28,"kd":0.643,"fl":2,"as":1,"dm":2377}],"dod_saints2_b3e":[{"n":"b.   sTarK_ x_0 <3＃77","role":"Heavy","rs":"inferred","ktpr":1.604,"h":2,"k":86,"d":54,"kd":1.593,"fl":8,"as":12,"dm":12671},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.413,"h":4,"k":122,"d":73,"kd":1.671,"fl":17,"as":12,"dm":21021},{"n":"ßℓυ†н | kroD-","role":"Heavy","rs":"inferred","ktpr":1.372,"h":2,"k":72,"d":63,"kd":1.143,"fl":15,"as":17,"dm":11236},{"n":"b.   hey hi <3 dustbin","role":"3rd","rs":"inferred","ktpr":1.338,"h":2,"k":66,"d":49,"kd":1.347,"fl":10,"as":14,"dm":11440},{"n":"****JTM   LaNGoNdd<3vt","role":"Rifle","rs":"inferred","ktpr":1.319,"h":4,"k":113,"d":68,"kd":1.662,"fl":10,"as":9,"dm":13526},{"n":"b.   steve","role":"Sniper","rs":"inferred","ktpr":1.314,"h":2,"k":67,"d":46,"kd":1.457,"fl":4,"as":1,"dm":9071},{"n":"b.   e p y o n","role":"3rd","rs":"inferred","ktpr":1.289,"h":2,"k":60,"d":45,"kd":1.333,"fl":11,"as":13,"dm":8661},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.233,"h":2,"k":67,"d":60,"kd":1.117,"fl":9,"as":11,"dm":10119},{"n":"uR[TM]* Ke:>^1.de","role":"Heavy","rs":"inferred","ktpr":1.22,"h":2,"k":69,"d":68,"kd":1.015,"fl":10,"as":12,"dm":11382},{"n":"uR[TM]* HLAH","role":"Sniper","rs":"inferred","ktpr":1.21,"h":2,"k":65,"d":48,"kd":1.354,"fl":1,"as":3,"dm":9751},{"n":"ßℓυ†н | TillJim","role":"Rifle","rs":"inferred","ktpr":1.199,"h":2,"k":60,"d":48,"kd":1.25,"fl":7,"as":12,"dm":9981},{"n":"[bb] piff ＃4Monty","role":"Heavy","rs":"inferred","ktpr":1.196,"h":2,"k":67,"d":69,"kd":0.971,"fl":11,"as":11,"dm":10126},{"n":"[bb] bR0M ＃WATUPYOUTUBE","role":"3rd","rs":"roster","ktpr":1.12,"h":2,"k":50,"d":39,"kd":1.282,"fl":7,"as":3,"dm":5577},{"n":"ßℓυ†н | nicholson","role":"Rifle","rs":"inferred","ktpr":1.107,"h":2,"k":50,"d":42,"kd":1.19,"fl":9,"as":4,"dm":7709},{"n":"[bb] pb_","role":"Rifle","rs":"roster","ktpr":1.103,"h":2,"k":58,"d":54,"kd":1.074,"fl":7,"as":3,"dm":5442},{"n":"[bb] cK- ＃phillylan2026","role":"Rifle","rs":"inferred","ktpr":1.101,"h":2,"k":59,"d":58,"kd":1.017,"fl":8,"as":4,"dm":4718},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":1.054,"h":4,"k":116,"d":110,"kd":1.055,"fl":8,"as":24,"dm":17493},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":1.036,"h":4,"k":94,"d":86,"kd":1.093,"fl":18,"as":20,"dm":14746},{"n":"ßℓυ†н | patten","role":"Sniper","rs":"inferred","ktpr":1.026,"h":2,"k":48,"d":41,"kd":1.171,"fl":5,"as":6,"dm":7495},{"n":"****JTM   jules","role":"Heavy","rs":"inferred","ktpr":1.02,"h":4,"k":102,"d":96,"kd":1.062,"fl":12,"as":12,"dm":6003},{"n":"****JTM   ihatealiceglass","role":"Heavy","rs":"inferred","ktpr":0.999,"h":4,"k":99,"d":88,"kd":1.125,"fl":7,"as":14,"dm":6721},{"n":"****JTM   ian","role":"Sniper","rs":"inferred","ktpr":0.993,"h":4,"k":87,"d":72,"kd":1.208,"fl":9,"as":4,"dm":12346},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.983,"h":4,"k":93,"d":83,"kd":1.12,"fl":9,"as":13,"dm":14445},{"n":"b.   тωὶﮐт","role":"Rifle","rs":"inferred","ktpr":0.952,"h":2,"k":40,"d":36,"kd":1.111,"fl":7,"as":1,"dm":3808},{"n":"****JTM   ddorito","role":"Rifle","rs":"inferred","ktpr":0.944,"h":4,"k":97,"d":98,"kd":0.99,"fl":9,"as":12,"dm":15950},{"n":"ßℓυ†н | incite[bc]","role":"Heavy","rs":"inferred","ktpr":0.937,"h":2,"k":48,"d":59,"kd":0.814,"fl":10,"as":12,"dm":7288},{"n":"[bb] reppoĦ＃respectfully","role":"Heavy","rs":"roster","ktpr":0.917,"h":2,"k":43,"d":55,"kd":0.782,"fl":13,"as":3,"dm":2250},{"n":"NoSo ! AlleyWayHandies","role":"Heavy","rs":"inferred","ktpr":0.902,"h":2,"k":48,"d":54,"kd":0.889,"fl":5,"as":7,"dm":6473},{"n":"uR[TM]* Kevs Dolmetscher","role":"3rd","rs":"inferred","ktpr":0.897,"h":2,"k":43,"d":50,"kd":0.86,"fl":9,"as":9,"dm":6726},{"n":"ßℓυ†н | p12","role":"3rd","rs":"inferred","ktpr":0.897,"h":2,"k":46,"d":50,"kd":0.92,"fl":5,"as":17,"dm":8318},{"n":"NoSo ! Savage¬","role":"Rifle","rs":"inferred","ktpr":0.872,"h":2,"k":43,"d":45,"kd":0.956,"fl":4,"as":3,"dm":3162},{"n":"dicE[: :]stealthlol","role":"Sniper","rs":"inferred","ktpr":0.872,"h":2,"k":45,"d":51,"kd":0.882,"fl":5,"as":1,"dm":5974},{"n":"NoSo ! arachnid","role":"Sniper","rs":"inferred","ktpr":0.854,"h":2,"k":43,"d":44,"kd":0.977,"fl":2,"as":0,"dm":3022},{"n":"b.   o[bb]y","role":"Rifle","rs":"inferred","ktpr":0.852,"h":2,"k":47,"d":67,"kd":0.701,"fl":8,"as":6,"dm":7595},{"n":"[NATO] Ho0liii","role":"Sniper","rs":"inferred","ktpr":0.842,"h":4,"k":79,"d":82,"kd":0.963,"fl":8,"as":2,"dm":13130},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.83,"h":4,"k":87,"d":97,"kd":0.897,"fl":5,"as":29,"dm":14757},{"n":"dicE[: :]Gorilla[bc] ＃6-32","role":"Rifle","rs":"inferred","ktpr":0.807,"h":2,"k":41,"d":52,"kd":0.788,"fl":6,"as":4,"dm":5093},{"n":"uR[TM]* Jee ＃22e＃minou","role":"Heavy","rs":"inferred","ktpr":0.8,"h":2,"k":45,"d":72,"kd":0.625,"fl":8,"as":10,"dm":7329},{"n":"****JTM   mogers 4ky <3h","role":"3rd","rs":"inferred","ktpr":0.789,"h":4,"k":75,"d":82,"kd":0.915,"fl":6,"as":11,"dm":6024},{"n":"NoSo ! Bausch","role":"Rifle","rs":"inferred","ktpr":0.768,"h":2,"k":39,"d":45,"kd":0.867,"fl":2,"as":5,"dm":4071},{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":0.765,"h":2,"k":42,"d":55,"kd":0.764,"fl":3,"as":7,"dm":7561},{"n":"uR[TM]* zamp0lit","role":"Rifle","rs":"inferred","ktpr":0.75,"h":2,"k":36,"d":59,"kd":0.61,"fl":11,"as":5,"dm":2751},{"n":"uR[TM]* SirSnipeys","role":"Rifle","rs":"inferred","ktpr":0.664,"h":2,"k":39,"d":69,"kd":0.565,"fl":4,"as":9,"dm":6752},{"n":"NoSo ! yayme","role":"Heavy","rs":"inferred","ktpr":0.66,"h":2,"k":35,"d":52,"kd":0.673,"fl":3,"as":8,"dm":2942},{"n":"NoSo ! Khoi","role":"3rd","rs":"inferred","ktpr":0.658,"h":2,"k":34,"d":57,"kd":0.596,"fl":6,"as":4,"dm":3439},{"n":"[bb]3SidedQuarter","role":"Sniper","rs":"inferred","ktpr":0.595,"h":2,"k":26,"d":49,"kd":0.531,"fl":9,"as":1,"dm":1453},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.556,"h":2,"k":28,"d":57,"kd":0.491,"fl":6,"as":6,"dm":4647},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":0.556,"h":2,"k":32,"d":54,"kd":0.593,"fl":0,"as":13,"dm":5106}],"dod_thunder2":[{"n":"dicE[: :]element","role":"Rifle","rs":"inferred","ktpr":1.066,"h":2,"k":46,"d":37,"kd":1.243,"fl":7,"as":4,"dm":9065},{"n":"dicE[: :]stealthlol","role":"Sniper","rs":"inferred","ktpr":1.047,"h":2,"k":40,"d":27,"kd":1.481,"fl":2,"as":5,"dm":7411},{"n":"dicE[: :]player","role":"Heavy","rs":"roster","ktpr":1.024,"h":2,"k":40,"d":33,"kd":1.212,"fl":9,"as":11,"dm":7851},{"n":"dicE[: :]m00cat :D","role":"Heavy","rs":"roster","ktpr":0.988,"h":2,"k":33,"d":23,"kd":1.435,"fl":4,"as":5,"dm":6007},{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":0.962,"h":2,"k":41,"d":34,"kd":1.206,"fl":4,"as":8,"dm":8486},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":0.813,"h":2,"k":31,"d":28,"kd":1.107,"fl":3,"as":9,"dm":6854},{"n":"dicE[: :]Gorilla[bc] <3Cooper","role":"Rifle","rs":"inferred","ktpr":0.807,"h":2,"k":34,"d":34,"kd":1.0,"fl":4,"as":7,"dm":6791},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":0.781,"h":2,"k":32,"d":36,"kd":0.889,"fl":7,"as":9,"dm":10640},{"n":"[NATO] Ho0liii <3 nakk","role":"Sniper","rs":"inferred","ktpr":0.764,"h":2,"k":32,"d":39,"kd":0.821,"fl":8,"as":1,"dm":6276},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.721,"h":2,"k":30,"d":35,"kd":0.857,"fl":5,"as":3,"dm":6115},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":0.592,"h":2,"k":28,"d":42,"kd":0.667,"fl":3,"as":4,"dm":5977},{"n":"dicE[: :]warchyld[dd]","role":"3rd","rs":"inferred","ktpr":0.492,"h":2,"k":21,"d":40,"kd":0.525,"fl":5,"as":9,"dm":4794}],"dod_anzio":[{"n":"[NATO] NoName^","role":"Rifle","rs":"inferred","ktpr":1.376,"h":2,"k":52,"d":29,"kd":1.793,"fl":8,"as":5,"dm":7136},{"n":"iH.vertex","role":"Rifle","rs":"inferred","ktpr":1.172,"h":2,"k":56,"d":44,"kd":1.273,"fl":7,"as":6,"dm":10617},{"n":"[NATO] Ho0liii","role":"Sniper","rs":"inferred","ktpr":1.072,"h":2,"k":39,"d":29,"kd":1.345,"fl":9,"as":1,"dm":5874},{"n":"[NATO] Hub","role":"Heavy","rs":"inferred","ktpr":1.051,"h":2,"k":44,"d":37,"kd":1.189,"fl":9,"as":7,"dm":6929},{"n":"[NATO] nightmare＃old","role":"Heavy","rs":"inferred","ktpr":1.02,"h":2,"k":43,"d":34,"kd":1.265,"fl":5,"as":3,"dm":5490},{"n":"[NATO] baiko ＃gubbe.se","role":"3rd","rs":"inferred","ktpr":0.977,"h":2,"k":39,"d":32,"kd":1.219,"fl":6,"as":9,"dm":6980},{"n":"[NATO] Sq =)))","role":"Rifle","rs":"inferred","ktpr":0.914,"h":2,"k":37,"d":34,"kd":1.088,"fl":7,"as":5,"dm":6220},{"n":"iH.hildebrand?","role":"Sniper","rs":"inferred","ktpr":0.764,"h":2,"k":26,"d":25,"kd":1.04,"fl":5,"as":3,"dm":3643},{"n":"iH.kanguhhh?!","role":"Heavy","rs":"inferred","ktpr":0.725,"h":2,"k":31,"d":43,"kd":0.721,"fl":9,"as":5,"dm":2696},{"n":"iH.monday","role":"3rd","rs":"inferred","ktpr":0.627,"h":2,"k":28,"d":50,"kd":0.56,"fl":9,"as":10,"dm":4032},{"n":"iH.seanality","role":"Rifle","rs":"roster","ktpr":0.597,"h":2,"k":26,"d":46,"kd":0.565,"fl":8,"as":1,"dm":2371},{"n":"iH.s i k <3 n a t","role":"Rifle","rs":"inferred","ktpr":0.567,"h":2,"k":28,"d":46,"kd":0.609,"fl":3,"as":6,"dm":4690}]}}]}</script>
+
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("lan-data").textContent);
+  var state = { day: 0, map: null, showAll: false };
+  var fmt = function (n) { return n.toLocaleString("en-US"); };
+
+  var elBaseline = document.getElementById("baseline");
+  var elChips = document.getElementById("mapchips");
+  var elTable = document.getElementById("leader");
+  var elHead = document.getElementById("board-head");
+  var elShow = document.getElementById("showall");
+  var tabs = [document.getElementById("tab-0"), document.getElementById("tab-1")];
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function renderBaseline(day) {
+    elBaseline.textContent = "";
+    var t = el("span", "t", day.label + "'s field baseline");
+    elBaseline.appendChild(t);
+    var parts = [
+      ["avg K/D", day.avg.kd.toFixed(2)],
+      ["avg kills/half", day.avg.kph.toFixed(1)],
+      ["avg flags/half", day.avg.fph.toFixed(2)],
+      ["pool", day.avg.pool + " players"]
+    ];
+    parts.forEach(function (p) {
+      var s = el("span", null, p[0] + " ");
+      s.appendChild(el("b", null, p[1]));
+      elBaseline.appendChild(s);
+    });
+    elBaseline.appendChild(el("span", "hint", "KTPR normalizes every player below against these numbers — and only these."));
+  }
+
+  function renderChips(day) {
+    elChips.textContent = "";
+    var mk = function (label, mapKey, count) {
+      var b = el("button", "chip", label + (count ? " · " + count : ""));
+      b.setAttribute("aria-pressed", String(state.map === mapKey));
+      b.addEventListener("click", function () {
+        state.map = mapKey; state.showAll = false; render();
+      });
+      elChips.appendChild(b);
+    };
+    mk("All maps", null, "");
+    Object.keys(day.maps).forEach(function (m) {
+      mk(m.replace(/^dod_/, ""), m, "");
+    });
+  }
+
+  function rolePill(row) {
+    var p = el("span", "rolepill" + (row.rs === "inferred" ? " inferred" : ""), row.role);
+    p.title = row.rs === "inferred"
+      ? "Position inferred from Axis class"
+      : "Position declared on roster";
+    return p;
+  }
+
+  function ktprCell(v, max) {
+    var wrap = el("div", "ktprcell");
+    wrap.appendChild(el("b", null, v.toFixed(3)));
+    var bar = el("div", "ktprbar");
+    var i = el("i");
+    i.style.width = Math.max(4, Math.round(v / max * 100)) + "%";
+    bar.appendChild(i);
+    wrap.appendChild(bar);
+    return wrap;
+  }
+
+  function detailRow(row, colspan) {
+    var tr = el("tr", "detail");
+    var td = el("td"); td.colSpan = colspan;
+    var grid = el("div", "detailgrid");
+
+    // hitboxes
+    var c1 = el("div");
+    c1.appendChild(el("h4", null, "Where the hits landed"));
+    var maxHits = 1;
+    Object.keys(row.hb).forEach(function (k) { maxHits = Math.max(maxHits, row.hb[k][0]); });
+    Object.keys(row.hb).forEach(function (k) {
+      var r = el("div", "hbrow");
+      r.appendChild(el("span", "lbl", k));
+      var bar = el("div", "bar"); var i = el("i");
+      i.style.width = Math.round(row.hb[k][0] / maxHits * 100) + "%";
+      bar.appendChild(i); r.appendChild(bar);
+      r.appendChild(el("span", "ct", row.hb[k][0] + " · " + fmt(row.hb[k][1]) + "dmg"));
+      c1.appendChild(r);
+    });
+    grid.appendChild(c1);
+
+    // classes
+    var c2 = el("div");
+    c2.appendChild(el("h4", null, "Class spawns"));
+    var dl2 = el("dl", "kvmini");
+    Object.keys(row.cl).forEach(function (k) {
+      dl2.appendChild(el("dt", null, k));
+      dl2.appendChild(el("dd", null, fmt(row.cl[k])));
+    });
+    c2.appendChild(dl2);
+    var src = el("p", "hint mt8", "Position: " + row.role + " (" +
+      (row.rs === "inferred" ? "inferred from Axis class" : "declared on roster") + ")");
+    c2.appendChild(src);
+    grid.appendChild(c2);
+
+    // the rest of the ledger
+    var c3 = el("div");
+    c3.appendChild(el("h4", null, "The rest of the ledger"));
+    var dl3 = el("dl", "kvmini");
+    [["Headshot kills", row.hs], ["Hits landed", fmt(row.hits)], ["Headshot hits", row.hsh],
+     ["Flag caps (HUD)", row.caps], ["Cap denials", row.cb], ["Objective score", row.obj],
+     ["Best streak", row.st], ["Grenade kills", row.nk], ["Gun kills", row.gk],
+     ["Prone transitions", fmt(row.pr)]].forEach(function (p) {
+      dl3.appendChild(el("dt", null, p[0]));
+      dl3.appendChild(el("dd", null, String(p[1])));
+    });
+    c3.appendChild(dl3);
+    grid.appendChild(c3);
+
+    td.appendChild(grid);
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function render() {
+    var day = DATA.days[state.day];
+    tabs.forEach(function (t, i) { t.setAttribute("aria-pressed", String(i === state.day)); });
+    renderBaseline(day);
+    renderChips(day);
+
+    var isMap = state.map !== null;
+    var rows = isMap ? day.maps[state.map] : day.players;
+    elHead.textContent = isMap
+      ? day.label + " · " + state.map + " — rated against " + day.label + "'s field"
+      : day.label + " leaderboard — all tournament matches";
+
+    elTable.textContent = "";
+    var thead = el("thead");
+    var htr = el("tr");
+    var cols = isMap
+      ? ["#", "Player", "Pos", "KTPR", "K–D", "K/D", "Flags", "Assists", "Damage"]
+      : ["#", "Player", "Pos", "KTPR", "K–D", "K/D", "Kills/half", "Flags/half", "Assists", "Damage", ""];
+    cols.forEach(function (c, i) {
+      var th = el("th", i >= 4 && c !== "" ? "r" : null, c);
+      htr.appendChild(th);
+    });
+    thead.appendChild(htr);
+    elTable.appendChild(thead);
+
+    var tbody = el("tbody");
+    var maxK = rows.length ? rows[0].ktpr : 1;
+    var limit = state.showAll ? rows.length : Math.min(15, rows.length);
+    var colspan = cols.length;
+
+    rows.slice(0, limit).forEach(function (row, idx) {
+      var tr = el("tr", idx < 3 ? "top3" : null);
+      tr.appendChild(el("td", "rank", String(idx + 1)));
+      var tdp = el("td", "player", row.n); tdp.title = row.n;
+      tr.appendChild(tdp);
+      var tdr = el("td"); tdr.appendChild(rolePill(row)); tr.appendChild(tdr);
+      var tdk = el("td"); tdk.appendChild(ktprCell(row.ktpr, maxK)); tr.appendChild(tdk);
+      tr.appendChild(el("td", "r", row.k + "–" + row.d));
+      tr.appendChild(el("td", "r", row.kd.toFixed(2)));
+      if (!isMap) {
+        tr.appendChild(el("td", "r", row.kph.toFixed(1)));
+        tr.appendChild(el("td", "r", row.fph.toFixed(2)));
+      } else {
+        tr.appendChild(el("td", "r", String(row.fl)));
+      }
+      tr.appendChild(el("td", "r", String(row.as)));
+      tr.appendChild(el("td", "r", fmt(row.dm)));
+      if (!isMap) {
+        var tdd = el("td", "r");
+        var btn = el("button", "detailbtn", "detail");
+        btn.setAttribute("aria-expanded", "false");
+        btn.addEventListener("click", function () {
+          var open = btn.getAttribute("aria-expanded") === "true";
+          btn.setAttribute("aria-expanded", String(!open));
+          if (open) {
+            var next = tr.nextElementSibling;
+            if (next && next.classList.contains("detail")) next.remove();
+          } else {
+            tr.parentNode.insertBefore(detailRow(row, colspan), tr.nextElementSibling);
+          }
+        });
+        tdd.appendChild(btn);
+        tr.appendChild(tdd);
+      }
+      tbody.appendChild(tr);
+    });
+    elTable.appendChild(tbody);
+
+    elShow.hidden = rows.length <= limit;
+    elShow.textContent = "Show all " + rows.length + " players";
+  }
+
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () {
+      state.day = i; state.map = null; state.showAll = false; render();
+    });
+  });
+  elShow.addEventListener("click", function () { state.showAll = true; render(); });
+
+  render();
+
+  // ---- mockup-only publication gate ----
+  var on = document.getElementById("mock-on"), off = document.getElementById("mock-off");
+  function setStats(published) {
+    document.body.dataset.stats = published ? "on" : "off";
+    on.setAttribute("aria-pressed", String(published));
+    off.setAttribute("aria-pressed", String(!published));
+  }
+  on.addEventListener("click", function () { setStats(true); });
+  off.addEventListener("click", function () { setStats(false); });
+})();
+</script>
+</body>
+</html>

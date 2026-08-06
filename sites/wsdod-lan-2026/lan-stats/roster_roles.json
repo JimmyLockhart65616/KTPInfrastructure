@@ -1,0 +1,40 @@
+{
+  "_comment": [
+    "Operator-declared positions, keyed by SteamID in 'Y:Z' form (no STEAM_ prefix,",
+    "no universe digit). These OVERRIDE the class-based inference, because a",
+    "position is a team assignment and a class is only evidence of it.",
+    "",
+    "The inference reads the Axis class, which maps one-to-one to a position on",
+    "that side. It is right for most players and wrong when class slots force a",
+    "substitution: DoD limits how many of each class a team may field, so a second",
+    "Heavy whose STG slot is taken spawns as something else and then looks like",
+    "whatever they had to take. The three below are exactly that case -- BAR on",
+    "Allies, Unter on Axis, and Heavies in fact.",
+    "",
+    "Add a player here whenever the inferred position is wrong. Anyone absent is",
+    "inferred, and build_stats reports how many of each there were.",
+    "2026-08-06: seanality and pb_ confirmed NOT 3rds despite Stoss-dominant Axis play, which is what established that Stoss cannot classify a player -- Rifles and 3rds both use it.",
+    "2026-08-06: operator named 3rds team by team. Sik was inferred Rifle and is actually IcyHot's 3rd -- the only case where inference had the position wrong rather than merely unproven. Price is Right (bsod) and Uncle Ricos (bulletfodder) were named but appear in no .ktp match, and Arrested Dev's 3rd is unknown.",
+    "0:1794 appears as both 'billymanbrewing' and 'billbsod' across the two days -- same account, different in-game name. Names are not identity here; the SteamID is. Anything keyed on display name will split this player in two.",
+    "2026-08-06 final pass. Kevs (uR) and p12 declared 3rds, epyon and monday declared not. The last two were the strongest Unter signals in the whole dataset -- 166 and 50 Unter with zero Stoss -- and are still Rifles, which is the clearest evidence that class cannot determine position. Kevs is 'very likely' bulletfodder rather than confirmed; if that identification is wrong the position may be too."
+  ],
+  "roles": {
+    "0:3612473": "Heavy",
+    "1:6155141": "Heavy",
+    "0:104450108": "Heavy",
+    "1:748805": "Rifle",
+    "0:77934219": "Rifle",
+    "1:16016464": "3rd",
+    "0:281787": "3rd",
+    "0:2996359": "3rd",
+    "1:31962398": "3rd",
+    "0:4492": "3rd",
+    "0:123285": "3rd",
+    "0:72967": "3rd",
+    "0:1794": "3rd",
+    "1:955338590": "3rd",
+    "1:9865547": "3rd",
+    "1:6758404": "Rifle",
+    "0:11692441": "Rifle"
+  }
+}

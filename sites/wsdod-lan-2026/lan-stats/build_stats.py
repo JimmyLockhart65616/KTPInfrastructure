@@ -77,6 +77,20 @@ def sql(c, q, t=600):
     return [line.split("\t") for line in out.splitlines() if line.strip()]
 
 
+def roster_roles() -> dict[str, str]:
+    """Operator-declared positions. These win over inference.
+
+    A position is a team assignment; a class is only evidence of it. DoD caps
+    how many of each class a team can field, so a second Heavy whose STG slot is
+    taken spawns as whatever is left and then infers wrong.
+    """
+    try:
+        with open("roster_roles.json", encoding="utf-8") as fh:
+            return json.load(fh).get("roles", {})
+    except FileNotFoundError:
+        return {}
+
+
 def ktp_matches() -> dict[str, dict]:
     """The .ktp matches only, with their day and map, from the match index."""
     import csv
@@ -92,7 +106,9 @@ def ktp_matches() -> dict[str, dict]:
 
 def main() -> int:
     matches = ktp_matches()
+    declared = roster_roles()
     days = sorted({m["day"] for m in matches.values()})
+    print("roster overrides: %d" % len(declared))
     print("ktp matches: %d across %s" % (len(matches), ", ".join(days)))
 
     c = connect()
@@ -250,7 +266,8 @@ def main() -> int:
                 "prone_changes": b["prone"],
                 "classes": label_classes(b["classes"]),
                 "roles": roll_up_roles(b["classes"]),
-                "primary_role": primary_role(b["classes"]),
+                "primary_role": declared.get(steam) or primary_role(b["classes"]),
+                "role_source": "roster" if steam in declared else "inferred",
                 "hitboxes": label_hitboxes(hb_by.get(steam, {})),
             })
         players.sort(key=lambda p: -p["ktpr"])

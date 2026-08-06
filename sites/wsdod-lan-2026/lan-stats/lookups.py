@@ -45,10 +45,19 @@ for _i in range(21, 26):
 # usually on Garand. Treat class_role() as a hint; a player's real position is a
 # roster fact, not something spawns can prove.
 CLASS_ROLE: dict[int, str] = {
-    1: "Rifle", 10: "Rifle", 11: "Rifle",       # Garand / K98 / Stoss
+    1: "Rifle", 10: "Rifle",                    # Garand / K98
     6: "Heavy", 13: "Heavy",                    # BAR / STG
-    2: "3rd", 3: "3rd", 12: "3rd",              # Carbine / Tommy / Unter
+    2: "3rd", 3: "3rd", 11: "3rd", 12: "3rd",   # Carbine / Tommy / Stoss / Unter
     5: "Sniper", 14: "Sniper",                  # Springfield / Scharf
+}
+
+# Position is read from AXIS play, because only the Axis classes map one-to-one.
+# On Allies a Garand is a Rifle OR a 3rd and a BAR is a Heavy OR a 3rd, so the
+# Allied half of a match cannot distinguish them. Teams swap sides at halftime,
+# so a player's Axis class settles what their Allied class hides -- all 61 LAN
+# players played Axis, so nothing needed a roster.
+AXIS_ROLE: dict[int, str] = {
+    10: "Rifle", 11: "3rd", 12: "3rd", 13: "Heavy", 14: "Sniper",
 }
 
 # Positions in the order the league lists them, for stable table ordering.
@@ -106,12 +115,21 @@ def roll_up_roles(counts: dict) -> dict:
 
 
 def primary_role(counts: dict) -> str:
-    """The position a player actually filled, by spawn share.
+    """The position a player filled, decided by their Axis class.
 
-    Reported alongside the full breakdown rather than instead of it -- a player
-    who splits 60/40 between two positions is a real thing, and collapsing that
-    to one label loses it.
+    Axis classes are one-to-one with positions; Allied ones are not. Falling
+    back to overall spawn share when a player never played Axis is a guess and
+    is marked as such by returning the share-based answer -- but at the 2026 LAN
+    every player played both sides, so the fallback never fired.
     """
+    axis = {}
+    for k, v in counts.items():
+        i = _as_int(k)
+        if i in AXIS_ROLE:
+            axis[AXIS_ROLE[i]] = axis.get(AXIS_ROLE[i], 0) + int(v)
+    if axis:
+        return max(axis, key=axis.get)
+
     rolled = {}
     for k, v in counts.items():
         rolled[class_role(k)] = rolled.get(class_role(k), 0) + int(v)

@@ -43,6 +43,7 @@
       "Sniper": 218
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 234,
@@ -112,6 +113,7 @@
       "Heavy": 276
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 415,
@@ -181,6 +183,7 @@
       "Heavy": 300
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 436,
@@ -248,9 +251,11 @@
       "K98": 72
      },
      "roles": {
-      "Rifle": 310
+      "Rifle": 228,
+      "3rd": 82
      },
      "primary_role": "Rifle",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 320,
@@ -318,9 +323,11 @@
       "Stoss (K43)": 74
      },
      "roles": {
-      "Rifle": 312
+      "Rifle": 238,
+      "3rd": 74
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 360,
@@ -391,11 +398,12 @@
       "Carbine": 1
      },
      "roles": {
-      "Rifle": 260,
+      "Rifle": 230,
       "Heavy": 4,
-      "3rd": 2
+      "3rd": 32
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 171,
@@ -467,6 +475,7 @@
       "3rd": 122
      },
      "primary_role": "Heavy",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 500,
@@ -536,6 +545,7 @@
       "Rifle": 320
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 287,
@@ -605,6 +615,7 @@
       "Rifle": 349
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 381,
@@ -675,7 +686,8 @@
       "Heavy": 244,
       "3rd": 58
      },
-     "primary_role": "Heavy",
+     "primary_role": "Rifle",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 353,
@@ -745,6 +757,7 @@
       "Rifle": 303
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 359,
@@ -814,6 +827,7 @@
       "Rifle": 313
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 389,
@@ -883,6 +897,7 @@
       "Rifle": 349
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 332,
@@ -950,9 +965,11 @@
       "K98": 34
      },
      "roles": {
-      "Rifle": 324
+      "Rifle": 188,
+      "3rd": 136
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 358,
@@ -1025,6 +1042,7 @@
       "Sniper": 289
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 240,
@@ -1094,6 +1112,7 @@
       "Rifle": 315
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 282,
@@ -1163,6 +1182,7 @@
       "Sniper": 241
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 171,
@@ -1234,6 +1254,7 @@
       "3rd": 2
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 307,
@@ -1305,6 +1326,7 @@
       "3rd": 17
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 320,
@@ -1376,6 +1398,7 @@
       "3rd": 68
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 347,
@@ -1445,6 +1468,7 @@
       "Rifle": 329
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 336,
@@ -1516,12 +1540,12 @@
       "Stoss (K43)": 1
      },
      "roles": {
-      "Rifle": 1,
       "Heavy": 6,
-      "3rd": 11,
+      "3rd": 12,
       "Sniper": 293
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 257,
@@ -1591,6 +1615,7 @@
       "Heavy": 308
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 361,
@@ -1662,6 +1687,7 @@
       "3rd": 5
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 451,
@@ -1731,6 +1757,7 @@
       "Heavy": 379
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 466,
@@ -1800,6 +1827,7 @@
       "Rifle": 366
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 236,
@@ -1869,11 +1897,12 @@
       "Unter (MP40)": 1
      },
      "roles": {
-      "Rifle": 313,
+      "Rifle": 291,
       "Heavy": 1,
-      "3rd": 1
+      "3rd": 23
      },
      "primary_role": "Rifle",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 258,
@@ -1945,6 +1974,7 @@
       "3rd": 3
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 360,
@@ -2013,10 +2043,11 @@
       "Unter (MP40)": 2
      },
      "roles": {
-      "Rifle": 275,
-      "3rd": 2
+      "Rifle": 255,
+      "3rd": 22
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 278,
@@ -2086,11 +2117,12 @@
       "Stoss (K43)": 15
      },
      "roles": {
-      "Rifle": 47,
+      "Rifle": 32,
       "Heavy": 231,
-      "3rd": 53
+      "3rd": 68
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 368,
@@ -2161,6 +2193,7 @@
       "3rd": 145
      },
      "primary_role": "Heavy",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 424,
@@ -2230,10 +2263,12 @@
       "Stoss (K43)": 6
      },
      "roles": {
-      "Rifle": 77,
-      "Heavy": 399
+      "Rifle": 71,
+      "Heavy": 399,
+      "3rd": 6
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 270,
@@ -2301,9 +2336,11 @@
       "K98": 26
      },
      "roles": {
-      "Rifle": 348
+      "Rifle": 210,
+      "3rd": 138
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 264,
@@ -2371,9 +2408,11 @@
       "Stoss (K43)": 28
      },
      "roles": {
-      "Rifle": 297
+      "Rifle": 269,
+      "3rd": 28
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 247,
@@ -2442,10 +2481,11 @@
       "Stoss (K43)": 32
      },
      "roles": {
-      "Rifle": 138,
-      "3rd": 256
+      "Rifle": 106,
+      "3rd": 288
      },
      "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 394,
@@ -2518,12 +2558,13 @@
       "Scharf (K98 scoped)": 3
      },
      "roles": {
-      "Rifle": 91,
+      "Rifle": 46,
       "Heavy": 56,
-      "3rd": 105,
+      "3rd": 150,
       "Sniper": 3
      },
      "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 247,
@@ -2593,6 +2634,7 @@
       "Sniper": 308
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 222,
@@ -2664,6 +2706,7 @@
       "3rd": 27
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 329,
@@ -2736,6 +2779,7 @@
       "Sniper": 302
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 222,
@@ -2805,6 +2849,7 @@
       "Rifle": 345
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 377,
@@ -2875,12 +2920,13 @@
       "Unter (MP40)": 1
      },
      "roles": {
-      "Rifle": 309,
+      "Rifle": 268,
       "Heavy": 9,
-      "3rd": 1,
+      "3rd": 42,
       "Sniper": 1
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 380,
@@ -2951,7 +2997,8 @@
       "Heavy": 316,
       "3rd": 8
      },
-     "primary_role": "Heavy",
+     "primary_role": "Rifle",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 263,
@@ -3021,6 +3068,7 @@
       "Rifle": 466
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 210,
@@ -3090,11 +3138,11 @@
       "Stoss (K43)": 8
      },
      "roles": {
-      "Rifle": 8,
       "Heavy": 205,
-      "3rd": 98
+      "3rd": 106
      },
      "primary_role": "Heavy",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 295,
@@ -3161,9 +3209,11 @@
       "Stoss (K43)": 192
      },
      "roles": {
-      "Rifle": 392
+      "Rifle": 200,
+      "3rd": 192
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 225,
@@ -3233,6 +3283,7 @@
       "Sniper": 313
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 261,
@@ -3308,6 +3359,7 @@
       "Sniper": 265
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 172,
@@ -3377,11 +3429,12 @@
       "Unter (MP40)": 1
      },
      "roles": {
-      "Rifle": 233,
+      "Rifle": 127,
       "Heavy": 50,
-      "3rd": 1
+      "3rd": 107
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 250,
@@ -3453,6 +3506,7 @@
       "Sniper": 371
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 198,
@@ -3524,6 +3578,7 @@
       "3rd": 101
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 327,
@@ -3595,6 +3650,7 @@
       "3rd": 25
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 344,
@@ -3664,6 +3720,7 @@
       "Heavy": 374
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 376,
@@ -3731,10 +3788,11 @@
       "Unter (MP40)": 1
      },
      "roles": {
-      "Rifle": 369,
-      "3rd": 1
+      "Rifle": 185,
+      "3rd": 185
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 276,
@@ -3804,6 +3862,7 @@
       "Rifle": 416
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 162,
@@ -3878,6 +3937,7 @@
       "Sniper": 302
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 173,
@@ -3950,6 +4010,7 @@
       "Sniper": 63
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 137,
@@ -4019,6 +4080,7 @@
       "Rifle": 380
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 154,
@@ -4090,12 +4152,13 @@
       "Unter (MP40)": 1
      },
      "roles": {
-      "Rifle": 339,
+      "Rifle": 160,
       "Heavy": 2,
-      "3rd": 21,
+      "3rd": 200,
       "Sniper": 1
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 399,
@@ -4163,10 +4226,11 @@
       "Stoss (K43)": 14
      },
      "roles": {
-      "Rifle": 14,
-      "Heavy": 361
+      "Heavy": 361,
+      "3rd": 14
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 290,
@@ -4236,6 +4300,7 @@
       "Heavy": 401
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 233,
@@ -4306,11 +4371,12 @@
       "Scharf (K98 scoped)": 2
      },
      "roles": {
-      "Rifle": 263,
-      "3rd": 109,
+      "Rifle": 147,
+      "3rd": 225,
       "Sniper": 2
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 209,
@@ -9444,6 +9510,7 @@
       "Rifle": 306
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 389,
@@ -9510,9 +9577,11 @@
       "Stoss (K43)": 81
      },
      "roles": {
-      "Rifle": 173
+      "Rifle": 92,
+      "3rd": 81
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 247,
@@ -9584,6 +9653,7 @@
       "3rd": 5
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 327,
@@ -9651,9 +9721,11 @@
       "K98": 47
      },
      "roles": {
-      "Rifle": 298
+      "Rifle": 209,
+      "3rd": 89
      },
      "primary_role": "Rifle",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 320,
@@ -9723,6 +9795,7 @@
       "Heavy": 337
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 436,
@@ -9792,6 +9865,7 @@
       "Heavy": 259
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 415,
@@ -9863,6 +9937,7 @@
       "3rd": 17
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 380,
@@ -9932,6 +10007,7 @@
       "Rifle": 318
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 282,
@@ -10003,6 +10079,7 @@
       "3rd": 82
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 381,
@@ -10069,9 +10146,11 @@
       "Garand": 54
      },
      "roles": {
-      "Rifle": 112
+      "Rifle": 54,
+      "3rd": 58
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 225,
@@ -10145,6 +10224,7 @@
       "Sniper": 3
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 359,
@@ -10215,7 +10295,8 @@
       "Heavy": 168,
       "3rd": 108
      },
-     "primary_role": "Heavy",
+     "primary_role": "Rifle",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 353,
@@ -10285,6 +10366,7 @@
       "Sniper": 211
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 234,
@@ -10355,7 +10437,8 @@
       "Heavy": 61,
       "3rd": 42
      },
-     "primary_role": "Heavy",
+     "primary_role": "Rifle",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 263,
@@ -10425,6 +10508,7 @@
       "Sniper": 120
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 198,
@@ -10496,6 +10580,7 @@
       "3rd": 2
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 270,
@@ -10568,6 +10653,7 @@
       "3rd": 173
      },
      "primary_role": "Heavy",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 500,
@@ -10635,9 +10721,11 @@
       "Stoss (K43)": 14
      },
      "roles": {
-      "Rifle": 224
+      "Rifle": 210,
+      "3rd": 14
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 171,
@@ -10709,6 +10797,7 @@
       "3rd": 1
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 307,
@@ -10778,6 +10867,7 @@
       "Rifle": 329
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 336,
@@ -10851,6 +10941,7 @@
       "Sniper": 360
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 257,
@@ -10920,6 +11011,7 @@
       "Rifle": 281
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 287,
@@ -10991,6 +11083,7 @@
       "3rd": 38
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 320,
@@ -11060,6 +11153,7 @@
       "Rifle": 377
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 236,
@@ -11131,6 +11225,7 @@
       "3rd": 27
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 466,
@@ -11200,6 +11295,7 @@
       "Sniper": 288
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 261,
@@ -11267,10 +11363,11 @@
       "Unter (MP40)": 23
      },
      "roles": {
-      "Rifle": 299,
-      "3rd": 23
+      "Rifle": 152,
+      "3rd": 170
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 358,
@@ -11338,9 +11435,11 @@
       "Stoss (K43)": 49
      },
      "roles": {
-      "Rifle": 295
+      "Rifle": 246,
+      "3rd": 49
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 360,
@@ -11412,6 +11511,7 @@
       "3rd": 52
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 368,
@@ -11483,6 +11583,7 @@
       "3rd": 2
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 210,
@@ -11556,12 +11657,13 @@
       "Tommy (Thompson)": 18
      },
      "roles": {
-      "Rifle": 158,
+      "Rifle": 118,
       "Heavy": 67,
-      "3rd": 50,
+      "3rd": 90,
       "Sniper": 47
      },
      "primary_role": "Rifle",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 258,
@@ -11633,6 +11735,7 @@
       "Sniper": 111
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 173,
@@ -11704,6 +11807,7 @@
       "Sniper": 11
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 360,
@@ -11775,6 +11879,7 @@
       "3rd": 60
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 329,
@@ -11845,6 +11950,7 @@
       "3rd": 169
      },
      "primary_role": "Heavy",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 424,
@@ -11914,6 +12020,7 @@
       "Heavy": 400
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 451,
@@ -11985,6 +12092,7 @@
       "3rd": 44
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 347,
@@ -12054,6 +12162,7 @@
       "Sniper": 307
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 240,
@@ -12123,6 +12232,7 @@
       "Rifle": 332
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 377,
@@ -12192,6 +12302,7 @@
       "Sniper": 207
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 171,
@@ -12261,6 +12372,7 @@
       "Rifle": 447
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 332,
@@ -12330,6 +12442,7 @@
       "Rifle": 328
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 247,
@@ -12398,11 +12511,12 @@
       "STG (MP44)": 8
      },
      "roles": {
-      "Rifle": 205,
+      "Rifle": 107,
       "Heavy": 8,
-      "3rd": 9
+      "3rd": 107
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 250,
@@ -12471,10 +12585,11 @@
       "Unter (MP40)": 11
      },
      "roles": {
-      "Rifle": 289,
-      "3rd": 11
+      "Rifle": 278,
+      "3rd": 22
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 278,
@@ -12547,6 +12662,7 @@
       "Sniper": 228
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 172,
@@ -12618,6 +12734,7 @@
       "Sniper": 4
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 361,
@@ -12684,9 +12801,11 @@
       "Garand": 185
      },
      "roles": {
-      "Rifle": 377
+      "Rifle": 185,
+      "3rd": 192
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 276,
@@ -12754,10 +12873,11 @@
       "Stoss (K43)": 9
      },
      "roles": {
-      "Rifle": 9,
-      "Heavy": 421
+      "Heavy": 421,
+      "3rd": 9
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 290,
@@ -12827,6 +12947,7 @@
       "Rifle": 102
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Generic": {
        "hits": 154,
@@ -12898,6 +13019,7 @@
       "3rd": 78
      },
      "primary_role": "Heavy",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 295,
@@ -12966,10 +13088,11 @@
       "Stoss (K43)": 64
      },
      "roles": {
-      "Rifle": 148,
-      "3rd": 292
+      "Rifle": 84,
+      "3rd": 356
      },
      "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 394,
@@ -13038,10 +13161,11 @@
       "Tommy (Thompson)": 1
      },
      "roles": {
-      "Rifle": 404,
-      "3rd": 8
+      "Rifle": 215,
+      "3rd": 197
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 399,
@@ -13109,10 +13233,11 @@
       "Stoss (K43)": 11
      },
      "roles": {
-      "Rifle": 11,
+      "3rd": 11,
       "Sniper": 418
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 222,
@@ -13182,11 +13307,12 @@
       "BAR": 28
      },
      "roles": {
-      "Rifle": 283,
+      "Rifle": 194,
       "Heavy": 28,
-      "3rd": 57
+      "3rd": 146
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Left arm": {
        "hits": 264,
@@ -13257,11 +13383,12 @@
       "K98": 2
      },
      "roles": {
-      "Rifle": 8,
-      "3rd": 34,
+      "Rifle": 2,
+      "3rd": 40,
       "Sniper": 293
      },
      "primary_role": "Sniper",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 222,
@@ -13332,11 +13459,12 @@
       "Carbine": 1
      },
      "roles": {
-      "Rifle": 44,
+      "Rifle": 30,
       "Heavy": 332,
-      "3rd": 9
+      "3rd": 23
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 344,
@@ -13406,6 +13534,7 @@
       "Heavy": 412
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 376,
@@ -13473,10 +13602,11 @@
       "Tommy (Thompson)": 1
      },
      "roles": {
-      "Rifle": 113,
-      "3rd": 1
+      "Rifle": 55,
+      "3rd": 59
      },
-     "primary_role": "Rifle",
+     "primary_role": "3rd",
+     "role_source": "roster",
      "hitboxes": {
       "Generic": {
        "hits": 209,
@@ -13546,6 +13676,7 @@
       "Rifle": 147
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 137,
@@ -13615,6 +13746,7 @@
       "Heavy": 146
      },
      "primary_role": "Heavy",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 233,
@@ -13684,6 +13816,7 @@
       "Rifle": 135
      },
      "primary_role": "Rifle",
+     "role_source": "inferred",
      "hitboxes": {
       "Left arm": {
        "hits": 162,
