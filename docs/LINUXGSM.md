@@ -120,6 +120,32 @@ done
 
 **IMPORTANT:** This patch must be reapplied after any `./dodserver update-lgsm` command, as LinuxGSM overwrites the modules. Always verify the patch is in place before enabling monitor cron on a new or updated server.
 
+> 🔻 **A SECOND branch in the same file is live, buggy, and dead only by accident — audited 2026-08-05.**
+>
+> `fn_monitor_check_session` has three branches; the KTP patch neutralises only the third
+> (L203-212, the "old type" form above). Of the two left live:
+>
+> - **L184 is correct.** `pgrep -fcx "tmux -L ${socketname} …"` — right variable, exact match, fires
+>   only at **≥2** sessions. Genuine duplicate detection.
+> - **L194 is upstream-buggy.** It uses `${sessionname}` where the *socket* belongs, matches by
+>   substring, and fires on **≠0** → `pkill` + `command_restart.sh`. Read plainly, it should kill a
+>   healthy server on every monitor run.
+>
+> **Why it never fires:** LinuxGSM appends a random hex suffix to the socket, so the real line is
+> `tmux -L dodserver-c5d7f085 new-session … -s dodserver`. `socketname` (`dodserver-c5d7f085`) and
+> `sessionname` (`dodserver`) differ, so the literal substring `tmux -L dodserver new-session` never
+> appears and the branch cannot match. Corroborated empirically: ~5,900 monitor runs across 5
+> instances with zero kills.
+>
+> ⚠️ **This is safety by accident of naming, not by our patch.** If a future LinuxGSM ever sets
+> `socketname == sessionname`, **L194 fires every monitor run and pkills + restarts every instance —
+> mid-match.** Check it alongside the "old type" patch on every `./dodserver update-lgsm`.
+>
+> Prod (24/24, md5 `ac5f8fee3c6d`, comment-style patch) and canonical/LAN (`d3af3f33d438`,
+> `if false; then` style) differ but are both safe. Canonical's form is better — it neutralises the
+> *condition*, so a LinuxGSM update that re-adds lines cannot silently re-enable the branch.
+> **Converge prod to canonical at the next provision, not as an emergency.**
+
 > 🔴 **The line range above is version-specific and WILL break a newer LinuxGSM. Never apply it without the `bash -n` gate below.**
 >
 > `203,212` was correct for the LinuxGSM shipped in January 2026. On **v26.2.0** the same range lands one block earlier and swallows the opening `if` of the duplicate-PID check, orphaning the `elif` that follows it. The result is a `command_monitor.sh` that **fails to parse**:
