@@ -102,10 +102,12 @@ NAV = (
   '<nav>\n  <div class="wrap row">\n'
   '    <span class="brand"><span class="k">KTP</span> &mdash; Demo Archive</span>\n'
   '    <span class="spacer"></span>\n'
-  '    <a class="navlink hidesm" href="/">Downloads</a>\n'
-  '    <a class="navlink hidesm" href="/demos/">Demos</a>\n'
-  '    <a class="navlink hidesm" href="/netcode/">Netcode</a>\n'
-  '    <a class="navlink hidesm" href="/anticheat/">Anti-Cheat</a>\n'
+  '    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/">Downloads</a>\n'
+  '    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/demos/">Demos</a>\n'
+  '    <a class="navlink hidesm" href="https://netcode.ktpdod.com/">Netcode</a>\n'
+  '    <a class="navlink hidesm" href="https://profiles.ktpdod.com/">Profiles</a>\n'
+  '    <a class="navlink hidesm" href="https://bundles.ktpdod.com/">My Data</a>\n'
+  '    <a class="navlink hidesm" href="https://ac.ktpdod.com/">Anti-Cheat</a>\n'
   '    <a class="navlink" href="https://support.ktpdod.com">Support</a>\n'
   '  </div>\n</nav>\n')
 
