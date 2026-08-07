@@ -16,17 +16,18 @@
     "2026-08-06: seanality and pb_ confirmed NOT 3rds despite Stoss-dominant Axis play, which is what established that Stoss cannot classify a player -- Rifles and 3rds both use it.",
     "2026-08-06: operator named 3rds team by team. Sik was inferred Rifle and is actually IcyHot's 3rd -- the only case where inference had the position wrong rather than merely unproven. Price is Right (bsod) and Uncle Ricos (bulletfodder) were named but appear in no .ktp match, and Arrested Dev's 3rd is unknown.",
     "0:1794 appears as both 'billymanbrewing' and 'billbsod' across the two days -- same account, different in-game name. Names are not identity here; the SteamID is. Anything keyed on display name will split this player in two.",
-    "2026-08-06 final pass. Kevs (uR) and p12 declared 3rds, epyon and monday declared not. The last two were the strongest Unter signals in the whole dataset -- 166 and 50 Unter with zero Stoss -- and are still Rifles, which is the clearest evidence that class cannot determine position. Kevs is 'very likely' bulletfodder rather than confirmed; if that identification is wrong the position may be too."
+    "2026-08-06 final pass. Kevs (uR) and p12 declared 3rds, epyon and monday declared not. The last two were the strongest Unter signals in the whole dataset -- 166 and 50 Unter with zero Stoss -- and are still Rifles, which is the clearest evidence that class cannot determine position. Kevs is 'very likely' bulletfodder rather than confirmed; if that identification is wrong the position may be too.",
+    "2026-08-06: IcyHot's 3rd reassigned from Sik to seanality. This reverses an earlier 'not Sean' call; the later instruction stands. Both are Stoss-dominant with little Unter, so nothing in the class data distinguishes them -- this is roster knowledge only."
   ],
   "roles": {
     "0:3612473": "Heavy",
     "1:6155141": "Heavy",
     "0:104450108": "Heavy",
-    "1:748805": "Rifle",
+    "1:748805": "3rd",
     "0:77934219": "Rifle",
     "1:16016464": "3rd",
     "0:281787": "3rd",
-    "0:2996359": "3rd",
+    "0:2996359": "Rifle",
     "1:31962398": "3rd",
     "0:4492": "3rd",
     "0:123285": "3rd",

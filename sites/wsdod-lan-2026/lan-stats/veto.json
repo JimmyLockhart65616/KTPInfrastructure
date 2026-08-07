@@ -1,0 +1,775 @@
+{
+ "sequences": {
+  "F": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "railroad2_s9a",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "harrington",
+    "side": "Allies"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "anzio",
+    "side": "Allies"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "lennon5_b1",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "TS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "TS",
+    "action": "decider",
+    "map": "armory_b6",
+    "side": "Allies"
+   }
+  ],
+  "LS1": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "lennon5_b1",
+    "side": "Axis"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "harrington",
+    "side": "Allies"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "TS",
+    "action": "ban",
+    "map": "armory_b6",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "TS",
+    "action": "decider",
+    "map": "railroad2_s9a",
+    "side": "Axis"
+   }
+  ],
+  "LS2": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "armory_b6",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "railroad2_s9a",
+    "side": "Allies"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "saints2_b3e",
+    "side": "Allies"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   }
+  ],
+  "P34": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "lennon5_b1",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 4,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "LS",
+    "action": "ban",
+    "map": "railroad2_s9a",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "LS",
+    "action": "decider",
+    "map": "armory_b6",
+    "side": "Allies"
+   }
+  ],
+  "P56": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "armory_b6",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "ban",
+    "map": "lennon5_b1",
+    "side": ""
+   },
+   {
+    "step": 4,
+    "actor": "TS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "LS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "LS",
+    "action": "decider",
+    "map": "railroad2_s9a",
+    "side": "Allies"
+   }
+  ],
+  "P78": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "ban",
+    "map": "railroad2_s9a",
+    "side": ""
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 4,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "LS",
+    "action": "ban",
+    "map": "lennon5_b1",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "LS",
+    "action": "decider",
+    "map": "armory_b6",
+    "side": "Axis"
+   }
+  ],
+  "P910": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   }
+  ],
+  "PI1": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "railroad2_s9a",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 4,
+    "actor": "TS",
+    "action": "ban",
+    "map": "lennon5_b1",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "LS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "LS",
+    "action": "decider",
+    "map": "armory_b6",
+    "side": "Axis"
+   }
+  ],
+  "PI2": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "ban",
+    "map": "lennon5_b1",
+    "side": ""
+   },
+   {
+    "step": 4,
+    "actor": "TS",
+    "action": "ban",
+    "map": "armory_b6",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "LS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "LS",
+    "action": "decider",
+    "map": "railroad2_s9a",
+    "side": "Axis"
+   }
+  ],
+  "QF1": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "harrington",
+    "side": "Allies"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "railroad2_s9a",
+    "side": "Allies"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "TS",
+    "action": "ban",
+    "map": "lennon5_b1",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "TS",
+    "action": "decider",
+    "map": "armory_b6",
+    "side": "Allies"
+   }
+  ],
+  "QF2": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "lennon5_b1",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "armory_b6",
+    "side": "Axis"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "saints2_b3e",
+    "side": "Axis"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "TS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "TS",
+    "action": "decider",
+    "map": "railroad2_s9a",
+    "side": "Allies"
+   }
+  ],
+  "QF3": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "railroad2_s9a",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "armory_b6",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "lennon5_b1",
+    "side": "Allies"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "saints2_b3e",
+    "side": "Axis"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "TS",
+    "action": "decider",
+    "map": "anzio",
+    "side": "Allies"
+   }
+  ],
+  "QF4": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "harrington",
+    "side": "Axis"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "railroad2_s9a",
+    "side": "Allies"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "TS",
+    "action": "ban",
+    "map": "armory_b6",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "TS",
+    "action": "decider",
+    "map": "lennon5_b1",
+    "side": "Axis"
+   }
+  ],
+  "SF1": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "thunder2",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "lennon5_b1",
+    "side": "Allies"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "armory_b6",
+    "side": "Axis"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "saints2_b3e",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "TS",
+    "action": "ban",
+    "map": "railroad2_s9a",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "TS",
+    "action": "decider",
+    "map": "anzio",
+    "side": "Allies"
+   }
+  ],
+  "SF2": [
+   {
+    "step": 0,
+    "actor": "TS",
+    "action": "ban",
+    "map": "anzio",
+    "side": ""
+   },
+   {
+    "step": 1,
+    "actor": "LS",
+    "action": "ban",
+    "map": "railroad2_s9a",
+    "side": ""
+   },
+   {
+    "step": 2,
+    "actor": "TS",
+    "action": "pick",
+    "map": "thunder2",
+    "side": "Axis"
+   },
+   {
+    "step": 3,
+    "actor": "LS",
+    "action": "pick",
+    "map": "lennon5_b1",
+    "side": "Allies"
+   },
+   {
+    "step": 4,
+    "actor": "LS",
+    "action": "ban",
+    "map": "harrington",
+    "side": ""
+   },
+   {
+    "step": 5,
+    "actor": "TS",
+    "action": "ban",
+    "map": "armory_b6",
+    "side": ""
+   },
+   {
+    "step": 6,
+    "actor": "TS",
+    "action": "decider",
+    "map": "saints2_b3e",
+    "side": "Axis"
+   }
+  ]
+ },
+ "played": {
+  "F": [
+   "harrington",
+   "anzio",
+   "armory_b6"
+  ],
+  "LS1": [
+   "lennon5_b1",
+   "harrington",
+   "railroad2_s9a"
+  ],
+  "LS2": [
+   "railroad2_s9a",
+   "saints2_b3e"
+  ],
+  "P34": [
+   "armory_b6"
+  ],
+  "P56": [
+   "railroad2_s9a"
+  ],
+  "P78": [
+   "armory_b6"
+  ],
+  "P910": [],
+  "PI1": [
+   "armory_b6"
+  ],
+  "PI2": [
+   "railroad2_s9a"
+  ],
+  "QF1": [
+   "harrington",
+   "railroad2_s9a",
+   "armory_b6"
+  ],
+  "QF2": [
+   "armory_b6",
+   "saints2_b3e",
+   "railroad2_s9a"
+  ],
+  "QF3": [
+   "lennon5_b1",
+   "saints2_b3e",
+   "anzio"
+  ],
+  "QF4": [
+   "harrington",
+   "railroad2_s9a",
+   "lennon5_b1"
+  ],
+  "SF1": [
+   "lennon5_b1",
+   "armory_b6",
+   "anzio"
+  ],
+  "SF2": [
+   "thunder2",
+   "lennon5_b1",
+   "saints2_b3e"
+  ]
+ }
+}

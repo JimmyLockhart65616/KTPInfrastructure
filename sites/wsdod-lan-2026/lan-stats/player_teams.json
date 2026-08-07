@@ -1,0 +1,429 @@
+{
+ "1:16016464": {
+  "team": "Best Buds",
+  "votes": 8,
+  "runner_up": 3,
+  "margin": 5,
+  "matches": 8
+ },
+ "0:77934219": {
+  "team": "Best Buds",
+  "votes": 10,
+  "runner_up": 3,
+  "margin": 7,
+  "matches": 10
+ },
+ "0:104450108": {
+  "team": "Best Buds",
+  "votes": 10,
+  "runner_up": 3,
+  "margin": 7,
+  "matches": 10
+ },
+ "0:32793027": {
+  "team": "Best Buds",
+  "votes": 10,
+  "runner_up": 3,
+  "margin": 7,
+  "matches": 10
+ },
+ "1:10054114": {
+  "team": "Best Buds",
+  "votes": 9,
+  "runner_up": 3,
+  "margin": 6,
+  "matches": 9
+ },
+ "1:2052836": {
+  "team": "Best Buds",
+  "votes": 10,
+  "runner_up": 3,
+  "margin": 7,
+  "matches": 10
+ },
+ "1:351766339": {
+  "team": "North Atlantic Treaty Org",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "0:15083886": {
+  "team": "North Atlantic Treaty Org",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "1:31962398": {
+  "team": "North Atlantic Treaty Org",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "1:11494215": {
+  "team": "North Atlantic Treaty Org",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "0:363246168": {
+  "team": "North Atlantic Treaty Org",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "1:9446506": {
+  "team": "North Atlantic Treaty Org",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "1:9865547": {
+  "team": "Arrested Development",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:836459725": {
+  "team": "Arrested Development",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:443810": {
+  "team": "Arrested Development",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:93610": {
+  "team": "Arrested Development",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:64041420": {
+  "team": "Arrested Development",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:51476452": {
+  "team": "Arrested Development",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:9833731": {
+  "team": "NoSoul",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:67913": {
+  "team": "NoSoul",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:25429845": {
+  "team": "NoSoul",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:18676541": {
+  "team": "NoSoul",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:123285": {
+  "team": "NoSoul",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:6122950": {
+  "team": "NoSoul",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:4492": {
+  "team": "onLAN thunder",
+  "votes": 11,
+  "runner_up": 3,
+  "margin": 8,
+  "matches": 11
+ },
+ "0:78863": {
+  "team": "onLAN thunder",
+  "votes": 11,
+  "runner_up": 3,
+  "margin": 8,
+  "matches": 11
+ },
+ "0:741614372": {
+  "team": "onLAN thunder",
+  "votes": 11,
+  "runner_up": 3,
+  "margin": 8,
+  "matches": 11
+ },
+ "0:74027": {
+  "team": "onLAN thunder",
+  "votes": 11,
+  "runner_up": 3,
+  "margin": 8,
+  "matches": 11
+ },
+ "1:1699528": {
+  "team": "onLAN thunder",
+  "votes": 11,
+  "runner_up": 3,
+  "margin": 8,
+  "matches": 11
+ },
+ "1:8702451": {
+  "team": "onLAN thunder",
+  "votes": 11,
+  "runner_up": 3,
+  "margin": 8,
+  "matches": 11
+ },
+ "0:72967": {
+  "team": "b Team",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "0:3906550": {
+  "team": "b Team",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "1:68033122": {
+  "team": "b Team",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "1:6758404": {
+  "team": "b Team",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "0:749715": {
+  "team": "b Team",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "1:24850": {
+  "team": "b Team",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "0:16983": {
+  "team": "icyHOT",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:11692441": {
+  "team": "icyHOT",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:90794": {
+  "team": "icyHOT",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:748805": {
+  "team": "icyHOT",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:10230748": {
+  "team": "icyHOT",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:2996359": {
+  "team": "icyHOT",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:237126": {
+  "team": "Uncle Rico's Time Machine",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "0:7735372": {
+  "team": "Uncle Rico's Time Machine",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "1:10437288": {
+  "team": "Uncle Rico's Time Machine",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "0:6291720": {
+  "team": "Uncle Rico's Time Machine",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "1:25130574": {
+  "team": "Uncle Rico's Time Machine",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "1:955338590": {
+  "team": "Uncle Rico's Time Machine",
+  "votes": 8,
+  "runner_up": 2,
+  "margin": 6,
+  "matches": 8
+ },
+ "0:99398": {
+  "team": "Price is Right",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:2221518": {
+  "team": "Price is Right",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:642008661": {
+  "team": "Price is Right",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:777438": {
+  "team": "Price is Right",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "1:25292511": {
+  "team": "Price is Right",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:1794": {
+  "team": "Price is Right",
+  "votes": 12,
+  "runner_up": 3,
+  "margin": 9,
+  "matches": 12
+ },
+ "0:3612473": {
+  "team": "dicE",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "1:10468563": {
+  "team": "dicE",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "0:281787": {
+  "team": "dicE",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "1:6155141": {
+  "team": "dicE",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "1:1547256": {
+  "team": "dicE",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "0:8832199": {
+  "team": "dicE",
+  "votes": 13,
+  "runner_up": 4,
+  "margin": 9,
+  "matches": 13
+ },
+ "1:2312843": {
+  "team": "Best Buds",
+  "votes": 9,
+  "runner_up": 3,
+  "margin": 6,
+  "matches": 9
+ }
+}

@@ -1,0 +1,382 @@
+{
+ "demos": [
+  {
+   "id": 1,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/001-kev_de-dod.zip"
+  },
+  {
+   "id": 2,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/002-Nein-armory_axis.zip"
+  },
+  {
+   "id": 3,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/003-Nein-armory_allies.zip"
+  },
+  {
+   "id": 4,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/004-piff-match1nato2.zip"
+  },
+  {
+   "id": 5,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/005-3sidedquarter-lanarmoryvsnato2nd.zip"
+  },
+  {
+   "id": 6,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/006-3sidedquarter-lanarmoryvsnato2nd.zip"
+  },
+  {
+   "id": 7,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/007-piff-match1nato1.zip"
+  },
+  {
+   "id": 8,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/008-3sidedquarter-lanarmoryvsnato1st.zip"
+  },
+  {
+   "id": 9,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/009-dorito-dorito-rr-game1-bteam-armory-axis.zip"
+  },
+  {
+   "id": 10,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/010-dorito-dorito-rr-game1-bteam-armory-axis.zip"
+  },
+  {
+   "id": 11,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/011-dorito-dorito-rr-game1-bteam-armory-allies.zip"
+  },
+  {
+   "id": 12,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/012-warchyld_dd-dicevprice-armory-axis.zip"
+  },
+  {
+   "id": 13,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/013-warchyld_dd-dicevprice-armory-allies.zip"
+  },
+  {
+   "id": 14,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/014-warchyld_dd-dicevprice-armory-axis.zip"
+  },
+  {
+   "id": 15,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/015-kroD-wsdod_match1_armory_allies_2.zip"
+  },
+  {
+   "id": 16,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/016-incite_bc-2026LAN_Bluth_vs_NoSo_Axis_Half1.zip"
+  },
+  {
+   "id": 17,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/017-kroD-wsdod_match1_armory_axis_1.zip"
+  },
+  {
+   "id": 18,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/018-incite_bc-2026LAN_Bluth_vs_NoSo_Allies_half2.zip"
+  },
+  {
+   "id": 19,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/019-piff-match2price1.zip"
+  },
+  {
+   "id": 20,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/020-piff-match2price2.zip"
+  },
+  {
+   "id": 21,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/021-khoi-khoi-groupstage-1-nosoul_arresteddevelopment-1-armory_allies.zip"
+  },
+  {
+   "id": 22,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/022-khoi-khoi-groupstage-1-nosoul_arresteddevelopment-2-armory_axis.zip"
+  },
+  {
+   "id": 23,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/023-khoi-khoi-groupstage-2-nosoul_nato-1-thunder2_axis.zip"
+  },
+  {
+   "id": 24,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/024-khoi-khoi-groupstage-2-nosoul_nato-2-thunder2_allies.zip"
+  },
+  {
+   "id": 25,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/025-stealthlol-match1PIRarmoryallies.zip"
+  },
+  {
+   "id": 26,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/026-stealthlol-match1PIRarmoryaxis.zip"
+  },
+  {
+   "id": 27,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/027-stealthlol-match2ADthunderallies.zip"
+  },
+  {
+   "id": 28,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/028-element-philly-m1-price-armory-allies.zip"
+  },
+  {
+   "id": 29,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/029-stealthlol-match2ADthunderaxis.zip"
+  },
+  {
+   "id": 30,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/030-element-philly-m1-price-armory-allies.zip"
+  },
+  {
+   "id": 31,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/031-Nein-thunder_allies.zip"
+  },
+  {
+   "id": 32,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/032-element-philly-m1-price-armory-axis.zip"
+  },
+  {
+   "id": 33,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/033-Nein-thunder_axis.zip"
+  },
+  {
+   "id": 34,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/034-element-philly-m2-AD-thunder-allies.zip"
+  },
+  {
+   "id": 35,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/035-element-philly-m2-AD-thunder-axis.zip"
+  },
+  {
+   "id": 36,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/036-3sidedquarter-lanthundervsprice1st.zip"
+  },
+  {
+   "id": 37,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/037-3sidedquarter-lanthundervsprice2nd.zip"
+  },
+  {
+   "id": 38,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/038-piff-match3thunder1.zip"
+  },
+  {
+   "id": 39,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/039-piff-match3thunder2.zip"
+  },
+  {
+   "id": 40,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/040-khoi-khoi-groupstage-3-nosoul_dice-1-lennon5_allies.zip"
+  },
+  {
+   "id": 41,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/041-khoi-khoi-groupstage-3-nosoul_dice-2-lennon5_axis.zip"
+  },
+  {
+   "id": 42,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/042-warchyld_dd-dicevbluth-thunder-allies.zip"
+  },
+  {
+   "id": 43,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/043-warchyld_dd-dicevbluth-thunder-axis.zip"
+  },
+  {
+   "id": 44,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/044-warchyld_dd-dicevbluth-thunder-axis.zip"
+  },
+  {
+   "id": 45,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/045-warchyld_dd-dicevprice-armory-axis.zip"
+  },
+  {
+   "id": 46,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/046-warchyld_dd-dicevsoul-lennon-allies.zip"
+  },
+  {
+   "id": 47,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/047-warchyld_dd-dicevsoul-lennon-axis.zip"
+  },
+  {
+   "id": 48,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/048-Nein-lennon_allies.zip"
+  },
+  {
+   "id": 49,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/049-Nein-lennon_axis.zip"
+  },
+  {
+   "id": 50,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/050-khoi-khoi-groupstage-4-nosoul_priceisright-1-saints2_allies.zip"
+  },
+  {
+   "id": 51,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/051-khoi-khoi-groupstage-4-nosoul_priceisright-2-saints2_axis.zip"
+  },
+  {
+   "id": 52,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/052-stealthlol-match4THUNDERsaintsallies.zip"
+  },
+  {
+   "id": 53,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/053-stealthlol-match4THUNDERsaintsaxis.zip"
+  },
+  {
+   "id": 54,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/054-piff-match4nicholson1.zip"
+  },
+  {
+   "id": 55,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/055-piff-match4nicholson2.zip"
+  },
+  {
+   "id": 56,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/056-stealthlol-match5NATOharringtonallies.zip"
+  },
+  {
+   "id": 57,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/057-stealthlol-match5NATOharringtonaxis.zip"
+  },
+  {
+   "id": 58,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/058-warchyld_dd-dicevnmato-harry-axis.zip"
+  },
+  {
+   "id": 59,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/059-warchyld_dd-dicevnmato-harry-allies.zip"
+  },
+  {
+   "id": 60,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/060-warchyld_dd-dicevbluth-thunder-allies.zip"
+  },
+  {
+   "id": 61,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/061-bromley-HARRYNOSOULALLIES.zip"
+  },
+  {
+   "id": 62,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/062-stealthlol-match6ICYanzioallies.zip"
+  },
+  {
+   "id": 63,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/063-stealthlol-match6ICYanzioaxis.zip"
+  },
+  {
+   "id": 64,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/064-3sidedquarter-lananziovsbteeam2nd.zip"
+  },
+  {
+   "id": 65,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/065-3sidedquarter-lanarmoryvsnato1st.zip"
+  },
+  {
+   "id": 66,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/066-piff-match6bteam1.zip"
+  },
+  {
+   "id": 67,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/067-piff-match6bteam2.zip"
+  },
+  {
+   "id": 68,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/068-Nicholson-ArmoryVSNoSoul-_Saturday.zip"
+  },
+  {
+   "id": 69,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/069-Nicholson-ThunderVSDice_-_Saturday.zip"
+  },
+  {
+   "id": 70,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/070-Nicholson-LennonVSICY_-_Saturday.zip"
+  },
+  {
+   "id": 71,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/071-Nicholson-SaintsVSBBS_-_Saturday.zip"
+  },
+  {
+   "id": 72,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/072-Nicholson-HarringtonVSBTeam_-_Saturday.zip"
+  },
+  {
+   "id": 73,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/073-Nicholson-AnzioVSPrice_-_Saturday.zip"
+  },
+  {
+   "id": 74,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/074-piff-playoffs1nicholson1.zip"
+  },
+  {
+   "id": 75,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/075-piff-playoffs1nicholson2.zip"
+  },
+  {
+   "id": 76,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/076-piff-playoffs2nicholsson1.zip"
+  },
+  {
+   "id": 77,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/077-piff-playoffs2nicholsson2.zip"
+  },
+  {
+   "id": 78,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/078-piff-playoffs2nicholsson2.zip"
+  },
+  {
+   "id": 79,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/079-piff-lowerplayoff1pir1.zip"
+  },
+  {
+   "id": 80,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/080-piff-lowerplayoff2pir1.zip"
+  },
+  {
+   "id": 81,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/081-piff-lowerplayoff1pir2.zip"
+  },
+  {
+   "id": 82,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/082-piff-lowerplayoff2pir2.zip"
+  },
+  {
+   "id": 83,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/083-piff-dod_railroad2_s9a0000_bmp.zip"
+  },
+  {
+   "id": 84,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/084-piff-lowerfinal1.zip"
+  },
+  {
+   "id": 85,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/085-piff-lowerfinal1.zip"
+  },
+  {
+   "id": 86,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/086-piff-lowerfinal2.zip"
+  },
+  {
+   "id": 87,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/087-Nicholson-SundayVSBestBuds.zip"
+  },
+  {
+   "id": 88,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/088-Nicholson-SundayVSICYHOT.zip"
+  },
+  {
+   "id": 89,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/089-Nicholson-SundayVSDICE.zip"
+  },
+  {
+   "id": 90,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/player-uploads/090-m00cat-wsod26_grp1_h1_m00cat.zip"
+  }
+ ],
+ "photos": [
+  {
+   "id": 1,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/photos/001-Khoi-sik-yayme-khoi-bausch.jpeg"
+  },
+  {
+   "id": 2,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/photos/002-Khoi-sik-yayme-khoi-bausch.jpeg"
+  },
+  {
+   "id": 3,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/photos/003-Khoi-arachnid-khoi-bausch-yayme.jpeg"
+  },
+  {
+   "id": 4,
+   "url": "https://fastdl.ktpdod.com/demos/LAN-PHILLY2026/photos/004-baiko-Sz_nightmare_Sq_NoName_baiko_h00li.webp"
+  }
+ ]
+}
