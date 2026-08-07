@@ -102,6 +102,7 @@ nav .row { display:flex; align-items:center; gap: 22px; height: 58px; }
 nav .spacer { flex: 1; }
 nav .navlink { color: var(--dim); font-size: 0.82rem; letter-spacing: 0.6px; }
 nav .navlink:hover { color: var(--text); }
+nav .navlink.here { color: var(--text); }
 .who {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 0.72rem; color: var(--dim); letter-spacing: 0.4px;
@@ -161,6 +162,9 @@ h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -1px
    shifts the nav's right edge and breaks the header geometry lock. */
 .eyebrow .who { margin-left: auto; }
 .eyebrow .who:empty { display: none; }
+/* the chip takes the auto margin; without this the two auto margins split the
+   slack and the sponsor pill floats inboard of where every sibling page puts it */
+.eyebrow .who + .sponsor-slot { margin-left: 0; }
 
 /* Section jumps. The nav carries the other KTP sites now, so in-page navigation lives here.
    This is a <nav> for semantics, so it has to undo the bare `nav {}` top-bar rule above --
@@ -383,7 +387,6 @@ footer .accent { color: var(--red); white-space: nowrap; }
     <span class="brand"><span class="k">KTP</span> &mdash; Support</span>
     <span class="spacer"></span>
     <a class="navlink hidesm" href="https://fastdl.ktpdod.com/">Downloads</a>
-    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/demos/">Demos</a>
     <a class="navlink hidesm" href="https://netcode.ktpdod.com/">Netcode</a>
     <a class="navlink hidesm" href="https://profiles.ktpdod.com/">Profiles</a>
     <a class="navlink hidesm" href="https://bundles.ktpdod.com/">My Data</a>
