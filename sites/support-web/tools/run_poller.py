@@ -40,8 +40,10 @@ def main() -> int:
         return 0
 
     try:
-        P.write_atomic(args.public, public)
-        P.write_atomic(args.detail, detail)
+        # public.json is served by nginx as a static file; detail.json is
+        # operator-only and lives outside the web root.
+        P.write_atomic(args.public, public, mode=0o644)
+        P.write_atomic(args.detail, detail, mode=0o600)
     except OSError as exc:
         print(f"support-poller: write failed: {exc}", file=sys.stderr)
         return 1

@@ -69,15 +69,22 @@ def unrelayed_reports(conn, limit: int = 50) -> list[dict]:
         return list(cur.fetchall())
 
 
-def insert_ticket(conn, scope, steam_id, display_name, requested_by, note, season) -> int:
+def insert_ticket(conn, level, group, steam_id, display_name, requested_by,
+                  note, season) -> int:
+    """Level decides the flags written to users.ini; group decides which
+    heading the line goes under. Both are stored -- two grants can carry the
+    same flags under different headings, and the group is what a postseason
+    sweep filters on."""
     with transaction(conn), conn.cursor() as cur:
         cur.execute(
             """
             INSERT INTO support_tickets
-              (scope, steam_id, display_name, requested_by, requested_note, status, season)
-            VALUES (%s, %s, %s, %s, %s, 'submitted', %s)
+              (level, group_name, steam_id, display_name, requested_by,
+               requested_note, status, season)
+            VALUES (%s, %s, %s, %s, %s, %s, 'submitted', %s)
             """,
-            (scope.value, steam_id, display_name, requested_by, note, season),
+            (level.value, group.value, steam_id, display_name, requested_by,
+             note, season),
         )
         return cur.lastrowid
 
@@ -103,8 +110,8 @@ def open_tickets(conn) -> list[dict]:
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id, scope, steam_id, display_name, requested_by, requested_note,
-                   status, season, created_at
+            SELECT id, level, group_name, steam_id, display_name, requested_by,
+                   requested_note, status, season, created_at
             FROM support_tickets
             WHERE status IN ('submitted', 'approved', 'applied', 'active')
             ORDER BY FIELD(status, 'submitted', 'approved', 'applied', 'active'),

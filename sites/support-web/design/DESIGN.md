@@ -582,3 +582,175 @@ here.** A stray `ktpdod.com` in `support.`'s `server_name` would capture it the 
 - **Certs:** Let's Encrypt per-subdomain, one `live/` dir each — nine already. `support.` follows the
   same pattern: **its own cert, never a SAN including the apex** (§A).
 - **Vhost convention:** one file per subdomain in `sites-available` → symlinked. `support.` matches.
+
+---
+
+# Visual refinement pass — 2026-08-05
+
+Operator brief: *"in terms of a prototype this is pretty good as a first pass; just needs to be
+overall cleaned up, made to look cleaner, less cluttered."* This pass is refinement **within** the
+bundles-web house style — no new palette, no new typefaces, no layout paradigm change. Components
+copied verbatim from `bundles-web/styles.css` (eyebrow, panel/head/body, pill, field, btn, footer,
+nav) stay verbatim; everything page-specific was rebuilt onto the scales below.
+
+## The scales the page is now built to
+
+**Spacing (px): 4 · 8 · 12 · 16 · 24 · 32 · 48.** Sections sit on a uniform 48px top rhythm (was
+26px, which read as one undifferentiated column); admin sub-sections at 32; panels stack at 16 via
+the house's own `.panel + .panel` rule (restored — its absence was why the first pass carried ~10
+inline `margin-top` styles); captions sit 12 under their content. Grid containers space with `gap`
+and explicitly zero the panel-stacking margin (`.fleet/.cmdcols/.cmdgrid > .panel`), because grid
+items don't collapse margins — without that reset the restored rule shifts every non-first grid panel.
+
+**Type (rem): 0.68 · 0.72 · 0.78 · 0.82 · 0.86 · 0.92 · 1.05 · 1.3 · clamp() h1** (+ the house's
+0.7 pill, untouched). Roles: 0.68 uppercase micro-labels, 0.72 meta/hints/captions, 0.78
+tables/card body/fineprint, 0.82 rows/nav/tickets, 0.86 prose panels, 0.92 lede/inputs/buttons,
+1.05 sub-heads/brand, 1.3 section h2. This retired ten one-off sizes (0.62, 0.64, 0.74, 0.76, 0.8,
+0.84, 0.9, 1.02, 1.1rem, 11px).
+
+**Colour discipline:** colour now only carries information — red = accent word, brand K, live/down,
+note-box rail, sponsor; blue = ok, info, every command `code`; amber = degraded, and the mockup
+switcher (deliberately loud, it isn't part of the design). Everything else is the grey ramp.
+A page-local `--rule: rgba(33,72,149,0.38)` token replaced five separately-declared interior row
+borders, and interior rules (table rows, fineprint tops) are now consistently lighter than panel
+borders, so tables read by alignment instead of chrome.
+
+## Fixed outright (bugs, not taste)
+
+- **`.badge` referenced `--line`, `--green`, `--accent` — none exist in this palette** (rules were
+  pasted from a different site). Badges now use the real tokens: `type` = blue (info), `live` = red
+  (a live match is the one thing worth a hot colour on a status board). They also moved onto their
+  own line inside service tiles instead of being nested mid-sentence in a 0.72rem span.
+- `.sponsor-slot` used `float:right` inside a flex row (a no-op) and a 4px-radius rectangle
+  matching nothing on the property → `margin-left:auto` and the house pill geometry.
+- `p.hint` outside `.field` matched no selector (AC-console panel) — `.hint` is now a standalone
+  class.
+- `<summary>` had no `:focus-visible` outline; added.
+
+## Removed
+
+- **`.score` — operator call ("rarely used by anyone").** Gone from the Ready group (renamed
+  "Ready & status") and from match-flow steps 4/6, which now show `.status` (it reports the score
+  while live, so the strip loses nothing). Recorded in COMMANDS.md §5 so it is never re-added.
+- ~20 inline `style=""` attributes (all but the data-driven bar widths) → the scales above plus
+  three sanctioned utilities (`.mt8`, `.mt16`, `.measure`) and two content classes (`.prose`,
+  `.rolelist`). Inline styles were the main specificity hazard this file had.
+- Dead rules: `.hcard.sponsor` (no such card exists since the §E header move), duplicated panel
+  gradient declarations (now one `--panel-grad` token — same output, one source).
+
+## Signature element
+
+**The house eyebrow's 26px × 2px blue dash, reused as the marker above each top-level section
+`h2`.** One sentence of justification: it gives a long single page wayfinding using the one
+decorative mark the property already owns, so section starts here read exactly like every sibling
+page's hero. Sub-heads inside the admin tier deliberately do *not* get it — the dash means
+"section", and diluting it would cost the meaning. Nothing else was added; the hover red rail on
+hub cards (already house behaviour from `.bcard`) remains the only other flourish.
+
+## Still needs work (out of scope for this pass)
+
+- **Real-browser QA across widths.** This pass was built to plan and statically checked; the fleet
+  grid at ~700–900px (five panels, awkward 2/2/1 wrap) is the spot most likely to want a tweak.
+- **Copy-button density in the bot hub** — 15 `/ops` rows each with a copy pill is still the
+  busiest area of the page. They're quieter now (faint until hover) but a "copy on row hover only"
+  treatment was rejected for touch/keyboard reasons; if the operator still finds it noisy, the next
+  lever is dropping copy buttons from the admin tables entirely (admins can select text).
+- **Production font**: the prototype rides the fallback mono stack; metrics will shift slightly
+  when self-hosted JetBrains Mono lands. Re-check the matchflow strip wrapping then.
+- The `.mock` tier switcher ignores the type scale on purpose (throwaway device); don't "fix" it.
+
+---
+
+# Palette change — WSDoD olive (2026-08-05)
+
+Operator brief: re-palette the live template to the WSDoD olive-drab scheme, values extracted from
+`1911-ktp-beta.vercel.app/wsdod` (resolved from `lab()` to hex — real values, not guesses). Applied
+to **`app/templates/index.html` only**; `design/prototype.html` still carries the navy palette and
+is now visually stale as a color reference (its layout/markup reference value is unchanged).
+
+## Token mapping (names deliberately kept — the stylesheet references them everywhere)
+
+| Token | Was (navy) | Now (olive) | Source |
+|---|---|---|---|
+| `--bg` | `#001e62` | `#171c0a` | WSDoD `--background` |
+| `--panel` | `#0a2f77` | `#252a14` | WSDoD `--card` |
+| `--panel-2` | `#13367c` | `#323920` | WSDoD `--secondary` (still unused, kept defined) |
+| `--inset` | `#001a54` | `#101407` | derived — recessed tone darker than `--bg`; WSDoD has no inset role |
+| `--border` | `#214895` | `#3d432b` | WSDoD `--border` |
+| `--rule` | `rgba(33,72,149,.38)` | `rgba(61,67,43,.5)` | `--border` at reduced alpha; olive border is lower-contrast so alpha raised .38→.5 |
+| `--text` | `#f3fbff` | `#eae7d4` | WSDoD `--foreground` |
+| `--dim` | `#adc8e0` | `#b6b299` | WSDoD `--muted-foreground` |
+| `--faint` | `#8aa6cf` | `#98947c` | derived — `--dim` stepped down; chosen at ≈4.8:1 on panels (matching the navy faint's ~5:1, not the 4.2:1 a naive darken produced) |
+| `--red` | `#f52735` | `#d0513b` | WSDoD `--destructive` (rust) |
+| `--red-soft` | — (new) | `#e07a63` | derived; see contrast notes |
+| `--blue` | `#0072d5` | `#819746` | WSDoD `--primary` (moss) — **name kept, color is now green** |
+| `--blue-soft` | `#4ea3e6` | `#9fb45c` | derived — moss lifted for text-on-panel, mirroring the old blue/blue-soft split |
+| `--amber` | `#e8a13c` | `#c08b5c` | WSDoD `--accent` `#ad794b` **lifted** — see contrast notes |
+| `--panel-grad` | panel→`#082a6b` | panel→`#1e230f` | same darken-toward-bottom treatment |
+
+Hardcoded hexes swept in the same pass: theme-color meta, body radial gradient, nav backdrop
+(`rgba(16,20,7,.72)`), `::selection` ink, sponsor-slot hover ink, `.hcard` hover border
+(`#565e3b`), `.btn` ink + hover (`#93aa55`), ghost/copy hover ink (`#e6e3cf`), `.mock` pressed
+tint. A regex sweep confirms zero navy-era hexes remain. Font stack untouched — JetBrains Mono
+already led `--mono` and WSDoD uses the same face, so no change and no external request.
+
+## Status-colour semantics (re-derived, not just re-hexed)
+
+| State | Was | Now | Where |
+|---|---|---|---|
+| ok / info / commands / links / actions | blue | **moss** (`--blue`/`--blue-soft`) | dots, ok pills, bars, badges.type, links, buttons, code, focus rings, eyebrow/section dash, mstep.live |
+| down / live / alert / accent | red | **rust** (`--red`, `--red-soft` for small text) | down dots/pills, badge.live, offline counts, note-box rail, brand K, hero accent, hcard rail, sponsor |
+| degraded | amber | **tan** (`--amber`) | warn pills/dots only — still never a brand color |
+
+Moss = ok is the natural reading in an olive scheme; rust keeps "down/live" hot; tan slots into
+"degraded/attention". The `red`/`blue`/`amber` token names now lie about their hue — accepted
+trade (renaming was churn across the whole stylesheet); the `:root` block comments say so inline.
+
+**Ok-green vs background-green:** the flagged risk. Mitigations: `.dot.ok` and all ok *text* use
+`--blue-soft` `#9fb45c` (6.4:1 on panels — unmistakably lighter than any surface); fills/borders
+use `--blue` `#819746`, which is 4.5:1 on panels and 5.3:1 on `--inset` (the `.bar` track), both
+past the 3:1 UI-component floor. And per the existing rule, status is never colour-alone — every
+dot/pill has a text label, which is what actually protects the moss-on-olive case.
+
+## Contrast problems found and how they were solved
+
+- **White-on-moss buttons failed (3.3:1).** The navy `.btn` was white-on-blue (4.8:1); the same
+  treatment on moss fails. Fix: dark ink `#0b0f04` — WSDoD's own `--primary-foreground` — giving
+  6.0:1. Same treatment for `::selection` and the sponsor-slot hover (rust bg + `#150b04` ink,
+  WSDoD's `--accent-foreground`; white ink there was 4.3:1).
+- **Rust is mid-luminance; small rust text fails.** `#d0513b` on panels is 3.4:1 — same ratio the
+  navy red had, but that was already marginal and the new small-text sites (0.68–0.72rem
+  `badge.live`, `pill.down`, `.inst.off .ct`, the sponsor pill) deserve better. Fix: new
+  `--red-soft` `#e07a63`
+  (5.0:1) for small rust *text*, mirroring the existing blue/blue-soft precedent; borders, dots
+  and large accents stay `--red` (borders need only 3:1 — 3.4 passes).
+- **WSDoD tan `#ad794b` fails as text (3.9:1).** `--amber` ships lifted to `#c08b5c` (4.9:1) since
+  its only jobs here are small warn-pill text and a dot. The raw WSDoD value is recorded above if
+  a fill-weight tan is ever needed.
+- **`--faint` and `--rule` re-tuned rather than transliterated** — a straight luminance-match of
+  the navy values read too weak against olive (see table).
+
+## Admin layout — small panels no longer weigh like forms
+
+Operator: the AC console link / privileges form / approval queue / admin commands each spanned the
+full page, so a one-line link had the same visual weight as a six-field form. Changes (all inside
+the existing Jinja guards — no content moved across a `{% if %}` boundary, no gating change):
+
+- **KTP tier**: the top of the block is now a `.twocol` (existing 3fr/2fr grid). Wide column:
+  **Request game server privileges** (the real form). Narrow column, stacked: **AC review
+  console** (one link), **Approval queue** (empty-state + lifecycle strip; tickets are
+  flex-wrapping rows, so the ~440px column holds them when populated), **Booking a server** (two
+  short paragraphs, moved up from below the commands table — it's guidance, not reference, and it
+  pairs with the booking-adjacent queue). **In-game admin commands** and the **Bot command hub**
+  keep full width — they are wide tables in `.scrollbox`, width is load-bearing there.
+- **1.3/shared tier**: the moderator-request form + "Your requests" pair became the same
+  `.twocol` (form wide, status panel narrow) instead of two full-width stacked panels.
+- Under 860px `.twocol` collapses to one column (existing rule), so mobile reads top-to-bottom:
+  form, console link, queue, booking.
+- Incidental fix: the shared-tier block carried a **stray unbalanced `</div>`**; removed. All
+  three tier renders now emit balanced markup (verified by rendering the template with mock
+  context: public 61/61, 1.3 66/66, KTP 110/110 open/close divs).
+
+Verified: CSS braces balance (179/179), every `var()` reference resolves (`--panel-2` remains the
+one defined-but-unused token, as before), Jinja tags pair to depth 0, and the backend-read form
+names (`steam_id`, `display_name`, `level`, `group`, `note`) all survive.

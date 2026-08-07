@@ -55,17 +55,45 @@ def view(doc: dict | None, now: float | None = None) -> dict:
         return {
             "freshness": state.value,
             "servers": [],
+            "by_region": [],
+            "live_matches": [],
+            "age": None,
             "summary": None,
             "message": MISSING,
             "generated": (doc or {}).get("generated"),
         }
+    servers = doc.get("servers", [])
     return {
         "freshness": state.value,
-        "servers": doc.get("servers", []),
+        "servers": servers,
+        "by_region": _by_region(servers),
+        "live_matches": [s for s in servers if s.get("state")],
         "summary": doc.get("summary"),
         "message": None,
         "generated": doc["generated"],
+        "age": _age(doc["generated"], now),
     }
+
+
+def _by_region(servers: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Regions in first-seen order -- the poller emits them geographically, and
+    re-sorting alphabetically would scatter the fleet's own grouping."""
+    order: list[str] = []
+    grouped: dict[str, list[dict]] = {}
+    for s in servers:
+        region = s.get("region", "Other")
+        if region not in grouped:
+            order.append(region)
+            grouped[region] = []
+        grouped[region].append(s)
+    return [(r, grouped[r]) for r in order]
+
+
+def _age(generated: int, now: float | None = None) -> str:
+    secs = int((time.time() if now is None else now) - generated)
+    if secs < 90:
+        return f"{max(secs, 0)}s ago"
+    return f"{secs // 60}m ago"
 
 
 def server_labels(doc: dict | None) -> set[str]:

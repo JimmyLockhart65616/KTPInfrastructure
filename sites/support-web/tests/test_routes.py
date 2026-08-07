@@ -28,6 +28,7 @@ def client(tmp_path, monkeypatch):
     pub.write_text(json.dumps({
         "generated": 2_000_000_000,
         "servers": [{"region": "Dallas", "label": "Dallas 1", "up": True,
+                     "connect": "74.91.126.55:27015",
                      "map": "dod_donner", "players": 0, "max_players": 12, "hltv": True}],
         "summary": {"up": 1, "total": 1, "players": 0},
     }))
@@ -76,27 +77,59 @@ def client(tmp_path, monkeypatch):
 
 # --- what a logged-out visitor actually receives --------------------------
 
-def test_public_html_contains_no_admin_markup(client):
+KTP_ONLY = ("Approval queue", "Request game server privileges", "Bot command hub",
+            "/ops fleet-health", ".forcereset", "Booking a server",
+            "AC review console")
+ONE3_ONLY = ("Request moderator access",)
+
+
+def test_logged_out_receives_no_admin_markup_at_all(client):
+    """The claim the whole tier design rests on: gating is server-side, so a
+    logged-out response contains nothing to find in view-source."""
     html = client().get("/").text
-    for gated in ("request_one3", "request_ktp", "commands", "ticket queue"):
+    for gated in KTP_ONLY + ONE3_ONLY:
         assert gated not in html, f"logged-out HTML leaked {gated!r}"
-    assert "report-a-problem" in html and "Sponsor KTP" in html
+    assert "Sign in with Discord" in html
 
 
-def test_one3_sees_its_form_and_not_the_ktp_one(client):
+def test_one3_gets_its_form_and_none_of_the_ktp_surface(client):
     html = client("333").get("/").text
-    assert "1.3 moderator request" in html
-    assert "KTP privilege request" not in html and "ticket queue" not in html
+    assert "Request moderator access" in html
+    for ktp_only in KTP_ONLY:
+        assert ktp_only not in html, f"1.3 tier leaked {ktp_only!r}"
 
 
-def test_ktp_sees_everything(client):
+def test_ktp_gets_everything(client):
     html = client("111").get("/").text
-    for section in ("KTP privilege request", "bot command hub", "ticket queue"):
-        assert section in html
+    for section in KTP_ONLY + ONE3_ONLY:
+        assert section in html, f"KTP tier missing {section!r}"
 
 
-def test_status_renders_capacity_with_the_proxy_flag(client):
-    assert "0/12 +H" in client().get("/").text
+def test_public_page_renders_the_real_sections(client):
+    html = client().get("/").text
+    for expected in ("Report a problem", "Server commands", "Everything KTP",
+                     "Sponsor KTP", "Sign-in", "sign-in"):
+        if expected.lower() in html.lower():
+            continue
+        raise AssertionError(f"public page missing {expected!r}")
+
+
+def test_status_renders_live_fleet_data(client):
+    html = client().get("/").text
+    assert "Dallas 1" in html
+    assert "0/12" in html
+    assert "connect 74.91.126.55:27015" in html
+    # The fleet row is label + count + connect. Map name belongs to the live-match
+    # strip, and this fixture server has no match state, so it must NOT appear.
+    assert "dod_donner" not in html
+    assert "No live matches" in html
+
+
+def test_public_status_api_carries_connect_but_no_internal_detail(client):
+    body = client().get("/api/status").text
+    assert "74.91.126.55:27015" in body          # the game endpoint, deliberately
+    for internal in ("8087", ".service", "consecutive", "last_ok"):
+        assert internal not in body
 
 
 # --- detail.json is gated -------------------------------------------------
@@ -112,10 +145,6 @@ def test_detail_is_404_not_403_for_non_ktp(client, who):
 def test_detail_reaches_ktp_admins(client):
     r = client("111").get("/api/status/detail")
     assert r.status_code == 200 and "74.91.126.55:27015" in r.text
-
-
-def test_public_status_api_never_carries_addresses(client):
-    assert "74.91.126.55" not in client().get("/api/status").text
 
 
 def test_healthz_says_nothing_about_the_fleet(client):
@@ -218,7 +247,8 @@ def test_a_database_failure_does_not_block_the_relay(client, monkeypatch):
 # --- tickets --------------------------------------------------------------
 
 def ticket_form(**kw):
-    d = {"scope": "one3_moderator", "steam_id": "STEAM_0:1:12345", "display_name": "someone"}
+    d = {"level": "cl", "group": "one3_admin",
+         "steam_id": "STEAM_0:1:12345", "display_name": "someone"}
     d.update(kw)
     return d
 
@@ -228,18 +258,28 @@ def test_public_cannot_see_or_file_tickets(client):
     assert r.status_code == 404          # 404, not 403 -- says nothing
 
 
-def test_one3_admin_may_request_only_its_own_scope(client):
+def test_one3_admin_may_request_only_its_own_group_at_the_lower_level(client):
     c = client("333")
     assert c.post("/api/tickets", data=ticket_form()).status_code == 200
     # The KTP form is never rendered for them, but the endpoint is still open.
-    r = c.post("/api/tickets", data=ticket_form(scope="ktp_admin"))
-    assert r.status_code == 403
+    assert c.post("/api/tickets", data=ticket_form(group="ktp_admin")).status_code == 403
+    assert c.post("/api/tickets", data=ticket_form(group="season_captain")).status_code == 403
+    # Ban is a KTP decision even within their own group.
+    assert c.post("/api/tickets", data=ticket_form(level="cdl")).status_code == 403
 
 
-def test_ktp_admin_may_request_any_scope(client):
+def test_ktp_admin_may_request_every_combination(client):
     c = client("111")
-    for scope in ("one3_moderator", "ktp_admin", "season_captain"):
-        assert c.post("/api/tickets", data=ticket_form(scope=scope)).status_code == 200
+    for level in ("cl", "cdl"):
+        for group in ("ktp_admin", "one3_admin", "season_captain"):
+            r = c.post("/api/tickets", data=ticket_form(level=level, group=group))
+            assert r.status_code == 200, (level, group, r.text)
+
+
+def test_unknown_level_or_group_is_rejected(client):
+    c = client("111")
+    assert c.post("/api/tickets", data=ticket_form(level="abcdefg")).status_code == 400
+    assert c.post("/api/tickets", data=ticket_form(group="root")).status_code == 400
 
 
 @pytest.mark.parametrize("bad", ["", "76561198000000000", "STEAM_0:2:1", "STEAM_0:1:", "nonsense"])
@@ -281,3 +321,46 @@ def test_a_lost_race_reports_conflict_rather_than_success(client, monkeypatch):
 def test_missing_display_name_gets_our_message_not_a_schema_error(client):
     r = client("111").post("/api/tickets", data=ticket_form(display_name="  "))
     assert r.status_code == 400 and r.json()["error"] == "Who is it for?"
+
+
+# --- the form must actually be able to reach the endpoint -----------------
+
+def test_report_form_posts_to_the_endpoint_with_the_names_it_reads(client):
+    """This shipped broken once: the form was carried over from the design
+    prototype as `onsubmit="return false"` with ids and no names, so the API
+    worked while the page could not reach it. Direct-POST tests do not catch
+    that -- only reading the rendered form does."""
+    import re
+    html = client().get("/").text
+    seg = html[html.index('<section id="report"'):]
+    seg = seg[:seg.index("</section>")]
+
+    form = re.search(r"<form[^>]*>", seg).group(0)
+    assert 'action="/api/report"' in form and 'method="post"' in form
+
+    names = set(re.findall(r'<(?:input|select|textarea)[^>]*name="([^"]+)"', seg))
+    # Every parameter api_report() declares must be present in the markup.
+    assert {"category", "body", "server_label", "handle", "website", "started"} <= names
+
+
+def test_form_category_values_match_the_enum_exactly(client):
+    """A label change that edits the option value silently breaks submission --
+    the endpoint 400s on an unknown category."""
+    import re
+    from app.reports import Category
+    html = client().get("/").text
+    seg = html[html.index('<section id="report"'):]
+    seg = seg[:seg.index("</section>")]
+    offered = set(re.findall(r'<option value="([a-z_]+)"', seg))
+    assert offered == {c.value for c in Category}
+
+
+def test_every_offered_category_is_actually_accepted(client):
+    import re
+    c = client()
+    html = c.get("/").text
+    seg = html[html.index('<section id="report"'):]
+    offered = set(re.findall(r'<option value="([a-z_]+)"', seg[:seg.index("</section>")]))
+    for cat in sorted(offered)[:3]:            # rate limit is 3/hour
+        r = c.post("/api/report", data=form(category=cat))
+        assert r.status_code == 200, (cat, r.text)

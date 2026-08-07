@@ -153,3 +153,36 @@ def test_embed_truncates_to_discord_field_limit():
 def test_anonymous_reporter_is_labelled_not_blank():
     payload = embed_fields(Report(Category.LAG, None, "b", None), "id")
     assert payload["fields"][1]["value"] == "anonymous"
+
+
+# --- relay endpoint construction -----------------------------------------
+
+def test_relay_accepts_a_base_url_or_one_that_already_has_the_path():
+    """/etc/ktp/discord-relay.conf stores RELAY_URL with /reply on the end; an
+    env var is more naturally a base. Both must reach the same endpoint."""
+    import httpx
+    from app import relay
+
+    seen = []
+
+    def fake_post(url, **kw):
+        seen.append(url)
+        return httpx.Response(200, request=httpx.Request("POST", url))
+
+    real, httpx.post = httpx.post, fake_post
+    try:
+        for given in ("https://r.example.com",
+                      "https://r.example.com/",
+                      "https://r.example.com/reply",
+                      "https://r.example.com/reply/"):
+            relay.post_embed(given, "secret", "123", {"title": "t"})
+    finally:
+        httpx.post = real
+
+    assert seen == ["https://r.example.com/reply"] * 4
+
+
+def test_relay_reports_failure_instead_of_raising():
+    from app import relay
+    r = relay.post_embed("", "s", "1", {})          # not configured
+    assert r.ok is False and "not configured" in r.error

@@ -6,15 +6,20 @@ either direction. A request is a row; a human applies it over SSH and marks it
 applied. Anything else would turn a Discord login into a direct route to admin
 rights on 24 production instances.
 
-Two consequences fall out of that and are deliberate:
+The model mirrors what the live file actually contains, audited 2026-08-05: 52
+accounts across four headings, but only two flag sets. So a request needs two
+answers, not one -- the LEVEL decides the flags, the GROUP decides which heading
+the line is written under. Two grants with identical power can belong to
+different groups (1.3 admins and season captains are both `cl`), and the group
+is what makes a postseason sweep possible.
+
+Two consequences fall out and are deliberate:
 
 The form never collects a password. The applying admin sets one and passes it to
 the grantee out of band.
 
 The site cannot show "your current grants" from the file, because it never reads
-it. What it shows is the ticket history it wrote itself, which can drift from
-reality if someone edits users.ini by hand -- so APPLIED means "an admin said
-they applied it", never "verified present in the file".
+it. APPLIED means "an admin said they applied it", never "verified present".
 """
 
 from __future__ import annotations
@@ -34,18 +39,51 @@ class Status(str, Enum):
     EXPIRED = "expired"            # season rolled over
 
 
-class Scope(str, Enum):
-    ONE3_MODERATOR = "one3_moderator"      # .kick, requested by 1.3 admins
+class Level(str, Enum):
+    """The two flag sets in live use. There is deliberately no third.
+
+    Every level includes RCON (`l`), because every one of the 52 live accounts
+    has it -- there is no kick-without-restart tier in this scheme. That means
+    ANY grant here also confers `.forcereset`, `.restart` and `.quit`, and the
+    request form has to say so rather than implying kick is the ceiling.
+    """
+
+    KICK_RESTART = "cl"
+    KICK_BAN_RESTART = "cdl"
+
+    @property
+    def flags(self) -> str:
+        return self.value
+
+    @property
+    def label(self) -> str:
+        return ("Kick + Restart" if self is Level.KICK_RESTART
+                else "Kick + Ban + Restart")
+
+    @property
+    def grants_ban(self) -> bool:
+        return self is Level.KICK_BAN_RESTART
+
+
+class Group(str, Enum):
+    """Which heading in users.ini the line is written under."""
+
     KTP_ADMIN = "ktp_admin"
-    SEASON_CAPTAIN = "season_captain"      # .kick + changemap, expires with the season
+    ONE3_ADMIN = "one3_admin"
+    SEASON_CAPTAIN = "season_captain"
+
+    @property
+    def heading(self) -> str:
+        """The literal comment heading the applying admin looks for."""
+        return {
+            Group.KTP_ADMIN: "KTP Kick/Ban/Restart Admins",
+            Group.ONE3_ADMIN: "1.3 Discord General Admins",
+            Group.SEASON_CAPTAIN: "S{season} Captains",
+        }[self]
 
     @property
     def expires_with_season(self) -> bool:
-        return self is Scope.SEASON_CAPTAIN
-
-    @property
-    def requester_tier(self) -> str:
-        return "one3" if self is Scope.ONE3_MODERATOR else "ktp"
+        return self is Group.SEASON_CAPTAIN
 
 
 # A ticket only ever moves forward, and only along these edges. Encoding it here
@@ -81,7 +119,8 @@ def transition(current: Status, target: Status) -> Status:
 @dataclass(frozen=True)
 class Ticket:
     id: int
-    scope: Scope
+    level: Level
+    group: Group
     steam_id: str
     display_name: str
     requested_by: str          # Discord ID
@@ -97,13 +136,24 @@ class Ticket:
         """Approved but not yet applied -- the queue an admin actually works."""
         return self.status is Status.APPROVED
 
+    @property
+    def heading(self) -> str:
+        h = self.group.heading
+        return h.format(season=self.season) if "{season}" in h else h
 
-def may_request(tier: str, scope: Scope) -> bool:
-    """KTP admins can request any scope; 1.3 admins only their own moderators."""
+
+def may_request(tier: str, level: Level, group: Group) -> bool:
+    """Who may ask for what.
+
+    KTP admins may request anything. 1.3 admins may only add their own
+    community's admins, and only at the lower level -- ban is a KTP decision,
+    and letting the 1.3 tier grant it would make the split between the two
+    groups meaningless.
+    """
     if tier == "ktp":
         return True
     if tier == "one3":
-        return scope is Scope.ONE3_MODERATOR
+        return group is Group.ONE3_ADMIN and level is Level.KICK_RESTART
     return False
 
 
@@ -117,7 +167,7 @@ def expiring_tickets(tickets: list[Ticket], next_season_number: int) -> list[Tic
     return [
         t
         for t in tickets
-        if t.scope.expires_with_season
+        if t.group.expires_with_season
         and t.status is Status.ACTIVE
         and (t.season is None or t.season < next_season_number)
     ]

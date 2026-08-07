@@ -122,6 +122,10 @@ def public_document(results: list[dict], now: float | None = None) -> dict:
     for r in results:
         inst: Instance = r["instance"]
         entry = {"region": inst.region, "label": inst.label, "up": bool(r["up"])}
+        # The game endpoint is public by nature -- players type it into the
+        # console to join. This is the ONE address the public document carries,
+        # and it is deliberate; everything else about topology stays out.
+        entry["connect"] = f"{inst.ip}:{inst.port}"
         if not r["degraded"]:
             info, name = r["info"], r["name"]
             entry["map"] = info.map
@@ -169,13 +173,19 @@ def detail_document(results: list[dict], now: float | None = None) -> dict:
     }
 
 
-def write_atomic(path: str, doc: dict) -> None:
-    """Never let a reader see a half-written document."""
+def write_atomic(path: str, doc: dict, mode: int = 0o600) -> None:
+    """Never let a reader see a half-written document.
+
+    `mode` is explicit because mkstemp creates 0600 and the two documents have
+    opposite audiences: nginx serves public.json directly, so it must be
+    world-readable, while detail.json carries addresses and must not be.
+    """
     directory = os.path.dirname(path) or "."
     fd, tmp = tempfile.mkstemp(dir=directory, suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(doc, fh, separators=(",", ":"))
+        os.chmod(tmp, mode)          # before the rename, so no window is 0600
         os.replace(tmp, path)
     except BaseException:
         os.path.exists(tmp) and os.unlink(tmp)

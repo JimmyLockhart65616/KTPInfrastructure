@@ -13,6 +13,13 @@
    source of record. Tokens, type scale, panel shapes and pill
    treatments are copied from it, not reinterpreted.
 
+   Visual refinement pass (see DESIGN.md § Visual refinement):
+   - spacing scale 4/8/12/16/24/32/48; sections on a 48px rhythm
+   - type scale 0.68/0.72/0.78/0.82/0.86/0.92/1.05/1.3 + clamp h1
+   - colour carries information only: red=alert/live/accent,
+     blue=ok/info/commands, amber=degraded, grey ramp for the rest
+   - signature: the house eyebrow dash reused as a section marker
+
    Deliberate deviations (see DESIGN.md § Deviations):
    1. nav is NOT position:sticky — operator requires a static,
       non-moving header.
@@ -32,6 +39,7 @@
   --panel-2:   #13367c;
   --inset:     #001a54;
   --border:    #214895;
+  --rule:      rgba(33,72,149,0.38);   /* interior row rules — lighter than --border */
   --text:      #f3fbff;
   --dim:       #adc8e0;
   --faint:     #8aa6cf;
@@ -40,6 +48,7 @@
   --blue-soft: #4ea3e6;
   --amber:     #e8a13c;   /* status "degraded" only — not a brand color */
   --radius: 14px;
+  --panel-grad: linear-gradient(180deg, var(--panel) 0%, #082a6b 100%);
   --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
   color-scheme: dark;
 }
@@ -59,12 +68,17 @@ body {
 }
 a { color: var(--blue); text-decoration: none; }
 a:hover { color: var(--blue-soft); }
+code { font-family: var(--mono); color: var(--blue-soft); }
 ::selection { background: var(--red); color:#fff; }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 22px; width: 100%; }
 [hidden] { display: none !important; }
 
-a:focus-visible, button:focus-visible { outline: 2px solid var(--blue-soft); outline-offset: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--blue-soft); outline-offset: 2px; }
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+/* spacing utilities — the only sanctioned way to nudge layout in markup */
+.mt8  { margin-top: 8px; }
+.mt16 { margin-top: 16px; }
 
 /* ---- top bar — STATIC by operator requirement (not sticky, not animated) ---- */
 nav {
@@ -80,7 +94,7 @@ nav .navlink { color: var(--dim); font-size: 0.82rem; letter-spacing: 0.6px; }
 nav .navlink:hover { color: var(--text); }
 .who {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 0.76rem; color: var(--dim); letter-spacing: 0.4px;
+  font-size: 0.72rem; color: var(--dim); letter-spacing: 0.4px;
   border: 1px solid var(--border); border-radius: 999px; padding: 6px 13px;
   white-space: nowrap;
 }
@@ -92,67 +106,96 @@ nav .navlink:hover { color: var(--text); }
   font-size: 0.72rem; letter-spacing: 2.4px; text-transform: uppercase;
   color: var(--dim); display:flex; align-items:center; gap: 10px;
 }
-.eyebrow::before { content:""; width: 26px; height: 2px; background: var(--blue); display:inline-block; }
+.eyebrow::before { content:""; width: 26px; height: 2px; background: var(--blue); display:inline-block; flex:none; }
 .accent { color: var(--red); }
-.panel {
-  background: linear-gradient(180deg, var(--panel) 0%, #082a6b 100%);
-  border: 1px solid var(--border); border-radius: var(--radius);
-}
-.panel .head {
+.panel { background: var(--panel-grad); border: 1px solid var(--border); border-radius: var(--radius); }
+.panel + .panel { margin-top: 16px; }
+/* grid containers space with gap — neutralize the stacking margin there */
+.fleet > .panel, .cmdcols > .panel, .cmdgrid > .panel { margin-top: 0; }
+.panel .head,
+details.panel > summary {
   font-size:0.68rem; letter-spacing:1.8px; text-transform:uppercase; color:var(--dim);
   padding: 13px 16px; border-bottom:1px solid var(--border);
   display:flex; align-items:center; justify-content:space-between; gap: 10px;
 }
-.panel .head .n { color: var(--faint); letter-spacing: 0.6px; text-transform: none; font-size: 0.72rem; }
+.panel .head .n,
+details.panel > summary .n { color: var(--faint); letter-spacing: 0.6px; text-transform: none; font-size: 0.72rem; }
 .panel .body { padding: 15px 16px; }
 .pill { font-size: 0.7rem; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--border); color: var(--dim); letter-spacing: 0.4px; white-space: nowrap; }
 .pill.ok { border-color: var(--blue); color: var(--blue-soft); }
 .pill.warn { border-color: var(--amber); color: var(--amber); }
 .pill.down { border-color: var(--red); color: var(--red); }
-.note-box { border-left: 3px solid var(--red); background: var(--inset); padding: 14px 16px; border-radius: 0 var(--radius) var(--radius) 0; margin: 18px 0; font-size: 0.86rem; color: var(--dim); }
+.note-box { border-left: 3px solid var(--red); background: var(--inset); padding: 14px 16px; border-radius: 0 var(--radius) var(--radius) 0; margin: 16px 0; font-size: 0.86rem; color: var(--dim); }
 .note-box b { color: var(--text); }
+.hint { font-size: 0.72rem; color: var(--faint); letter-spacing: 0.3px; }
+
+/* small prose inside panels — one treatment for every "paragraphs in a panel" body */
+.prose { font-size: 0.86rem; color: var(--dim); }
+.prose b { color: var(--text); }
+.prose p + p { margin-top: 8px; }
+.measure { max-width: 56ch; }
 
 /* ---- hero ---- */
-header.hero { padding: 52px 0 10px; }
+header.hero { padding: 56px 0 0; }
 h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -1px; line-height: 1.04; margin: 16px 0 12px; }
 .lede { color: var(--dim); max-width: 68ch; font-size: 0.92rem; }
 .lede b { color: var(--text); font-weight: 600; }
+.sponsor-slot {
+  margin-left: auto; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px;
+  color: var(--red); border: 1px solid var(--red); border-radius: 999px;
+  padding: 4px 13px; white-space: nowrap; text-transform: none;
+}
+.sponsor-slot:hover { background: var(--red); color: #fff; }
 
 /* ---- section scaffolding ---- */
-section { padding: 26px 0 8px; }
+section { padding: 48px 0 0; }
 .sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; margin-bottom: 16px; }
 h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
-.sec-head .meta { font-size: 0.76rem; color: var(--faint); letter-spacing: 0.4px; }
+/* signature: the house eyebrow dash, reused as the marker for each
+   top-level section — the property's one decorative mark, so section
+   starts read the same as every sibling page's hero. */
+.sec-head h2::before { content:""; display:block; width: 26px; height: 2px; background: var(--blue); margin-bottom: 10px; }
+.sec-head .meta { font-size: 0.72rem; color: var(--faint); letter-spacing: 0.4px; }
+/* sub-heads (inside the admin tier) — smaller, no dash: the dash marks sections, not subsections */
+.sec-head.sub { margin-top: 32px; }
+.sec-head.sub h2 { font-size: 1.05rem; }
+.sec-head.sub h2::before { display: none; }
 
 /* ---- status: fleet grid ---- */
-.fleet { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.fleet { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
 .region .head b { color: var(--text); letter-spacing: 1.8px; }
-.inst { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(33,72,149,0.4); font-size: 0.82rem; }
+.inst { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 0.82rem; }
 .inst:last-child { border-bottom: none; }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .dot.ok { background: var(--blue-soft); }
 .dot.down { background: var(--red); }
 .dot.warn { background: var(--amber); }
 .inst .nm { color: var(--text); white-space: nowrap; }
-.inst .bar { flex: 1; height: 5px; background: var(--inset); border-radius: 999px; overflow: hidden; min-width: 30px; }
+.inst .bar { flex: 1; height: 4px; background: var(--inset); border-radius: 999px; overflow: hidden; min-width: 30px; }
 .inst .bar i { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
-.inst .ct { color: var(--dim); font-size: 0.76rem; white-space: nowrap; min-width: 5ch; text-align: right; }
+.inst .ct { color: var(--dim); font-size: 0.72rem; white-space: nowrap; min-width: 5ch; text-align: right; }
 .inst.off .nm { color: var(--faint); }
 .inst.off .ct { color: var(--red); }
 
 /* ---- status: services strip ---- */
-.services { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 12px; }
-.svc { background: linear-gradient(180deg, var(--panel) 0%, #082a6b 100%); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 15px; display: flex; align-items: center; gap: 11px; }
-.svc .dot { width: 9px; height: 9px; }
+.services { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+.svc { background: var(--panel-grad); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 15px; display: flex; align-items: flex-start; gap: 11px; }
+.svc .dot { width: 9px; height: 9px; margin-top: 5px; }
 .svc .t { min-width: 0; }
-.svc .t b { display: block; font-size: 0.84rem; color: var(--text); font-weight: 700; }
-.svc .t span { display: block; font-size: 0.72rem; color: var(--faint); letter-spacing: 0.3px; }
-.status-foot { font-size: 0.76rem; color: var(--faint); margin-top: 12px; letter-spacing: 0.3px; }
+.svc .t b { display: block; font-size: 0.82rem; color: var(--text); font-weight: 700; }
+.svc .t > span { display: block; font-size: 0.72rem; color: var(--faint); letter-spacing: 0.3px; }
+.svc .t .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.badge { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.6px; padding: 1px 8px; border-radius: 4px; border: 1px solid var(--border); color: var(--dim); }
+.badge.type { border-color: var(--blue); color: var(--blue-soft); }
+.badge.live { border-color: var(--red); color: var(--red); }
+.status-foot { font-size: 0.78rem; color: var(--faint); margin-top: 12px; letter-spacing: 0.3px; }
+.status-foot b { color: var(--dim); }
 
 /* ---- ops detail (KTP-admin gated) ---- */
-.opstable { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 560px; }
-.opstable th { text-align: left; color: var(--faint); font-weight: 400; font-size: 0.7rem; letter-spacing: 1.4px; text-transform: uppercase; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--border); }
-.opstable td { padding: 7px 14px 7px 0; border-bottom: 1px solid rgba(33,72,149,0.4); color: var(--dim); vertical-align: top; }
+.opstable { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 560px; }
+.opstable th { text-align: left; color: var(--faint); font-weight: 400; font-size: 0.68rem; letter-spacing: 1.4px; text-transform: uppercase; padding: 6px 16px 6px 0; border-bottom: 1px solid var(--border); }
+.opstable td { padding: 8px 16px 8px 0; border-bottom: 1px solid var(--rule); color: var(--dim); vertical-align: top; }
+.opstable tr:last-child td { border-bottom: none; }
 .opstable td.u { color: var(--text); white-space: nowrap; }
 .scrollbox { overflow-x: auto; }
 
@@ -160,7 +203,7 @@ h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
 .hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 .hcard {
   display: block; color: inherit;
-  background: linear-gradient(180deg, var(--panel) 0%, #082a6b 100%);
+  background: var(--panel-grad);
   border: 1px solid var(--border); border-radius: var(--radius);
   padding: 15px 17px; position: relative; overflow: hidden;
 }
@@ -174,15 +217,6 @@ h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
 .hcard b { display: block; font-size: 0.92rem; color: var(--text); font-weight: 700; }
 .hcard .u { display: block; font-size: 0.72rem; color: var(--blue-soft); letter-spacing: 0.3px; margin: 2px 0 6px; }
 .hcard p { font-size: 0.78rem; color: var(--dim); }
-.sponsor-slot { float:right; font-weight:700; color:var(--red); border:1px solid var(--red);
-  border-radius:4px; padding:2px 10px; text-decoration:none; letter-spacing:.02em; }
-.sponsor-slot:hover { background:var(--red); color:#fff; }
-.badge { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em;
-  padding:1px 6px; border-radius:3px; border:1px solid var(--line); margin-left:6px; }
-.badge.live { border-color:var(--green); color:var(--green); }
-.badge.type { border-color:var(--accent); color:var(--accent); }
-.hcard.sponsor { border-color: var(--red); }
-.hcard.sponsor .u { color: var(--red); }
 
 /* ---- forms (field treatment verbatim from bundles-web login) ---- */
 .field { margin-bottom: 18px; }
@@ -190,6 +224,7 @@ h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
   display: block; font-size: 0.68rem; letter-spacing: 1.8px; text-transform: uppercase;
   color: var(--dim); margin-bottom: 7px;
 }
+.field label .soft { text-transform: none; letter-spacing: 0; }
 .field input, .field select, .field textarea {
   width: 100%;
   background: var(--inset); border: 1px solid var(--border); border-radius: 10px;
@@ -198,7 +233,7 @@ h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
 }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); }
 .field input::placeholder, .field textarea::placeholder { color: var(--faint); }
-.field .hint { font-size: 0.74rem; color: var(--faint); margin-top: 6px; letter-spacing: 0.3px; }
+.field .hint { margin-top: 6px; }
 .field textarea { resize: vertical; min-height: 110px; }
 .btn {
   display: inline-block;
@@ -211,45 +246,85 @@ h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
 .btn:hover { background: #0b82e8; border-color: #0b82e8; }
 .btn.ghost { background: var(--inset); color: var(--text); border-color: var(--border); }
 .btn.ghost:hover { border-color: var(--blue); color: #cfe6ff; }
+.btn.sm { padding: 6px 14px; font-size: 0.78rem; margin-top: 0; }
 .form-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
 @media (max-width: 640px) { .form-cols { grid-template-columns: 1fr; } }
-.fineprint { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.76rem; color: var(--faint); line-height: 1.65; }
+.fineprint { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--faint); line-height: 1.65; }
 .fineprint b { color: var(--dim); }
 
 /* ---- two-col layout for report + signin ---- */
 .twocol { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; align-items: start; }
+.twocol > .note-box { margin: 0; }
 @media (max-width: 860px) { .twocol { grid-template-columns: 1fr; } }
 
-/* ---- admin: command hub ---- */
+/* ---- logged-out admin: the two access kinds ---- */
+.rolelist { margin-top: 16px; display: grid; gap: 10px; }
+.rolelist > div { display: flex; gap: 10px; align-items: baseline; font-size: 0.82rem; color: var(--dim); }
+
+/* ---- command tables (public reference + admin + bot hub) ---- */
 .cmdgrid { display: grid; gap: 16px; }
-.cmdtable { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 640px; }
-.cmdtable td { padding: 8px 14px 8px 0; border-bottom: 1px solid rgba(33,72,149,0.4); vertical-align: top; }
+.cmdtable { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 640px; }
+.cmdtable td { padding: 9px 16px 9px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 .cmdtable tr:last-child td { border-bottom: none; }
-.cmdtable code { color: var(--blue-soft); white-space: nowrap; font-family: var(--mono); }
+.cmdtable td:last-child { text-align: right; padding-right: 0; }
+.cmdtable code { white-space: nowrap; }
 .cmdtable .d { color: var(--dim); }
+.cmdtable.fit { min-width: 0; }
+.alias { color: var(--faint); font-size: 0.72rem; white-space: nowrap; }
 .copy {
-  background: var(--inset); color: var(--dim); border: 1px solid var(--border);
+  background: var(--inset); color: var(--faint); border: 1px solid var(--border);
   border-radius: 999px; padding: 3px 12px; font-size: 0.7rem; cursor: pointer;
   font-family: var(--mono); letter-spacing: 0.4px; white-space: nowrap;
 }
 .copy:hover { border-color: var(--blue); color: #cfe6ff; }
 .copy.done { border-color: var(--blue); color: var(--blue-soft); }
+.copy.mini { padding: 1px 8px; font-size: 0.68rem; }
+
+/* ---- command reference (public) ---- */
+/* Progressive disclosure via native <details> — no JS, nothing animates.
+   Summaries share the .panel .head treatment (grouped selector above) so a
+   closed group reads as a one-line panel. */
+details.panel > summary { border-bottom: none; cursor: pointer; list-style: none; user-select: none; }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary:hover { color: var(--text); }
+details.panel > summary::after { content: "+"; color: var(--faint); font-size: 0.95rem; flex: none; }
+details.panel[open] > summary { border-bottom: 1px solid var(--border); }
+details.panel[open] > summary::after { content: "\2013"; }
+.cmdcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+
+/* ---- match flow strip ---- */
+.matchflow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.mstep { flex: 1 1 128px; min-width: 128px; background: var(--inset); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.mstep b { display: block; font-size: 0.68rem; letter-spacing: 1.6px; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+.mstep code { font-size: 0.78rem; white-space: nowrap; }
+.mstep .s { display: block; font-size: 0.72rem; color: var(--faint); margin-top: 3px; line-height: 1.45; }
+.mstep.live { border-color: var(--blue); }
+.mstep.live b { color: var(--blue-soft); }
+
+/* ---- compact FAQ items (report sidebar) ---- */
+.mini-faq details { border-bottom: 1px solid var(--rule); }
+.mini-faq details:last-child { border-bottom: none; }
+.mini-faq summary { cursor: pointer; padding: 9px 0; font-size: 0.82rem; color: var(--text); list-style: none; user-select: none; }
+.mini-faq summary::-webkit-details-marker { display: none; }
+.mini-faq summary::before { content: "+ "; color: var(--faint); }
+.mini-faq details[open] summary::before { content: "\2013 "; }
+.mini-faq p { font-size: 0.78rem; color: var(--dim); padding: 0 0 10px; }
 
 /* ---- request queue / ticket states ---- */
-.ticket { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid rgba(33,72,149,0.4); font-size: 0.82rem; }
+.ticket { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--rule); font-size: 0.82rem; }
 .ticket:last-child { border-bottom: none; }
 .ticket .who-t { color: var(--text); min-width: 16ch; }
 .ticket .what { color: var(--dim); flex: 1; min-width: 20ch; }
 .ticket .acts { display: flex; gap: 8px; }
 
 /* ---- flow strip (state machine, shown to requesters) ---- */
-.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.74rem; color: var(--dim); margin-top: 10px; }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--dim); margin-top: 12px; }
 .flow .st { border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; letter-spacing: 0.4px; white-space: nowrap; }
 .flow .st.cur { border-color: var(--blue); color: var(--blue-soft); }
 .flow .arr { color: var(--faint); }
 
 /* ---- footer ---- */
-footer { border-top: 1px solid var(--border); padding: 30px 0 70px; color: var(--dim); font-size: 0.82rem; margin-top: 40px; }
+footer { border-top: 1px solid var(--border); padding: 32px 0 72px; color: var(--dim); font-size: 0.82rem; margin-top: 48px; }
 footer.split { display:flex; flex-wrap:wrap; gap: 24px; justify-content: space-between; }
 footer .col { max-width: 46ch; }
 footer h4 { color: var(--text); font-size: 0.72rem; letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 8px; }
@@ -262,7 +337,7 @@ footer .accent { color: var(--red); white-space: nowrap; }
   background: var(--inset); border: 2px dashed var(--amber); border-radius: 12px;
   padding: 10px 12px; max-width: 260px;
 }
-.mock .tag { display: block; font-size: 0.64rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+.mock .tag { display: block; font-size: 0.68rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
 .mock .btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .mock button {
   font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.4px;
@@ -285,6 +360,7 @@ footer .accent { color: var(--red); white-space: nowrap; }
     <span class="brand"><span class="k">KTP</span> — Keep the Practice</span>
     <span class="spacer"></span>
     <a class="navlink hidesm" href="#status">Status</a>
+    <a class="navlink hidesm" href="#commands">Commands</a>
     <a class="navlink hidesm" href="#report">Report a problem</a>
     <a class="navlink hidesm" href="#hub">Sites</a>
     <a class="navlink" href="#admin">Admin</a>
@@ -313,57 +389,60 @@ footer .accent { color: var(--red); white-space: nowrap; }
     </div>
 
     <div class="fleet">
+      <!-- Each row carries a copy button for its `connect ip:port` string
+           (operator-approved). The public JSON contract gains one field:
+           `connect` per instance — see COMMANDS.md § connect strings. -->
       <div class="panel region">
         <div class="head"><b>Atlanta</b><span class="n">5/5 up · 37 playing</span></div>
         <div class="body">
-          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #1</span><span class="bar"><i style="width:44%"></i></span><span class="ct">14/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #2</span><span class="bar"><i style="width:38%"></i></span><span class="ct">12/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #3</span><span class="bar"><i style="width:22%"></i></span><span class="ct">7/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #4</span><span class="bar"><i style="width:13%"></i></span><span class="ct">4/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #1</span><span class="bar"><i style="width:44%"></i></span><span class="ct">14/32</span><button class="copy mini" data-cmd="connect 74.91.121.9:27015">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #2</span><span class="bar"><i style="width:38%"></i></span><span class="ct">12/32</span><button class="copy mini" data-cmd="connect 74.91.121.9:27016">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #3</span><span class="bar"><i style="width:22%"></i></span><span class="ct">7/32</span><button class="copy mini" data-cmd="connect 74.91.121.9:27017">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #4</span><span class="bar"><i style="width:13%"></i></span><span class="ct">4/32</span><button class="copy mini" data-cmd="connect 74.91.121.9:27018">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Atlanta #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 74.91.121.9:27019">connect</button></div>
         </div>
       </div>
 
       <div class="panel region">
         <div class="head"><b>Dallas</b><span class="n">5/5 up · 22 playing</span></div>
         <div class="body">
-          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #1</span><span class="bar"><i style="width:56%"></i></span><span class="ct">18/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #2</span><span class="bar"><i style="width:13%"></i></span><span class="ct">4/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #1</span><span class="bar"><i style="width:56%"></i></span><span class="ct">18/32</span><button class="copy mini" data-cmd="connect 74.91.126.55:27015">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #2</span><span class="bar"><i style="width:13%"></i></span><span class="ct">4/32</span><button class="copy mini" data-cmd="connect 74.91.126.55:27016">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 74.91.126.55:27017">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 74.91.126.55:27018">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Dallas #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 74.91.126.55:27019">connect</button></div>
         </div>
       </div>
 
       <div class="panel region">
         <div class="head"><b>Denver</b><span class="n">4/5 up · 12 playing</span></div>
         <div class="body">
-          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #1</span><span class="bar"><i style="width:38%"></i></span><span class="ct">12/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #2</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #1</span><span class="bar"><i style="width:38%"></i></span><span class="ct">12/32</span><button class="copy mini" data-cmd="connect 66.163.114.109:27015">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #2</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 66.163.114.109:27016">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 66.163.114.109:27017">connect</button></div>
           <div class="inst off"><span class="dot down"></span><span class="nm">Denver #4</span><span class="bar"></span><span class="ct">offline</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Denver #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 66.163.114.109:27019">connect</button></div>
         </div>
       </div>
 
       <div class="panel region">
         <div class="head"><b>New York</b><span class="n">5/5 up · 29 playing</span></div>
         <div class="body">
-          <div class="inst"><span class="dot ok"></span><span class="nm">New York #1</span><span class="bar"><i style="width:63%"></i></span><span class="ct">20/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">New York #2</span><span class="bar"><i style="width:28%"></i></span><span class="ct">9/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">New York #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">New York #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">New York #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #1</span><span class="bar"><i style="width:63%"></i></span><span class="ct">20/32</span><button class="copy mini" data-cmd="connect 74.91.123.64:27015">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #2</span><span class="bar"><i style="width:28%"></i></span><span class="ct">9/32</span><button class="copy mini" data-cmd="connect 74.91.123.64:27016">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 74.91.123.64:27017">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 74.91.123.64:27018">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">New York #5</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 74.91.123.64:27019">connect</button></div>
         </div>
       </div>
 
       <div class="panel region">
         <div class="head"><b>Chicago</b><span class="n">4/4 up · 6 playing</span></div>
         <div class="body">
-          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #1</span><span class="bar"><i style="width:19%"></i></span><span class="ct">6/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #2</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
-          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #1</span><span class="bar"><i style="width:19%"></i></span><span class="ct">6/32</span><button class="copy mini" data-cmd="connect 172.238.176.101:27015">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #2</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 172.238.176.101:27016">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #3</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 172.238.176.101:27017">connect</button></div>
+          <div class="inst"><span class="dot ok"></span><span class="nm">Chicago #4</span><span class="bar"><i style="width:0%"></i></span><span class="ct">0/32</span><button class="copy mini" data-cmd="connect 172.238.176.101:27018">connect</button></div>
         </div>
       </div>
     </div>
@@ -372,8 +451,8 @@ footer .accent { color: var(--red); white-space: nowrap; }
          deliberately SEPARATE indicators — they fail independently. -->
     <div class="services">
       <div class="svc"><span class="dot ok"></span><div class="t"><b>HLTV relays</b><span>24/24 broadcasting</span></div></div>
-      <div class="svc"><span class="dot ok"></span><div class="t"><b>Atlanta 1</b><span>dod_donner · 8/16<span class="badge type">12MAN</span><span class="badge live">LIVE &mdash; 2ND HALF</span></span></div></div>
-      <div class="svc"><span class="dot ok"></span><div class="t"><b>Dallas 3</b><span>dod_avalanche · 12/16<span class="badge type">KTP</span><span class="badge live">LIVE &mdash; OT1</span></span></div></div>
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>Atlanta 1</b><span>dod_donner · 8/16</span><span class="badges"><span class="badge type">12MAN</span><span class="badge live">LIVE &mdash; 2ND HALF</span></span></div></div>
+      <div class="svc"><span class="dot ok"></span><div class="t"><b>Dallas 3</b><span>dod_avalanche · 12/16</span><span class="badges"><span class="badge type">KTP</span><span class="badge live">LIVE &mdash; OT1</span></span></div></div>
       <div class="svc"><span class="dot ok"></span><div class="t"><b>Denver 2</b><span>dod_kalt · 0/16</span></div></div>
       <div class="svc"><span class="dot ok"></span><div class="t"><b>Match recording</b><span>demo recording API</span></div></div>
       <div class="svc"><span class="dot warn"></span><div class="t"><b>Demo pipeline</b><span>naming &amp; archive — degraded</span></div></div>
@@ -381,12 +460,13 @@ footer .accent { color: var(--red); white-space: nowrap; }
       <div class="svc"><span class="dot ok"></span><div class="t"><b>HUD web</b><span>hud.ktpdod.com</span></div></div>
     </div>
 
-    <p class="status-foot">Public view shows region, server name and player count only.
-      Signed-in KTP admins see operational detail below.</p>
+    <p class="status-foot">The <b>connect</b> buttons copy a ready-to-paste
+      <code>connect ip:port</code> for the game console. Public view shows region, server name and
+      player count only. Signed-in KTP admins see operational detail below.</p>
 
     <!-- KTP-admin-only operational detail: unit names, timestamps,
          failure detail. NEVER in the public JSON. -->
-    <div class="panel" data-show="ktp" hidden style="margin-top:12px">
+    <div class="panel mt16" data-show="ktp" hidden>
       <div class="head">Operational detail <span class="pill">KTP admins only</span></div>
       <div class="body scrollbox">
         <table class="opstable">
@@ -401,6 +481,92 @@ footer .accent { color: var(--red); white-space: nowrap; }
         </table>
       </div>
     </div>
+  </section>
+
+  <!-- ==================== SERVER COMMANDS (public) ====================
+       Curated, not complete: the commands a player or captain actually
+       types, grouped by task. The full researched inventory (aliases,
+       permission gates, deliberate omissions — including .score) lives in
+       design/COMMANDS.md. Admin-gated commands are NOT here — they render
+       only in the KTP-admin tier, server-side. -->
+  <section id="commands">
+    <div class="sec-head"><h2>Server commands</h2>
+      <span class="meta">typed in game chat · the short list you'll actually use</span></div>
+
+    <div class="matchflow" aria-label="Match flow, start to finish">
+      <div class="mstep"><b>1 · start</b><code>.ktp &lt;password&gt;</code><span class="s">or .scrim / .12man / .draft — no password</span></div>
+      <div class="mstep"><b>2 · confirm</b><code>.confirm</code><span class="s">one player from each team</span></div>
+      <div class="mstep"><b>3 · ready</b><code>.ready</code><span class="s">6 per team (default)</span></div>
+      <div class="mstep live"><b>4 · first half</b><code>.status</code><span class="s">live — clock runs</span></div>
+      <div class="mstep"><b>5 · halftime</b><code>.ready</code><span class="s">map reloads, sides swap, ready up again</span></div>
+      <div class="mstep live"><b>6 · second half</b><code>.status</code><span class="s">combined total decides it</span></div>
+      <div class="mstep"><b>7 · tied?</b><code>.ktpOT &lt;password&gt;</code><span class="s">overtime — fresh tech budget</span></div>
+    </div>
+
+    <div class="note-box">
+      <b>.pause and .tac are disabled — .tech is the only pause.</b> Each team gets
+      <b>300 seconds of tech time for the whole match</b>, not per half: spend 4:00 in the
+      first half and you start the second with 1:00. Overtime gets its own fresh budget.
+      To unpause, the pausing team says <code>.resume</code>
+      and the other team confirms with <code>.go</code>.
+    </div>
+
+    <div class="cmdcols">
+      <details class="panel">
+        <summary>Starting a match <span class="n">.ktp · .scrim · .12man · .draft</span></summary>
+        <div class="body scrollbox">
+          <table class="cmdtable fit">
+            <tr><td><code>.ktp &lt;password&gt;</code></td><td class="d">Official league match. The season password comes from your captain or the admins.</td><td><button class="copy" data-cmd=".ktp">copy</button></td></tr>
+            <tr><td><code>.ktpOT &lt;password&gt;</code> <span class="alias">or .ktpot</span></td><td class="d">Continue a tied official match into overtime — 5-minute rounds.</td><td><button class="copy" data-cmd=".ktpOT">copy</button></td></tr>
+            <tr><td><code>.scrim</code></td><td class="d">Scrim — a menu asks 20 or 15 minutes. No password.</td><td><button class="copy" data-cmd=".scrim">copy</button></td></tr>
+            <tr><td><code>.12man</code></td><td class="d">12-man — a menu asks Standard or 1.3 Community (queue ID). No password.</td><td><button class="copy" data-cmd=".12man">copy</button></td></tr>
+            <tr><td><code>.draft</code> <span class="alias">· .draftOT for OT</span></td><td class="d">Draft match. No password.</td><td><button class="copy" data-cmd=".draft">copy</button></td></tr>
+            <tr><td><code>.confirm</code></td><td class="d">Pre-start confirmation — one player from each team, then ready-up begins.</td><td><button class="copy" data-cmd=".confirm">copy</button></td></tr>
+            <tr><td><code>.cancel</code></td><td class="d">Cancel a match that hasn't gone live yet. Once live, only an admin can reset it.</td><td><button class="copy" data-cmd=".cancel">copy</button></td></tr>
+          </table>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>Ready &amp; status <span class="n">.ready · .status</span></summary>
+        <div class="body scrollbox">
+          <table class="cmdtable fit">
+            <tr><td><code>.ready</code> <span class="alias">or .rdy</span></td><td class="d">Ready up. The half goes live when enough players on both teams are ready — 6 per team by default.</td><td><button class="copy" data-cmd=".ready">copy</button></td></tr>
+            <tr><td><code>.notready</code></td><td class="d">Take your ready back.</td><td><button class="copy" data-cmd=".notready">copy</button></td></tr>
+            <tr><td><code>.status</code></td><td class="d">Where the match stands: phase, ready counts, score.</td><td><button class="copy" data-cmd=".status">copy</button></td></tr>
+          </table>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>Pauses <span class="n">.tech only — see the budget rule above</span></summary>
+        <div class="body scrollbox">
+          <table class="cmdtable fit">
+            <tr><td><code>.tech</code> <span class="alias">or .technical</span></td><td class="d">Technical pause: 5-second countdown, then the game freezes. Charges your team's match budget while live. Spectators can't call it.</td><td><button class="copy" data-cmd=".tech">copy</button></td></tr>
+            <tr><td><code>.resume</code></td><td class="d">Pausing team asks to unpause.</td><td><button class="copy" data-cmd=".resume">copy</button></td></tr>
+            <tr><td><code>.go</code></td><td class="d">Other team confirms — short countdown, play resumes.</td><td><button class="copy" data-cmd=".go">copy</button></td></tr>
+          </table>
+          <div class="fineprint">If a player drops mid-round the server can auto-pause on its own.
+            It resumes the same way: <b>.resume</b> from the affected team, <b>.go</b> from the other.</div>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>Practice &amp; between matches <span class="n">.prac · .changemap</span></summary>
+        <div class="body scrollbox">
+          <table class="cmdtable fit">
+            <tr><td><code>.prac</code> <span class="alias">or .practice</span></td><td class="d">Practice mode — noclip and grenades enabled. Not available while a match is running.</td><td><button class="copy" data-cmd=".prac">copy</button></td></tr>
+            <tr><td><code>.nade</code> <span class="alias">or .grenade</span></td><td class="d">Hands you a grenade. Practice mode only.</td><td><button class="copy" data-cmd=".nade">copy</button></td></tr>
+            <tr><td><code>.nc</code> <span class="alias">or .noclip</span></td><td class="d">Toggle noclip. Practice mode only.</td><td><button class="copy" data-cmd=".nc">copy</button></td></tr>
+            <tr><td><code>.endprac</code> <span class="alias">or .endpractice</span></td><td class="d">Back to normal play.</td><td><button class="copy" data-cmd=".endprac">copy</button></td></tr>
+            <tr><td><code>.changemap</code></td><td class="d">Map menu — anyone can use it, blocked while a match is running.</td><td><button class="copy" data-cmd=".changemap">copy</button></td></tr>
+          </table>
+        </div>
+      </details>
+    </div>
+
+    <p class="status-foot">Something broken mid-match — a wedged pause, a half that won't restart?
+      That's admin territory: ping an admin in Discord or <a href="#report">report it</a>.</p>
   </section>
 
   <!-- ==================== REPORT A PROBLEM ==================== -->
@@ -441,7 +607,7 @@ footer .accent { color: var(--red); white-space: nowrap; }
               <div class="hint">Max 2000 characters. Don't include passwords — ever.</div>
             </div>
             <div class="field">
-              <label for="r-contact">Discord handle <span style="text-transform:none;letter-spacing:0">(optional — only if you want a reply)</span></label>
+              <label for="r-contact">Discord handle <span class="soft">(optional — only if you want a reply)</span></label>
               <input id="r-contact" type="text" autocomplete="off" placeholder="yourname">
             </div>
             <!-- production: hidden honeypot field + per-IP rate limit; see DESIGN.md -->
@@ -455,17 +621,43 @@ footer .accent { color: var(--red); white-space: nowrap; }
       </div>
 
       <div>
+        <!-- Deflection panel: the two most common "reports" that aren't
+             server faults, answered at the moment of filing. -->
+        <div class="panel">
+          <div class="head">Before you report — quick fixes</div>
+          <div class="body mini-faq">
+            <details>
+              <summary>Kicked for a cvar?</summary>
+              <p>The server enforces competitive cvar limits. The kick message names the
+                cvar — set it back to an allowed value in console and reconnect.
+                A plain bounds kick is not a ban and not a cheating accusation.
+                Policy: <a href="https://ac.ktpdod.com/">ac.ktpdod.com</a>.</p>
+            </details>
+            <details>
+              <summary>Map or file download failing?</summary>
+              <p>Custom maps download from our mirror on connect. Retry once; if one map
+                fails every time, report it here with the exact map name — a file
+                missing from the mirror is a real fault we can fix quickly.</p>
+            </details>
+            <details>
+              <summary>Looking for a demo, or want to watch?</summary>
+              <p>Every match is recorded — demos live at
+                <a href="https://fastdl.ktpdod.com/demos/">fastdl.ktpdod.com/demos</a>.
+                Spectate live matches at <a href="https://watch.ktpdod.com/">watch.ktpdod.com</a>.</p>
+            </details>
+          </div>
+        </div>
         <div class="panel">
           <div class="head">Faster routes</div>
-          <div class="body" style="font-size:0.84rem; color:var(--dim)">
-            <p><b style="color:var(--text)">Mid-match issue?</b> Tell the server — admins are
+          <div class="body prose">
+            <p><b>Mid-match issue?</b> Tell the server — admins are
               usually in the Discord already. This form is for things that can wait an hour.</p>
-            <p style="margin-top:10px"><b style="color:var(--text)">Anti-cheat question?</b>
+            <p><b>Anti-cheat question?</b>
               Your own data is at <a href="https://bundles.ktpdod.com/">bundles.ktpdod.com</a>;
               policy lives at <a href="https://ac.ktpdod.com/">ac.ktpdod.com</a>.</p>
           </div>
         </div>
-        <div class="note-box">
+        <div class="note-box mt16">
           <b>Suspect cheating?</b> Use this form with the “Player behavior” category —
           include server, time and player name. It routes to the anti-cheat admins
           privately. Never accuse in public chat.
@@ -498,22 +690,22 @@ footer .accent { color: var(--red); white-space: nowrap; }
     <!-- ---- logged out ---- -->
     <div class="twocol" data-show="public">
       <div class="panel">
-        <div class="body">
-          <p style="font-size:0.9rem; color:var(--dim); max-width:56ch">Sign in with Discord to
-            request admin privileges or use the admin tools. <b style="color:var(--text)">Two
+        <div class="body prose">
+          <p class="measure">Sign in with Discord to
+            request admin privileges or use the admin tools. <b>Two
             kinds of access:</b></p>
-          <div style="margin-top:14px; display:grid; gap:10px">
-            <div style="display:flex; gap:10px; align-items:baseline"><span class="pill">1.3 admins</span>
-              <span style="font-size:0.82rem; color:var(--dim)">request moderator (<code style="color:var(--blue-soft)">.kick</code>) access for your community's moderators</span></div>
-            <div style="display:flex; gap:10px; align-items:baseline"><span class="pill">KTP admins</span>
-              <span style="font-size:0.82rem; color:var(--dim)">bot command reference, privilege requests, request approvals</span></div>
+          <div class="rolelist">
+            <div><span class="pill">1.3 admins</span>
+              <span>request moderator (<code>.kick</code>) access for your community's moderators</span></div>
+            <div><span class="pill">KTP admins</span>
+              <span>bot command reference, privilege requests, request approvals</span></div>
           </div>
-          <button class="btn" style="margin-top:18px">Sign in with Discord</button>
+          <button class="btn mt16">Sign in with Discord</button>
           <div class="fineprint">Uses Discord only to identify you (<b>identify</b> scope — no
             server list, no messages). Access is granted per-person by the KTP staff.</div>
         </div>
       </div>
-      <div class="note-box" style="margin:0">
+      <div class="note-box">
         <b>Nothing here is self-service.</b> Signing in doesn't grant anything — it lets you
         ask. Every privilege change is reviewed and applied by a person.
       </div>
@@ -551,7 +743,7 @@ footer .accent { color: var(--red); white-space: nowrap; }
         </div>
       </div>
 
-      <div class="panel" style="margin-top:16px">
+      <div class="panel">
         <div class="head">Your requests</div>
         <div class="body">
           <div class="ticket">
@@ -575,12 +767,12 @@ footer .accent { color: var(--red); white-space: nowrap; }
     </div>
 
     <!-- ---- KTP admin tier ---- -->
-    <div data-show="ktp" hidden style="margin-top:16px">
+    <div class="mt16" data-show="ktp" hidden>
 
       <div class="panel">
         <div class="head">AC review console
           <span class="pill">KTP admins</span></div>
-        <div class="body">
+        <div class="body prose">
           <p><a href="https://admin.ktpdod.com/"><b>admin.ktpdod.com</b></a> &mdash; anti-cheat review console.</p>
           <p class="hint">Moved off the public hub deliberately: the console is reachable either way,
           but a front door should not advertise the admin entrance.</p>
@@ -618,20 +810,20 @@ footer .accent { color: var(--red); white-space: nowrap; }
         </div>
       </div>
 
-      <div class="panel" style="margin-top:16px">
+      <div class="panel">
         <div class="head">Approval queue <span class="n">2 waiting</span></div>
         <div class="body">
           <div class="ticket">
             <span class="who-t">STEAM_0:1:44821</span>
             <span class="what">1.3 moderator — requested by mockuser13 (1.3) · “our Tuesday night mod”</span>
-            <span class="acts"><button class="btn ghost" style="padding:6px 14px; font-size:0.76rem">Approve</button>
-            <button class="btn ghost" style="padding:6px 14px; font-size:0.76rem">Reject</button></span>
+            <span class="acts"><button class="btn ghost sm">Approve</button>
+            <button class="btn ghost sm">Reject</button></span>
           </div>
           <div class="ticket">
             <span class="who-t">STEAM_0:0:31007</span>
             <span class="what">seasonal captain — requested by nein · season 12 draft captain</span>
-            <span class="acts"><button class="btn ghost" style="padding:6px 14px; font-size:0.76rem">Approve</button>
-            <button class="btn ghost" style="padding:6px 14px; font-size:0.76rem">Reject</button></span>
+            <span class="acts"><button class="btn ghost sm">Approve</button>
+            <button class="btn ghost sm">Reject</button></span>
           </div>
           <div class="fineprint">Approving creates a checklist item, not a server change. The
             applying admin edits the admin list over SSH, marks the ticket <b>applied</b>, and the
@@ -639,8 +831,42 @@ footer .accent { color: var(--red); white-space: nowrap; }
         </div>
       </div>
 
+      <!-- ---- in-game admin commands (KTP tier only — never in public markup) ---- -->
+      <div class="sec-head sub"><h2>In-game admin commands</h2>
+        <span class="meta">flags come from users.ini · grants go live at the nightly restart</span></div>
+
+      <div class="panel">
+        <div class="head">Match recovery &amp; server control <span class="pill">admin flags required</span></div>
+        <div class="body scrollbox">
+          <table class="cmdtable">
+            <tr><td><code>.forcereset</code></td><td class="d"><b>RCON (l)</b> — clears ALL match state after a confirm step. The recovery hammer for a wedged or abandoned match.</td><td><button class="copy" data-cmd=".forcereset">copy</button></td></tr>
+            <tr><td><code>.h2restart</code> <span class="alias">or .restarthalf</span></td><td class="d"><b>RCON (l)</b> — restart a live 2nd half to 0&ndash;0, keeping 1st-half scores. Confirm step; live 2nd half only, not OT.</td><td><button class="copy" data-cmd=".h2restart">copy</button></td></tr>
+            <tr><td><code>.setstate &lt;args&gt;</code></td><td class="d"><b>RCON (l)</b> — rebuild match state (scores, half) after a crash or bad reset. Takes arguments; retype within 10s to confirm.</td><td><button class="copy" data-cmd=".setstate">copy</button></td></tr>
+            <tr><td><code>.kick</code></td><td class="d"><b>KICK (c)</b> — menu-based kick with audit logging. Immunity (a) honored.</td><td><button class="copy" data-cmd=".kick">copy</button></td></tr>
+            <tr><td><code>.ban</code> <span class="alias">· .unban</span></td><td class="d"><b>BAN (d)</b> — menu-based ban / ban-record removal, audited.</td><td><button class="copy" data-cmd=".ban">copy</button></td></tr>
+            <tr><td><code>.restart</code> <span class="alias">· .quit</span></td><td class="d"><b>RCON (l)</b> — restart / shut down the server process, audited. Never during a live match without agreement.</td><td><button class="copy" data-cmd=".restart">copy</button></td></tr>
+            <tr><td><code>.hltvrestart</code></td><td class="d"><b>RCON (l)</b> — restart this server's paired HLTV instance (recording recovers on the next match event).</td><td><button class="copy" data-cmd=".hltvrestart">copy</button></td></tr>
+          </table>
+          <div class="fineprint"><b>.changemap needs no flag</b> — any player can use it between
+            matches, so it lives in the public reference. Full command inventory, aliases and
+            permission notes: <b>design/COMMANDS.md</b> in KTPInfrastructure.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="head">Booking a server <span class="pill">KTP admins</span></div>
+        <div class="body prose">
+          <p>On the four baremetals (Atlanta, Dallas, Denver, New York), <b>#1
+            is the only instance with a clean exclusive CPU core</b> — put the highest-stakes match
+            there. <b>Avoid simultaneous matches on #4 and #5 of the same
+            city</b>: they share one physical core. Chicago runs four instances on dedicated vCPUs —
+            book any of them.</p>
+          <p class="hint mt8">Connect strings: the copy buttons on the status grid above.</p>
+        </div>
+      </div>
+
       <!-- ---- command hub ---- -->
-      <div class="sec-head" style="margin-top:26px"><h2 style="font-size:1.1rem">Bot command hub</h2>
+      <div class="sec-head sub"><h2>Bot command hub</h2>
         <span class="meta">run these in Discord · click to copy</span></div>
 
       <div class="cmdgrid">
@@ -673,6 +899,7 @@ footer .accent { color: var(--red); white-space: nowrap; }
             <table class="cmdtable">
               <tr><td><code>/ac player info|add|remove|reset-password</code></td><td class="d">AC player accounts.</td><td><button class="copy" data-cmd="/ac player info">copy</button></td></tr>
               <tr><td><code>/ac session list|show|review</code></td><td class="d">Session uploads for a SteamID; mark reviewed.</td><td><button class="copy" data-cmd="/ac session list">copy</button></td></tr>
+              <tr><td><code>/ac session bundle</code></td><td class="d">One-time link to a session's evidence ZIP for review.</td><td><button class="copy" data-cmd="/ac session bundle">copy</button></td></tr>
               <tr><td><code>/ac session mismatches</code></td><td class="d">Server re-score beat the client's claim (tamper triage).</td><td><button class="copy" data-cmd="/ac session mismatches">copy</button></td></tr>
               <tr><td><code>/ac match show|recent</code></td><td class="d">Match lookups.</td><td><button class="copy" data-cmd="/ac match recent">copy</button></td></tr>
               <tr><td><code>/ac hwid list|lookup|whoelse|ban|unban</code></td><td class="d">HWID bans. <b>whoelse is sensitive — always ephemeral.</b></td><td><button class="copy" data-cmd="/ac hwid lookup">copy</button></td></tr>
@@ -709,7 +936,7 @@ footer .accent { color: var(--red); white-space: nowrap; }
       <h4>Keep it running</h4>
       <p><a href="https://github.com/sponsors/afraznein">Sponsor the infrastructure</a> ·
         <a href="#report">Report a problem</a></p>
-      <p style="margin-top:8px"><span class="accent">Keep the Practice</span></p>
+      <p class="mt8"><span class="accent">Keep the Practice</span></p>
     </div>
   </footer>
 
@@ -750,8 +977,9 @@ footer .accent { color: var(--red); white-space: nowrap; }
   document.querySelectorAll('.copy').forEach(function (b) {
     b.addEventListener('click', function () {
       var txt = b.getAttribute('data-cmd');
+      var orig = b.textContent;
       function done() { b.textContent = 'copied'; b.classList.add('done');
-        setTimeout(function () { b.textContent = 'copy'; b.classList.remove('done'); }, 1400); }
+        setTimeout(function () { b.textContent = orig; b.classList.remove('done'); }, 1400); }
       if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(done, done); }
       else { done(); }
     });

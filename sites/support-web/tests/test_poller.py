@@ -7,6 +7,7 @@ nested value would pass a key check and still ship the address.
 """
 
 import json
+import os
 
 import pytest
 
@@ -40,15 +41,29 @@ def test_fleet_is_24_instances_on_the_expected_ports():
     assert max(i.port for i in f if i.region == "Chicago") == 27018
 
 
-def test_public_document_never_leaks_topology():
+def test_public_document_carries_the_game_endpoint_and_nothing_else():
+    """The one deliberate exception to the no-topology rule.
+
+    Game endpoints are public by nature -- a player types `connect ip:port` to
+    join, and the server browser lists them anyway. Everything else about the
+    fleet stays out: internal service ports, unit names, miss counts, error
+    strings, timestamps.
+    """
     results = [
         _ok("Atlanta 1", "Atlanta", "KTP - Atlanta 1 - 12MAN - LIVE - 2ND HALF",
             ip="74.91.121.9", port=27015),
         _down("Dallas 2", "Dallas", ip="74.91.126.55", port=27016),
     ]
-    blob = json.dumps(P.public_document(results))
-    for secret in ("74.91.121.9", "74.91.126.55", "27015", "27016", "timeout",
-                   "misses", "last_ok", "address"):
+    doc = P.public_document(results)
+    blob = json.dumps(doc)
+
+    # Present, deliberately, and only as the connect field.
+    assert doc["servers"][0]["connect"] == "74.91.121.9:27015"
+    assert doc["servers"][1]["connect"] == "74.91.126.55:27016"
+
+    # Still absent. `8087` is the HLTV API, which must never surface publicly.
+    for secret in ("timeout", "misses", "last_ok", "address", "8087",
+                   "hltv-api", "hltv-demo-renamer", ".service", "consecutive"):
         assert secret not in blob, f"public.json leaked {secret!r}"
 
 
@@ -58,6 +73,7 @@ def test_public_document_carries_map_players_and_match_state():
     )
     s = doc["servers"][0]
     assert s == {"region": "Atlanta", "label": "Atlanta 1", "up": True,
+                 "connect": "10.9.8.7:27015",
                  "map": "dod_donner", "players": 9, "max_players": 13,
                  "match_type": "12MAN", "state": "LIVE - 2ND HALF"}
 
@@ -70,7 +86,10 @@ def test_idle_server_reports_no_match_fields():
 
 def test_down_server_exposes_only_the_fact_that_it_is_down():
     s = P.public_document([_down("Dallas 2", "Dallas")])["servers"][0]
-    assert s == {"region": "Dallas", "label": "Dallas 2", "up": False}
+    # connect is still emitted -- the endpoint exists whether or not it answers,
+    # and a player retrying is a reasonable thing to let them do.
+    assert s == {"region": "Dallas", "label": "Dallas 2", "up": False,
+                 "connect": "10.9.8.7:27016"}
 
 
 def test_summary_counts_humans_not_slots():
@@ -151,3 +170,14 @@ def test_no_proxy_means_full_capacity_and_no_flag():
     r["humans"], r["hltv"] = 0, 0
     s = P.public_document([r])["servers"][0]
     assert s["max_players"] == 13 and "hltv" not in s
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Windows ignores POSIX file modes")
+def test_write_atomic_applies_the_mode_it_was_given(tmp_path):
+    import stat
+    pub, det = tmp_path / "public.json", tmp_path / "detail.json"
+    P.write_atomic(str(pub), {"generated": 1}, mode=0o644)
+    P.write_atomic(str(det), {"generated": 1}, mode=0o600)
+    # nginx serves public.json directly, so world-readable is required, not cosmetic.
+    assert stat.S_IMODE(os.stat(pub).st_mode) & 0o044
+    assert not stat.S_IMODE(os.stat(det).st_mode) & 0o077

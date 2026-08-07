@@ -22,7 +22,7 @@ from . import relay, status as st, store
 from .config import settings
 from .reports import RateLimiter, ReportRejected, validate
 from .season import current_season
-from .tickets import Scope, Status, TransitionError, may_request, transition
+from .tickets import Group, Level, Status, TransitionError, may_request, transition
 from .tiers import Tier, can_view_detail_status, resolve, visible_sections
 
 log = logging.getLogger("support-web")
@@ -194,7 +194,8 @@ def deliver_report(report, intake_id: str, ip_hash: str) -> None:
 @app.post("/api/tickets")
 def create_ticket(
     request: Request,
-    scope: str = Form(...),
+    level: str = Form(...),
+    group: str = Form(...),
     # Defaulted rather than required: an empty required Form yields FastAPI's
     # raw 422 schema error, and the person filling this in should see our
     # sentence about SteamID format instead.
@@ -207,13 +208,13 @@ def create_ticket(
     if not tier.is_admin:
         return JSONResponse({"detail": "not found"}, status_code=404)
     try:
-        want = Scope(scope)
+        want_level, want_group = Level(level), Group(group)
     except ValueError:
         return JSONResponse({"ok": False, "error": "Unknown privilege."}, status_code=400)
 
     # Checked again here, not only in the template: a 1.3 admin who never sees
     # the KTP form can still POST to this endpoint.
-    if not may_request(tier.value, want):
+    if not may_request(tier.value, want_level, want_group):
         return JSONResponse({"ok": False, "error": "Not yours to request."}, status_code=403)
 
     sid = normalise_steamid(steam_id)
@@ -226,7 +227,8 @@ def create_ticket(
     if not name:
         return JSONResponse({"ok": False, "error": "Who is it for?"}, status_code=400)
 
-    season = current_season(date.today()).number if want.expires_with_season else None
+    season = (current_season(date.today()).number
+              if want_group.expires_with_season else None)
     try:
         conn = store.connect(**settings.db_kwargs)
     except Exception as exc:                                     # noqa: BLE001
@@ -234,7 +236,7 @@ def create_ticket(
         return JSONResponse({"ok": False, "error": "Try again shortly."}, status_code=503)
     try:
         ticket_id = store.insert_ticket(
-            conn, want, sid, name,
+            conn, want_level, want_group, sid, name,
             request.session.get(SESSION_ID, ""), note.strip()[:500] or None, season,
         )
     finally:

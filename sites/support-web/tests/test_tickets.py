@@ -11,7 +11,8 @@ import pytest
 
 from app.tickets import (
     TERMINAL,
-    Scope,
+    Group,
+    Level,
     Status,
     Ticket,
     TransitionError,
@@ -23,8 +24,9 @@ from app.tickets import (
 )
 
 
-def t(status=Status.ACTIVE, scope=Scope.SEASON_CAPTAIN, season=10, tid=1):
-    return Ticket(tid, scope, "STEAM_0:1:1", "someone", "discord:1", status, season)
+def t(status=Status.ACTIVE, group=Group.SEASON_CAPTAIN, season=10, tid=1,
+      level=Level.KICK_RESTART):
+    return Ticket(tid, level, group, "STEAM_0:1:1", "someone", "discord:1", status, season)
 
 
 # --- the state machine ---------------------------------------------------
@@ -71,28 +73,64 @@ def test_open_and_awaiting_human_mean_what_they_say():
 
 # --- who may request what ------------------------------------------------
 
-def test_one3_admins_can_only_request_their_own_moderators():
-    assert may_request("one3", Scope.ONE3_MODERATOR)
-    assert not may_request("one3", Scope.KTP_ADMIN)
-    assert not may_request("one3", Scope.SEASON_CAPTAIN)
+def test_one3_admins_may_only_add_their_own_at_the_lower_level():
+    assert may_request("one3", Level.KICK_RESTART, Group.ONE3_ADMIN)
+    # Ban is a KTP decision; letting the 1.3 tier grant it would make the split
+    # between the two groups meaningless.
+    assert not may_request("one3", Level.KICK_BAN_RESTART, Group.ONE3_ADMIN)
+    assert not may_request("one3", Level.KICK_RESTART, Group.KTP_ADMIN)
+    assert not may_request("one3", Level.KICK_RESTART, Group.SEASON_CAPTAIN)
 
 
-def test_ktp_admins_may_request_any_scope():
-    assert all(may_request("ktp", s) for s in Scope)
+def test_ktp_admins_may_request_every_combination():
+    assert all(may_request("ktp", lv, g) for lv in Level for g in Group)
 
 
 @pytest.mark.parametrize("tier", ["public", "", "anonymous", "One3", "KTP"])
 def test_unknown_or_miscased_tiers_get_nothing(tier):
-    assert not any(may_request(tier, s) for s in Scope)
+    assert not any(may_request(tier, lv, g) for lv in Level for g in Group)
+
+
+# --- levels and groups reflect the live file -----------------------------
+
+def test_only_the_two_live_flag_sets_exist():
+    assert {lv.flags for lv in Level} == {"cl", "cdl"}
+
+
+def test_every_level_carries_rcon_because_every_live_account_does():
+    # There is no kick-without-restart tier in the live scheme, so any grant
+    # also confers .forcereset / .restart / .quit. The form must say so.
+    assert all("l" in lv.flags for lv in Level)
+
+
+def test_only_the_ban_level_grants_ban():
+    assert Level.KICK_BAN_RESTART.grants_ban
+    assert not Level.KICK_RESTART.grants_ban
+    assert "d" in Level.KICK_BAN_RESTART.flags
+    assert "d" not in Level.KICK_RESTART.flags
+
+
+def test_captain_heading_carries_the_season_number():
+    assert t(season=10).heading == "S10 Captains"
+    assert t(season=11).heading == "S11 Captains"
+    # Non-seasonal groups are literal headings with no substitution.
+    assert t(group=Group.KTP_ADMIN).heading == "KTP Kick/Ban/Restart Admins"
+    assert t(group=Group.ONE3_ADMIN).heading == "1.3 Discord General Admins"
+
+
+def test_only_captains_expire_with_the_season():
+    assert Group.SEASON_CAPTAIN.expires_with_season
+    assert not Group.KTP_ADMIN.expires_with_season
+    assert not Group.ONE3_ADMIN.expires_with_season
 
 
 # --- season expiry -------------------------------------------------------
 
 def test_only_active_captain_grants_expire():
     tickets = [
-        t(Status.ACTIVE, Scope.SEASON_CAPTAIN, 10, 1),
-        t(Status.ACTIVE, Scope.KTP_ADMIN, 10, 2),         # not season-scoped
-        t(Status.REVOKED, Scope.SEASON_CAPTAIN, 10, 3),   # already gone
+        t(Status.ACTIVE, Group.SEASON_CAPTAIN, 10, 1),
+        t(Status.ACTIVE, Group.KTP_ADMIN, 10, 2),         # not season-scoped
+        t(Status.REVOKED, Group.SEASON_CAPTAIN, 10, 3),   # already gone
     ]
     assert [x.id for x in expiring_tickets(tickets, 11)] == [1]
 

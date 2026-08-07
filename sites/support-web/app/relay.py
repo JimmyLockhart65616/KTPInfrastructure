@@ -44,9 +44,17 @@ def post_embed(
         "embeds": [embed],
         "allowed_mentions": NO_MENTIONS,
     }
+    # The fleet's existing config (/etc/ktp/discord-relay.conf) stores RELAY_URL
+    # with /reply already on it, while a bare base URL is the obvious thing to
+    # put in an env var. Accept both rather than making one of them silently
+    # POST to /reply/reply.
+    endpoint = url.rstrip("/")
+    if not endpoint.endswith("/reply"):
+        endpoint += "/reply"
+
     try:
         r = httpx.post(
-            url.rstrip("/") + "/reply",
+            endpoint,
             json=payload,
             headers={"X-Relay-Auth": secret, "Content-Type": "application/json"},
             timeout=timeout,
