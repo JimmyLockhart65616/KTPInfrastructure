@@ -84,3 +84,6 @@ wsdod-lan-2026/index.rendered.html
 .claude/settings.local.json
 # LAN prep staging - 3.5GB of engine/plugin binaries, never belongs in git
 /scripts/lan-prep-2026-07-22/
+
+# WSDoD site build output — regenerate with sites/wsdod-lan-2026/build_site.py
+sites/wsdod-lan-2026/dist/

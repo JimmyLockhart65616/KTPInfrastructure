@@ -395,6 +395,10 @@ h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.4px; }
 .chipgroup { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .chiplabel { font-size: 0.68rem; letter-spacing: 1.8px; text-transform: uppercase; color: var(--faint); min-width: 8ch; }
 .chipslot { display: contents; }
+/* a chip is a <button> in the single-file preview and an <a> on the built
+   site, so the anchor needs the button's reset to look identical */
+a.chip { text-decoration: none; display: inline-block; }
+.chip[aria-current="page"] { border-color: var(--blue); color: var(--blue-soft); }
 .chip {
   font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.4px; cursor: pointer;
   background: var(--inset); color: var(--dim); border: 1px solid var(--border);
@@ -2436,10 +2440,14 @@ function buildStatsBoard(CFG) {
 
 // One component, two editions. 2025 passes hud:false — that LAN ran no HUD,
 // so those columns are absent rather than rendered empty.
-buildStatsBoard({
-  data: JSON.parse(document.getElementById("lan-data").textContent),
-  suffix: ""
-});
+// Guarded because the built site ships one edition per page: on the 2025 page
+// there is no #lan-data, and reading it unguarded threw and took every script
+// after it with it — including the edition module, which left the page with no
+// edition bar at all.
+var el26 = document.getElementById("lan-data");
+if (el26) {
+  buildStatsBoard({ data: JSON.parse(el26.textContent), suffix: "" });
+}
 var el25 = document.getElementById("lan-data-2025");
 if (el25) {
   var d25 = JSON.parse(el25.textContent);
@@ -3259,14 +3267,27 @@ if (el25) {
 
   function renderChips() {
     chipsWrap.querySelectorAll(".chip, .edchip-note").forEach(function (n) { n.remove(); });
+    // An edition with an href lives on its own page, so the chip is a real
+    // link — that is what makes an edition shareable at all. Without one
+    // (the single-file prototype) it switches in place as before. One code
+    // path, so the preview and the built site behave the same.
     ED.order.forEach(function (id) {
       var ed = ED.editions[id];
-      var b = el("button", "chip", ed.label);
-      b.setAttribute("aria-pressed", String(id === current));
+      if (!ed) return;
+      var here = id === current;
+      var b = el(!here && ed.href ? "a" : "button", "chip", ed.label);
+      if (!here && ed.href) {
+        b.href = ed.href;
+      } else {
+        b.setAttribute("aria-pressed", String(here));
+      }
+      if (here) b.setAttribute("aria-current", "page");
       if (ed.status) b.title = ed.status;
-      b.addEventListener("click", function () {
-        if (id !== current) { setEdition(id); window.scrollTo(0, 0); }
-      });
+      if (!ed.href) {
+        b.addEventListener("click", function () {
+          if (id !== current) { setEdition(id); window.scrollTo(0, 0); }
+        });
+      }
       chipsWrap.appendChild(b);
     });
     var st = ED.editions[current].status;
