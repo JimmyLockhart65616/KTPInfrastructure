@@ -3078,7 +3078,7 @@
       "Heavy": 316,
       "3rd": 8
      },
-     "primary_role": "Rifle",
+     "primary_role": "Heavy",
      "role_source": "roster",
      "hitboxes": {
       "Left arm": {
@@ -10944,7 +10944,7 @@
       "Heavy": 61,
       "3rd": 42
      },
-     "primary_role": "Rifle",
+     "primary_role": "Heavy",
      "role_source": "roster",
      "hitboxes": {
       "Left arm": {

@@ -35,10 +35,11 @@
   "0:1794": "3rd",
   "1:955338590": "3rd",
   "1:9865547": "3rd",
-  "1:6758404": "Rifle",
+  "1:6758404": "Heavy",
   "0:11692441": "Heavy"
  },
  "notes": [
-  "2026-08-07: icyHOT's monday corrected from Rifle to Heavy per staff. The class data always said so -- BAR 141/144 and STG across the two days with no rifle spawns at all -- so this is the one case where the declared position disagreed with play and play was right."
+  "2026-08-07: icyHOT's monday corrected from Rifle to Heavy per staff. The class data always said so -- BAR 141/144 and STG across the two days with no rifle spawns at all -- so this is the one case where the declared position disagreed with play and play was right.",
+  "2026-08-07: b Team's epyon corrected from Rifle to Heavy per staff -- their second heavy behind sTarK_. Class play agrees (BAR 160 + STG 156 on the Saturday), and it completes b Team's six: two rifles, two heavies, a 3rd and a sniper. Together with monday this retires the earlier reading that treated both as Rifles because they were not 3rds."
  ]
 }
