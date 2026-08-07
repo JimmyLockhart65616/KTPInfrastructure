@@ -10,24 +10,34 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* KTP brand tokens (dark) — matched to the profiles site */
-    --bg:        #001e62;
-    --panel:     #0a2f77;
-    --inset:     #001a54;
-    --border:    #214895;
-    --text:      #f3fbff;
-    --dim:       #adc8e0;
-    --red:       #f52735;
-    --blue:      #0072d5;
-    --blue-soft: #4ea3e6;
+    /* Shared KTP tokens — same set support.ktpdod.com and the fastdl pages use.
+       --blue is MOSS GREEN; the name is kept from the blue era because every rule
+       below references it. */
+    --bg:        #171c0a;
+    --panel:     #252a14;
+    --panel-2:   #323920;
+    --inset:     #101407;
+    --border:    #3d432b;
+    --rule:      rgba(61,67,43,0.5);
+    --text:      #eae7d4;
+    --dim:       #b6b299;
+    --faint:     #98947c;
+    --red:       #d0513b;   /* rust */
+    --red-soft:  #e07a63;   /* --red alone is 3.4:1 on panels — use this for small text */
+    --blue:      #819746;   /* moss */
+    --blue-soft: #9fb45c;
+    --amber:     #c08b5c;
     --radius: 14px;
+    --panel-grad: linear-gradient(180deg, var(--panel) 0%, #1e230f 100%);
     --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+    color-scheme: dark;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
+html{scrollbar-gutter:stable}
   body {
     background:
-      radial-gradient(120% 80% at 50% -10%, #0a2f77 0%, rgba(10,47,119,0) 55%),
+      radial-gradient(120% 80% at 50% -10%, #252a14 0%, rgba(37,42,20,0) 55%),
       var(--bg);
     background-attachment: fixed;
     color: var(--text);
@@ -37,16 +47,16 @@
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
-  ::selection { background: var(--red); color: #fff; }
+  ::selection { background: var(--red); color: #150b04; }
 
   .wrap { max-width: 1180px; margin: 0 auto; padding: 0 22px; }
 
   /* ---- top bar (matches profiles) ---- */
+  /* top bar — STATIC by operator requirement (not sticky, not animated) */
   nav {
     border-bottom: 1px solid var(--border);
-    background: rgba(0,26,84,0.72);
-    backdrop-filter: blur(8px);
-    position: sticky; top: 0; z-index: 50;
+    background: rgba(16,20,7,0.72);
+    position: static;
   }
   nav .row { display: flex; align-items: center; gap: 22px; height: 58px; }
   .brand { font-weight: 800; letter-spacing: 1px; font-size: 1.05rem; color: var(--text); }
@@ -62,7 +72,8 @@
     font-size: 0.72rem; letter-spacing: 2.4px; text-transform: uppercase;
     color: var(--dim); display: flex; align-items: center; gap: 10px;
   }
-  .eyebrow::before { content: ""; width: 26px; height: 2px; background: var(--blue); display: inline-block; }
+  .eyebrow::before { content: ""; width: 26px; height: 2px; background: var(--blue);
+    display: inline-block; flex: none; }
   header.hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -1px; line-height: 1.04; margin: 16px 0 12px; }
   header.hero h1 .ktp { color: var(--red); }
   header.hero .sub { color: var(--dim); max-width: 74ch; font-size: 0.92rem; }
@@ -80,7 +91,7 @@
   a:hover { color: var(--blue-soft); }
   code {
     font-family: var(--mono);
-    background: rgba(0,114,213,0.16); border: 1px solid var(--border);
+    background: rgba(129,151,70,0.16); border: 1px solid var(--border);
     border-radius: 4px; padding: 1px 5px; font-size: 0.9em; color: var(--blue-soft);
   }
   /* Copy/paste block */
@@ -103,7 +114,7 @@
   /* Cvar cards (profiles panel styling + red hover rail) */
   .card {
     position: relative; overflow: hidden;
-    background: linear-gradient(180deg, var(--panel) 0%, #082a6b 100%);
+    background: var(--panel-grad);
     border: 1px solid var(--border); border-radius: var(--radius);
     padding: 18px 20px; margin: 16px 0;
     transition: border-color .16s ease, box-shadow .16s ease;
@@ -113,7 +124,7 @@
     background: var(--red); transform: scaleY(0); transform-origin: top;
     transition: transform .18s ease;
   }
-  .card:hover { border-color: #2f5cb0; box-shadow: 0 12px 30px rgba(0,0,0,0.30); }
+  .card:hover { border-color: var(--blue); box-shadow: 0 12px 30px rgba(0,0,0,0.30); }
   .card:hover::before { transform: scaleY(1); }
   .card h3 { margin: 0 0 8px; font-family: var(--mono); color: var(--blue-soft); font-size: 1.02rem; letter-spacing: 0.2px; }
   .card .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
@@ -130,7 +141,7 @@
   tr:last-child td { border-bottom: none; }
   th:last-child, td:last-child { border-right: none; }
   th { background: var(--inset); color: var(--text); font-weight: 700; letter-spacing: 0.4px; }
-  td { background: rgba(0,26,84,0.35); }
+  td { background: rgba(16,20,7,0.35); }
   td code { border: none; background: none; padding: 0; }
   /* Diagram */
   .diagram {
@@ -159,6 +170,25 @@
     color: var(--dim); font-size: 0.82rem;
   }
   footer a { color: var(--blue); }
+
+  /* ---- shared KTP chrome (support.ktpdod.com) ---- */
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--blue-soft); outline-offset: 2px; }
+  .mt8 { margin-top: 8px; }
+  @media (max-width: 720px) { nav .hidesm { display: none; } }
+  .sponsor-slot {
+    margin-left: auto; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px;
+    color: var(--red-soft); border: 1px solid var(--red); border-radius: 999px;
+    padding: 4px 13px; white-space: nowrap; text-transform: none;
+  }
+  .sponsor-slot:hover { background: var(--red); color: #150b04; }
+  footer.split { display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; }
+  footer .col { max-width: 46ch; }
+  footer h4 {
+    color: var(--text); font-size: 0.72rem; letter-spacing: 1.6px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  footer p { margin: 4px 0; }
+  footer .accent { color: var(--red); white-space: nowrap; }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; scroll-behavior: auto; }
     .card:hover::before { transform: scaleY(0); }
@@ -169,18 +199,22 @@
 
 <nav>
   <div class="wrap row">
-    <span class="brand"><span class="k">KTP</span> NETCODE</span>
+    <span class="brand"><span class="k">KTP</span> — Netcode</span>
     <span class="spacer"></span>
-    <a class="navlink" href="https://profiles.ktpdod.com/">Profiles</a>
-    <a class="navlink here" href="#">Netcode</a>
-    <a class="navlink" href="https://bundles.ktpdod.com/">My Data</a>
+    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/">Downloads</a>
+    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/demos/">Demos</a>
+    <a class="navlink here" href="https://netcode.ktpdod.com/">Netcode</a>
+    <a class="navlink hidesm" href="https://profiles.ktpdod.com/">Profiles</a>
+    <a class="navlink hidesm" href="https://bundles.ktpdod.com/">My Data</a>
+    <a class="navlink hidesm" href="https://ac.ktpdod.com/">Anti-Cheat</a>
+    <a class="navlink" href="https://support.ktpdod.com">Support</a>
   </div>
 </nav>
 
 <div class="wrap">
 
 <header class="hero">
-  <div class="eyebrow">Keep the Practice · Rate settings</div>
+  <div class="eyebrow">Keep the Practice &middot; Rate settings<a class="sponsor-slot" href="https://github.com/sponsors/afraznein">❤ Sponsor KTP</a></div>
   <h1><span class="ktp">KTP</span> Netcode</h1>
   <div class="sub">Recommended rate settings for all KTP servers: Atlanta &middot; Dallas &middot; Denver &middot; New York &middot; Chicago<br>
   Released July 9, 2026 &middot; by <b>Nein_</b> &middot; verified against the live fleet config &amp; KTPCvarChecker 7.29</div>
@@ -418,12 +452,24 @@
   </ul>
 </details>
 
-<footer>
-  KTP servers automatically check and enforce required cvars (KTPCvarChecker). League documentation:
-  <a href="https://github.com/afraznein/KTP_Documentation/blob/main/KTP%20Cvar%20List.md">KTP Cvar List</a> &middot;
-  <a href="https://github.com/afraznein/KTP_Documentation/blob/main/KTP%20Ruleset.md">KTP Ruleset</a><br>
-  Written by Nein_ &middot; Released July 9, 2026<br>
-  Questions? Ask a KTP admin on Discord. &middot; <span style="color:var(--red)">Keep the Practice</span>
+<footer class="split">
+  <div class="col">
+    <h4>About this page</h4>
+    <p>KTP servers check and enforce these cvars automatically (KTPCvarChecker), so the
+      recommended values are the ones the fleet already expects.</p>
+    <p class="mt8">Written by <b>Nein_</b> &middot; released July 9, 2026.
+      Questions? Ask a KTP admin on Discord.</p>
+  </div>
+  <div class="col">
+    <h4>Elsewhere</h4>
+    <p><a href="https://github.com/afraznein/KTP_Documentation/blob/main/KTP%20Cvar%20List.md">KTP Cvar List</a> &middot;
+      <a href="https://github.com/afraznein/KTP_Documentation/blob/main/KTP%20Ruleset.md">KTP Ruleset</a></p>
+    <p><a href="https://profiles.ktpdod.com/">Player profiles</a> &middot;
+      <a href="https://bundles.ktpdod.com/">My data</a></p>
+    <p><a href="https://github.com/sponsors/afraznein">Sponsor the infrastructure</a> &middot;
+      <a href="https://support.ktpdod.com">Report a problem</a></p>
+    <p class="mt8"><span class="accent">Keep the Practice</span></p>
+  </div>
 </footer>
 
 </div>
