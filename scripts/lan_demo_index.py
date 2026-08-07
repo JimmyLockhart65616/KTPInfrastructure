@@ -30,16 +30,31 @@ CSS = """
   color-scheme:dark;
 }
 *{margin:0;padding:0;box-sizing:border-box}
+/* Reserve the scrollbar gutter ALWAYS. Without it a short page (no scrollbar) is ~15px
+   wider than a long one, so centred content — including the header — shifts sideways
+   as you move between pages. That was measured at 7px on the LAN root page. */
+html{scrollbar-gutter:stable}
 body{background:radial-gradient(120% 80% at 50% -10%,#252a14 0%,rgba(37,42,20,0) 55%),var(--bg);
-  background-attachment:fixed;color:var(--text);font-family:var(--mono);font-size:14px;
+  background-attachment:fixed;color:var(--text);font-family:var(--mono);font-size:15px;
   line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
 a{color:var(--blue);text-decoration:none}
 a:hover{color:var(--blue-soft)}
 code{font-family:var(--mono);color:var(--blue-soft)}
 ::selection{background:var(--red);color:#150b04}
 a:focus-visible{outline:2px solid var(--blue-soft);outline-offset:2px}
-.wrap{max-width:1100px;margin:0 auto;padding:0 22px;width:100%}
+/* 1180 and 15px are shared with ktp-fastdl-indexes.py and the landing page — a different
+   value here slides the header sideways as you move between pages. */
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px;width:100%}
 .mt8{margin-top:8px}
+/* .card/.match set display, which beats the UA [hidden] rule */
+[hidden]{display:none!important}
+.search{display:flex;align-items:center;gap:.7rem;margin:0 0 1.1rem;flex-wrap:wrap}
+.search input{flex:1 1 240px;min-width:0;max-width:420px;background:var(--inset);
+  border:1px solid var(--border);border-radius:999px;padding:.45rem .95rem;color:var(--text);
+  font-family:var(--mono);font-size:.84rem}
+.search input:focus{outline:none;border-color:var(--blue)}
+.search input::placeholder{color:var(--faint)}
+.qc{color:var(--faint);font-size:.76rem;white-space:nowrap}
 nav{border-bottom:1px solid var(--border);background:rgba(16,20,7,0.72);position:static}
 nav .row{display:flex;align-items:center;gap:22px;height:58px}
 .brand{font-weight:800;letter-spacing:1px;font-size:1.05rem;color:var(--text)}
@@ -114,6 +129,45 @@ FOOTER = (
   '</footer>\n')
 
 
+SEARCH = ('<div class="search">'
+          '<input id="q" type="search" placeholder="Filter this page&hellip;" autocomplete="off"'
+          ' spellcheck="false" aria-label="Filter this page" aria-controls="qc">'
+          '<span id="qc" class="qc" role="status" aria-live="polite"></span></div>'
+          '<p id="qnone" class="note" hidden>Nothing on this page matches that filter.</p>')
+
+SCRIPT = """<script>
+(function(){
+  var q=document.getElementById('q'); if(!q) return;
+  var items=[].slice.call(document.querySelectorAll('[data-s]'));
+  var heads=[].slice.call(document.querySelectorAll('h2'));
+  var cnt=document.getElementById('qc'), none=document.getElementById('qnone');
+  function apply(){
+    var terms=q.value.trim().toLowerCase().split(/\\s+/).filter(Boolean);
+    var shown=0;
+    items.forEach(function(el){
+      var s=el.getAttribute('data-s');
+      var ok=terms.every(function(w){return s.indexOf(w)!==-1;});
+      el.hidden=!ok; if(ok) shown++;
+    });
+    heads.forEach(function(h){
+      var n=h.nextElementSibling, any=false;
+      while(n && n.tagName!=='H2'){
+        if(n.hasAttribute('data-s')){ if(!n.hidden) any=true; }
+        else if(n.querySelector('[data-s]:not([hidden])')) any=true;
+        n=n.nextElementSibling;
+      }
+      h.hidden = terms.length>0 && !any;
+    });
+    cnt.textContent = terms.length ? shown+' of '+items.length+' shown'
+                                   : items.length+(items.length===1?' item':' items');
+    none.hidden = !(terms.length>0 && shown===0);
+  }
+  q.addEventListener('input',apply);
+  apply();
+})();
+</script>"""
+
+
 def human(n):
     v = float(n)
     for u in ("B", "KB", "MB", "GB"):
@@ -132,7 +186,7 @@ def page(title, body):
       '<link rel="icon" href="/favicon.ico">',
       '<title>' + html.escape(title) + '</title>',
       '<style>' + CSS + '</style>', '</head>', '<body>',
-      NAV, '<div class="wrap">', EYEBROW, body, FOOTER, '</div>', '</body></html>', '']
+      NAV, '<div class="wrap">', EYEBROW, body, FOOTER, '</div>', SCRIPT, '</body></html>', '']
     return "\n".join(parts)
 
 
@@ -178,7 +232,10 @@ for mt in TYPES:
             chips.append('<a class="f" href="' + html.escape(f) + '"><span class="h">'
                          + lbl + '</span><span class="sz">'
                          + human(os.path.getsize(os.path.join(d, f))) + '</span></a>')
-        cards.append('<div class="match"><div class="mh">' + teams
+        key = " ".join([mid, meta] + ([tm.group(1), tm.group(2)] if tm else [])
+                       + sorted(fl)).lower()
+        cards.append('<div class="match" data-s="' + html.escape(key, quote=True)
+                     + '"><div class="mh">' + teams
                      + '<span class="meta">' + meta + '</span></div>'
                      + '<div class="files">' + "".join(chips) + '</div></div>')
 
@@ -188,13 +245,15 @@ for mt in TYPES:
             + html.escape(TYPE_LABEL.get(mt, mt)) + '</span></h1>'
             + '<p class="lede">' + str(len(files)) + ' demos across ' + str(len(groups))
             + ' matches. Named <code>type_matchid_half_team1_team2_map</code>.</p>'
-            + "".join(cards))
+            + SEARCH + "".join(cards))
     written.append((os.path.join(d, "index.html"), page("Philly 2026 — " + mt, body)))
 
 cards = []
 for mt in TYPES:
     if mt in counts:
-        cards.append('<div class="match"><div class="mh">'
+        cards.append('<div class="match" data-s="'
+                     + html.escape((mt + " " + TYPE_LABEL.get(mt, mt)).lower(), quote=True)
+                     + '"><div class="mh">'
                      '<span class="teams"><a href="' + mt + '/">'
                      + html.escape(TYPE_LABEL.get(mt, mt)) + '</a></span>'
                      '<span class="meta">' + str(counts[mt]) + ' demos</span></div></div>')

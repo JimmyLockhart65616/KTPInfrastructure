@@ -31,15 +31,24 @@ CSS = """
 --panel-grad:linear-gradient(180deg,var(--panel) 0%,#1e230f 100%);
 --mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;color-scheme:dark}
 *{margin:0;padding:0;box-sizing:border-box}
+/* Reserve the scrollbar gutter ALWAYS. Without it a short page (no scrollbar) is ~15px
+   wider than a long one, so centred content — including the header — shifts sideways
+   as you move between pages. That was measured at 7px on the LAN root page. */
+html{scrollbar-gutter:stable}
 body{background:radial-gradient(120% 80% at 50% -10%,#252a14 0%,rgba(37,42,20,0) 55%),var(--bg);
-background-attachment:fixed;color:var(--text);font-family:var(--mono);font-size:14px;
+background-attachment:fixed;color:var(--text);font-family:var(--mono);font-size:15px;
 line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
 a{color:var(--blue);text-decoration:none}a:hover{color:var(--blue-soft)}
 code{font-family:var(--mono);color:var(--blue-soft)}
 ::selection{background:var(--red);color:#150b04}
 a:focus-visible{outline:2px solid var(--blue-soft);outline-offset:2px}
-.wrap{max-width:1100px;margin:0 auto;padding:0 22px;width:100%}
+/* 1180 and 15px are load-bearing: the landing page and /netcode use them, and a different
+   value here slides the whole header sideways as you move between pages. */
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px;width:100%}
 .mt8{margin-top:8px}
+/* .card sets display:block, which beats the UA sheet's [hidden] rule — without !important
+   the filter hides nothing. */
+[hidden]{display:none!important}
 nav{border-bottom:1px solid var(--border);background:rgba(16,20,7,0.72);position:static}
 nav .row{display:flex;align-items:center;gap:22px;height:58px}
 .brand{font-weight:800;letter-spacing:1px;font-size:1.05rem;color:var(--text)}
@@ -79,6 +88,13 @@ border:1px solid var(--rule);border-radius:8px;padding:.24rem .6rem;font-size:.7
 .f:hover{border-color:var(--blue)}
 .f .h{color:var(--red-soft);font-weight:700}.f .sz{color:var(--faint)}
 .note{color:var(--faint);font-size:.78rem;margin:.2rem 0 1rem}
+.search{display:flex;align-items:center;gap:.7rem;margin:0 0 1.1rem;flex-wrap:wrap}
+.search input{flex:1 1 240px;min-width:0;max-width:420px;background:var(--inset);
+border:1px solid var(--border);border-radius:999px;padding:.45rem .95rem;color:var(--text);
+font-family:var(--mono);font-size:.84rem}
+.search input:focus{outline:none;border-color:var(--blue)}
+.search input::placeholder{color:var(--faint)}
+.qc{color:var(--faint);font-size:.76rem;white-space:nowrap}
 footer{border-top:1px solid var(--border);padding:32px 0 72px;color:var(--dim);
 font-size:0.82rem;margin-top:48px}
 footer.split{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between}
@@ -103,6 +119,48 @@ EYEBROW = ('<div class="eyebrow">Keep the Practice &middot; Competitive Day of D
            '<a class="sponsor-slot" href="https://github.com/sponsors/afraznein">'
            '&#10084; Sponsor KTP</a></div>\n')
 
+SEARCH = ('<div class="search">'
+          '<input id="q" type="search" placeholder="Filter this page&hellip;" autocomplete="off"'
+          ' spellcheck="false" aria-label="Filter this page" aria-controls="qc">'
+          '<span id="qc" class="qc" role="status" aria-live="polite"></span></div>'
+          '<p id="qnone" class="note" hidden>Nothing on this page matches that filter.</p>')
+
+# Filters anything carrying data-s (built lowercase at generation time, so no per-keystroke
+# text extraction). Terms are AND-ed. Headings hide when their whole group filters out --
+# otherwise you get a page of orphan section titles over nothing.
+SCRIPT = """<script>
+(function(){
+  var q=document.getElementById('q'); if(!q) return;
+  var items=[].slice.call(document.querySelectorAll('[data-s]'));
+  var heads=[].slice.call(document.querySelectorAll('h2'));
+  var cnt=document.getElementById('qc'), none=document.getElementById('qnone');
+  function apply(){
+    var terms=q.value.trim().toLowerCase().split(/\\s+/).filter(Boolean);
+    var shown=0;
+    items.forEach(function(el){
+      var s=el.getAttribute('data-s');
+      var ok=terms.every(function(w){return s.indexOf(w)!==-1;});
+      el.hidden=!ok; if(ok) shown++;
+    });
+    heads.forEach(function(h){
+      var n=h.nextElementSibling, any=false;
+      while(n && n.tagName!=='H2'){
+        if(n.hasAttribute('data-s')){ if(!n.hidden) any=true; }
+        else if(n.querySelector('[data-s]:not([hidden])')) any=true;
+        n=n.nextElementSibling;
+      }
+      h.hidden = terms.length>0 && !any;
+    });
+    cnt.textContent = terms.length ? shown+' of '+items.length+' shown'
+                                   : items.length+(items.length===1?' item':' items');
+    none.hidden = !(terms.length>0 && shown===0);
+  }
+  q.addEventListener('input',apply);
+  apply();
+})();
+</script>"""
+
+
 def footer(what):
     return ('<footer class="split">\n  <div class="col">\n    <h4>What this is</h4>\n    <p>'
             + what + '</p>\n  </div>\n  <div class="col">\n    <h4>Keep it running</h4>\n'
@@ -122,7 +180,7 @@ def page(title, site, body, what):
       '<title>' + html.escape(title) + '</title>',
       '<style>' + CSS + '</style>', '</head>', '<body>',
       nav(site), '<div class="wrap">', EYEBROW, body, footer(what), '</div>',
-      '</body></html>', ''])
+      SCRIPT, '</body></html>', ''])
 
 def human(n):
     v = float(n)
@@ -150,7 +208,8 @@ for label, dirs in DOD_GROUPS:
     if not have:
         continue
     cards.append('<h2>' + label + '</h2><div class="row2">' + "".join(
-        '<a class="card" href="' + d + '/"><div class="t">' + d + '/</div>'
+        '<a class="card" data-s="' + (d + " " + label).lower() + '" href="' + d + '/">'
+        '<div class="t">' + d + '/</div>'
         '<div class="d">' + str(len(os.listdir(FASTDL + "/dod/" + d))) + ' entries</div></a>'
         for d in have) + '</div>')
 loose = sorted(f for f in os.listdir(FASTDL + "/dod") if os.path.isfile(FASTDL + "/dod/" + f))
@@ -161,9 +220,10 @@ body = ('<div class="crumb"><a href="/">fastdl</a> / dod</div>'
         'here by hand.</b> The list is browsable if you want to fetch one file directly.</p>'
         '<p class="note">' + str(len(present)) + ' directories, ' + str(len(loose))
         + ' loose files. Served over HTTP as <code>sv_downloadurl</code>.</p>'
-        + "".join(cards)
+        + SEARCH + "".join(cards)
         + '<h2>Other directories</h2><div class="row2">' + "".join(
-            '<a class="card" href="' + d + '/"><div class="t">' + d + '/</div></a>'
+            '<a class="card" data-s="' + d.lower() + '" href="' + d + '/">'
+            '<div class="t">' + d + '/</div></a>'
             for d in sorted(present - {x for _, ds in DOD_GROUPS for x in ds})) + '</div>')
 out.append((FASTDL + "/dod/index.html",
             page("KTP FastDL — client downloads", "Client Downloads", body,
@@ -189,19 +249,21 @@ sections = []
 lan = DEMOS + "/LAN-PHILLY2026"
 if os.path.isdir(lan):
     sections.append('<h2>Event archive</h2><div class="row2">'
-                    '<a class="card" href="LAN-PHILLY2026/"><div class="t">WSDoD Philly 2026</div>'
+                    '<a class="card" data-s="wsdod philly 2026 lan event archive"'
+                    ' href="LAN-PHILLY2026/"><div class="t">WSDoD Philly 2026</div>'
                     '<div class="d">' + str(count_dems(lan)) + ' demos &middot; kept indefinitely'
                     '</div></a></div>')
 for city, srvs in by_city.items():
     sections.append('<h2>' + city + '</h2><div class="row2">' + "".join(
-        '<a class="card" href="' + s + '/"><div class="t">' + s + '</div>'
+        '<a class="card" data-s="' + (s + " " + city).lower() + '" href="' + s + '/">'
+        '<div class="t">' + s + '</div>'
         '<div class="d">' + str(count_dems(DEMOS + "/" + s)) + ' demos</div></a>'
         for s in srvs) + '</div>')
 body = ('<div class="crumb"><a href="/">fastdl</a> / demos</div>'
         '<h1>Demo <span class="accent">archive</span></h1>'
         '<p class="lede">Every match HLTV records across the 24-server fleet, sorted by server and '
         'match type. <b>League and draft matches are kept 180 days; pickups and scrims 90.</b> '
-        'Download one before it ages out.</p>' + "".join(sections))
+        'Download one before it ages out.</p>' + SEARCH + "".join(sections))
 out.append((DEMOS + "/index.html",
             page("KTP Demo Archive", "Demo Archive", body,
                  "Every competitive match on the KTP fleet, recorded by HLTV and kept on a "
@@ -216,8 +278,9 @@ for s in servers:
     body = ('<div class="crumb"><a href="/">fastdl</a> / <a href="/demos/">demos</a> / ' + s + '</div>'
             '<h1>' + s + ' <span class="accent">demos</span></h1>'
             '<p class="lede">Recorded matches on ' + s + ', by match type.</p>'
-            '<div class="row2">' + "".join(
-              '<a class="card" href="' + t + '/"><div class="t">'
+            + SEARCH + '<div class="row2">' + "".join(
+              '<a class="card" data-s="' + (t + " " + TYPE_LABEL.get(t, t)).lower()
+              + '" href="' + t + '/"><div class="t">'
               + html.escape(TYPE_LABEL.get(t, t)) + '</div><div class="d">'
               + str(count_dems(sp + "/" + t)) + ' demos &middot; kept '
               + RETENTION.get(t, "90 days") + '</div></a>' for t in types) + '</div>')
@@ -243,7 +306,10 @@ for s in servers:
                 chips.append('<a class="f" href="' + html.escape(f) + '"><span class="h">' + lbl
                              + '</span><span class="sz">'
                              + human(os.path.getsize(tp + "/" + f)) + '</span></a>')
-            cards.append('<div class="match"><div class="mh"><span class="teams">'
+            # match id + map + every filename, so a search hits on any of them
+            key = " ".join([mid, mp.group(1) if mp else ""] + sorted(fl)).lower()
+            cards.append('<div class="match" data-s="' + html.escape(key, quote=True)
+                         + '"><div class="mh"><span class="teams">'
                          + html.escape(mid) + '</span><span class="meta">'
                          + html.escape(mp.group(1) if mp else "") + '</span></div>'
                          '<div class="files">' + "".join(chips) + '</div></div>')
@@ -253,7 +319,7 @@ for s in servers:
                 + html.escape(TYPE_LABEL.get(t, t)) + '</span></h1>'
                 '<p class="lede">' + str(len(files)) + ' demos in ' + str(len(groups))
                 + ' matches. Kept ' + RETENTION.get(t, "90 days")
-                + ' from recording, then deleted.</p>' + "".join(cards))
+                + ' from recording, then deleted.</p>' + SEARCH + "".join(cards))
         out.append((tp + "/index.html", page("KTP demos — " + s + " " + t, "Demo Archive", body,
                     "Every competitive match on the KTP fleet, recorded by HLTV.")))
 
@@ -282,19 +348,21 @@ for root, dirs, files in os.walk(FASTDL + "/dod"):
     cards = ""
     if subs:
         cards += '<h2>Folders</h2><div class="row2">' + "".join(
-            '<a class="card" href="' + html.escape(x) + '/"><div class="t">' + html.escape(x)
+            '<a class="card" data-s="' + html.escape(x.lower(), quote=True) + '" href="'
+            + html.escape(x) + '/"><div class="t">' + html.escape(x)
             + '/</div><div class="d">' + str(len(os.listdir(os.path.join(root, x))))
             + ' entries</div></a>' for x in subs) + '</div>'
     if fl:
         rows = "".join(
-            '<a class="f" href="' + html.escape(f) + '"><span class="h">' + html.escape(f)
+            '<a class="f" data-s="' + html.escape(f.lower(), quote=True) + '" href="'
+            + html.escape(f) + '"><span class="h">' + html.escape(f)
             + '</span><span class="sz">' + human(os.path.getsize(os.path.join(root, f)))
             + '</span></a>' for f in fl)
         cards += ('<h2>' + str(len(fl)) + ' files</h2><div class="files">' + rows + '</div>')
     body = ('<div class="crumb">' + " / ".join(crumbs) + '</div>'
             '<h1><span class="accent">' + html.escape(rel) + '</span></h1>'
             '<p class="lede">Client content. Your game fetches these automatically on connect.</p>'
-            + cards)
+            + SEARCH + cards)
     out.append((os.path.join(root, "index.html"),
                 page("KTP FastDL — dod/" + rel, "Client Downloads", body,
                      "Fast content distribution for KTP game servers.")))
