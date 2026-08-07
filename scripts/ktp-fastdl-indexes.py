@@ -109,12 +109,11 @@ def nav(site):
             '    <span class="brand"><span class="k">KTP</span> &mdash; ' + site + '</span>\n'
             '    <span class="spacer"></span>\n'
             '    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/">Downloads</a>\n'
-            '    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/demos/">Demos</a>\n'
             '    <a class="navlink hidesm" href="https://netcode.ktpdod.com/">Netcode</a>\n'
             '    <a class="navlink hidesm" href="https://profiles.ktpdod.com/">Profiles</a>\n'
             '    <a class="navlink hidesm" href="https://bundles.ktpdod.com/">My Data</a>\n'
             '    <a class="navlink hidesm" href="https://ac.ktpdod.com/">Anti-Cheat</a>\n'
-            '    <a class="navlink" href="https://support.ktpdod.com">Support</a>\n'
+            '    <a class="navlink" href="https://support.ktpdod.com/">Support</a>\n'
             '  </div>\n</nav>\n')
 
 EYEBROW = ('<div class="eyebrow">Keep the Practice &middot; Competitive Day of Defeat'
