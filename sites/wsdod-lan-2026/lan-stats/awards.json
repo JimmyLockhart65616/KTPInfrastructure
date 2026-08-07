@@ -1,0 +1,1284 @@
+{
+ "_source": [
+  "Category names adapted from the community's WIP awards list in the",
+  "DoD LAN 2025 stats workbook. Leaders are computed from lan-stats.json.",
+  "NOTHING HERE IS AWARDED -- every row is a proposal for staff to pick",
+  "from, and the leader shown is simply who tops that number today.",
+  "The \"mortar\" weapon was dropped: DODX slot 0 is the unresolved-weapon bucket and is named mortar, so world and fall deaths land there. DoD 1.3 has no player mortar.",
+  "The \"mortar\" weapon was dropped: DODX slot 0 is the unresolved-weapon bucket and is named mortar, so world and fall deaths land there. DoD 1.3 has no player mortar."
+ ],
+ "status": "proposed",
+ "edition": "philly-2026",
+ "decided": [
+  {
+   "slug": "mvp-sat",
+   "title": "MVP · Saturday",
+   "blurb": "Highest KTPR of the group stage.",
+   "leader": {
+    "who": "iH.hildebrand?",
+    "value": "1.388 KTPR",
+    "who_short": "hildebrand?"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "mvp-sun",
+   "title": "MVP · Sunday",
+   "blurb": "Highest KTPR of the playoffs.",
+   "leader": {
+    "who": "iH.vertex",
+    "value": "1.413 KTPR",
+    "who_short": "vertex"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "fragger",
+   "title": "The Fragger",
+   "blurb": "Most kills across the weekend.",
+   "leader": {
+    "who": "dicE[: :]element",
+    "value": "750",
+    "who_short": "element"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "flagger",
+   "title": "The Flagger",
+   "blurb": "Most flags across the weekend.",
+   "leader": {
+    "who": "iH.seanality",
+    "value": "159",
+    "who_short": "seanality"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "flags-rate",
+   "title": "Flags Are My Life",
+   "blurb": "Most flags per half — the Calebsod award.",
+   "leader": {
+    "who": "iH.seanality",
+    "value": "6.91 per half",
+    "who_short": "seanality"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "kd",
+   "title": "K/D Is Life",
+   "blurb": "Highest kill/death ratio, 20 halves minimum.",
+   "leader": {
+    "who": "iH.hildebrand?",
+    "value": "1.73 K/D",
+    "who_short": "hildebrand?"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "streak",
+   "title": "On A Tear",
+   "blurb": "Longest single kill streak. HUD.",
+   "leader": {
+    "who": "iH.seanality",
+    "value": "14",
+    "who_short": "seanality"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "breaks",
+   "title": "Party Pooper",
+   "blurb": "Most enemy captures broken up. HUD.",
+   "leader": {
+    "who": "ßℓυ†н | nicholson",
+    "value": "20",
+    "who_short": "nicholson"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "assists",
+   "title": "The Setup Man",
+   "blurb": "Most assists. HUD.",
+   "leader": {
+    "who": "ßℓυ†н | p12 ＃7-33",
+    "value": "144",
+    "who_short": "p12 ＃7-33"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "damage",
+   "title": "Heavy Hitter",
+   "blurb": "Most damage dealt. HUD.",
+   "leader": {
+    "who": "dicE[: :]element",
+    "value": "123,851",
+    "who_short": "element"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "headshots",
+   "title": "Straight Between The Eyes",
+   "blurb": "Most headshot kills.",
+   "leader": {
+    "who": "dicE[: :]player",
+    "value": "141",
+    "who_short": "player"
+   },
+   "status": "proposed"
+  },
+  {
+   "slug": "prone",
+   "title": "Sandbagging Like A Boss",
+   "blurb": "Most time spent on the deck — the Milo award. HUD.",
+   "leader": {
+    "who": "uR[TM]* Kevs Dolmetscher",
+    "value": "17:44",
+    "who_short": "Kevs Dolmetscher"
+   },
+   "status": "proposed"
+  }
+ ],
+ "positions": {
+  "title": "Best Six By Position",
+  "blurb": "Top KTPR at each of the league's four positions.",
+  "rows": [
+   {
+    "role": "Rifle",
+    "who": "iH.vertex",
+    "value": "1.413 KTPR (Sunday)",
+    "who_short": "vertex"
+   },
+   {
+    "role": "Heavy",
+    "who": "****JTM   jules",
+    "value": "1.299 KTPR (Saturday)",
+    "who_short": "jules"
+   },
+   {
+    "role": "3rd",
+    "who": "[bb] bR0M ＃wetya",
+    "value": "1.349 KTPR (Sunday)",
+    "who_short": "bR0M ＃wetya"
+   },
+   {
+    "role": "Sniper",
+    "who": "iH.hildebrand?",
+    "value": "1.388 KTPR (Saturday)",
+    "who_short": "hildebrand?"
+   }
+  ],
+  "status": "proposed"
+ },
+ "attendance": {
+  "title": "Perfect Attendance",
+  "blurb": "Played every half of the weekend — 26 of them.",
+  "who": [
+   "dicE[: :]Gorilla[bc] ＃6-32",
+   "dicE[: :]element",
+   "dicE[: :]m00cat :D",
+   "dicE[: :]player",
+   "dicE[: :]stealthlol",
+   "dicE[: :]warchyld[dd]"
+  ],
+  "status": "proposed",
+  "who_short": [
+   "Gorilla[bc] ＃6-32",
+   "element",
+   "m00cat :D",
+   "player",
+   "stealthlol",
+   "warchyld[dd]"
+  ]
+ },
+ "vote": [
+  {
+   "slug": "rookies",
+   "title": "Best Rookie",
+   "blurb": "First LAN, played like it wasn't. The Asani award.",
+   "status": "proposed"
+  },
+  {
+   "slug": "carry",
+   "title": "Carry Us, Daddy",
+   "blurb": "Held a team together on their back. The PDX award.",
+   "status": "proposed"
+  },
+  {
+   "slug": "losing",
+   "title": "Best On A Losing Team",
+   "blurb": "The performance that deserved a better result.",
+   "status": "proposed"
+  },
+  {
+   "slug": "ninja",
+   "title": "The Ninja Capout",
+   "blurb": "The cheekiest decisive capture. The Leo award.",
+   "status": "proposed"
+  },
+  {
+   "slug": "dodger",
+   "title": "Best Dodger",
+   "blurb": "You know what you did. The Dbo award.",
+   "status": "proposed"
+  },
+  {
+   "slug": "improved",
+   "title": "Most Improved",
+   "blurb": "Turned up a different player to last year.",
+   "status": "proposed"
+  },
+  {
+   "slug": "stopdying",
+   "title": "Stop Dying, Bro",
+   "blurb": "Affectionately. The cK award.",
+   "status": "proposed"
+  }
+ ],
+ "single_match": [
+  {
+   "slug": "helping-hand",
+   "title": "Helping Hand",
+   "blurb": "Most assists in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "sTarK_ x_0 <3＃77",
+     "value": "23",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "incite[bc]",
+     "value": "21",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "s i k <3 n a t",
+     "value": "20",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "baiko ＃gubbe.se",
+     "value": "20",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "kanguhhh?!",
+     "value": "19",
+     "where": "armory_b6 · Sun"
+    }
+   ],
+   "leader": {
+    "who": "sTarK_ x_0 <3＃77",
+    "value": "23",
+    "where": "saints2_b3e · Sat",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "amazon",
+   "title": "Amazon Delivery",
+   "blurb": "Most grenade kills in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "cK- ＃phillylan2026",
+     "value": "29",
+     "where": "lennon5_b1 · Sun"
+    },
+    {
+     "who": "s i k <3 n a t",
+     "value": "26",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "vertex",
+     "value": "23",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "LaNGoNdd<3vt",
+     "value": "21",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "s i k <3 n a t",
+     "value": "20",
+     "where": "armory_b6 · Sat"
+    }
+   ],
+   "leader": {
+    "who": "cK- ＃phillylan2026",
+    "value": "29",
+    "where": "lennon5_b1 · Sun",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "benedict",
+   "title": "Benedict Arnold",
+   "blurb": "Most team kills in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "Ke:>^1.de",
+     "value": "6",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "element",
+     "value": "5",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "Hub",
+     "value": "5",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "cK- ＃phillylan2026",
+     "value": "5",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "warchyld[dd]",
+     "value": "5",
+     "where": "anzio · Sat"
+    }
+   ],
+   "leader": {
+    "who": "Ke:>^1.de",
+    "value": "6",
+    "where": "armory_b6 · Sat",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "dont-touch",
+   "title": "Don't Touch Me",
+   "blurb": "Least damage taken in a full match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "hildebrand?",
+     "value": "2,841",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "hildebrand?",
+     "value": "3,367",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "bonchon",
+     "value": "3,844",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "hildebrand?",
+     "value": "3,965",
+     "where": "lennon5_b1 · Sun"
+    },
+    {
+     "who": "bonchon",
+     "value": "4,017",
+     "where": "thunder2 · Sat"
+    }
+   ],
+   "leader": {
+    "who": "hildebrand?",
+    "value": "2,841",
+    "where": "thunder2 · Sat",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "hurt-me",
+   "title": "Hurt Me Daddy",
+   "blurb": "Most deaths in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "tokih",
+     "value": "77",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "o[bb]y",
+     "value": "75",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "billbsod",
+     "value": "74",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "billbsod",
+     "value": "73",
+     "where": "lennon5_b1 · Sun"
+    },
+    {
+     "who": "nomistizzle",
+     "value": "73",
+     "where": "lennon5_b1 · Sun"
+    }
+   ],
+   "leader": {
+    "who": "tokih",
+    "value": "77",
+    "where": "harrington · Sun",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "no-cap",
+   "title": "No Cap For You",
+   "blurb": "Most enemy captures broken up in a match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "piff ＃4Monty",
+     "value": "4",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "billbsod",
+     "value": "4",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "player",
+     "value": "4",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "value": "4",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "o[bb]y",
+     "value": "4",
+     "where": "harrington · Sat"
+    }
+   ],
+   "leader": {
+    "who": "piff ＃4Monty",
+    "value": "4",
+    "where": "armory_b6 · Sat",
+    "ties": 8
+   },
+   "tied": [
+    {
+     "who": "piff ＃4Monty",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "billbsod",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "player",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "o[bb]y",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "nicholson",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "SilverPlayer",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "nicholson",
+     "where": "armory_b6 · Sun"
+    }
+   ]
+  },
+  {
+   "slug": "not-tired",
+   "title": "I'm Not Tired",
+   "blurb": "Least time prone in a full match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "pb_",
+     "value": "0:00",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "Hub",
+     "value": "0:00",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "Sq =)))",
+     "value": "0:00",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "kroD-",
+     "value": "0:00",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "тωὶﮐт",
+     "value": "0:00",
+     "where": "armory_b6 · Sat"
+    }
+   ],
+   "leader": {
+    "who": "pb_",
+    "value": "0:00",
+    "where": "armory_b6 · Sat",
+    "ties": 101
+   },
+   "tied": [
+    {
+     "who": "pb_",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "Hub",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "Sq =)))",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "kroD-",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "тωὶﮐт",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "bonchon",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "steve",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "sp00kyskull <3 s0v",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "monday",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "HLAH",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "seanality",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "stealthlol",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "m00cat :D",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "hypnotik_ 0_x",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "element",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "тωὶﮐт",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "hildebrand?",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "seanality",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "p12 ＃7-33",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "Gorilla[bc] ＃6-32",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "element",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "nomistizzle",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "Bausch",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "Hub",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "Sq =)))",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "HLAH",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "bonchon",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "zamp0lit",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "sp00kyskull <3 s0v",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "SirSnipeys",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "steve",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "cory <3 liah,jkimbro,rdk",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "bonchon",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "ddorito",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "p12 ＃7-33",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "s i k <3 n a t",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "seanality",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "Khoi",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "Bausch",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "stealthlol",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "element",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "nomistizzle",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "cory <3 liah,jkimbro,rdk",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "yayme",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "Hub",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "Sq =)))",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "stealthlol",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "zamp0lit",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "Sq =)))",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "Hub",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "sp00kyskull <3 s0v",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "monday",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "seanality",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "zamp0lit",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "тωὶﮐт",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "sTarK_ x_0 <3＃77",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "Khoi",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "cK- ＃phillylan2026",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "bonchon",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "ddorito",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "тωὶﮐт",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "sTarK_ x_0 <3＃77",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "nein_",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "тωὶﮐт",
+     "where": "railroad2_s9a · Sun"
+    },
+    {
+     "who": "HLAH",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "zamp0lit",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "Jee ＃22e＃minou",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "Khoi",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "yayme",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "LaNGoNdd<3vt",
+     "where": "lennon5_b1 · Sun"
+    },
+    {
+     "who": "kroD-",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "hypnotik_ 0_x",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "nomistizzle",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "seanality",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "steve",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "Jee ＃22e＃minou",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "Khoi",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "element",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "Hub",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "p12 ＃7-33",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "NoName^",
+     "where": "thunder2 · Sun"
+    },
+    {
+     "who": "Hub",
+     "where": "thunder2 · Sun"
+    },
+    {
+     "who": "Sq =)))",
+     "where": "thunder2 · Sun"
+    },
+    {
+     "who": "sp00kyskull <3 s0v",
+     "where": "railroad2_s9a · Sun"
+    },
+    {
+     "who": "p12 ＃7-33",
+     "where": "lennon5_b1 · Sun"
+    },
+    {
+     "who": "kroD-",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "seanality",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "SilverPlayer",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "piff ＃4Monty",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "element",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "Hub",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "Sq =)))",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "Savage¬",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "hypnotik_ 0_x",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "AlleyWayHandies",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "cory <3 liah,jkimbro,rdk",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "nein_",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "nomistizzle",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "element",
+     "where": "armory_b6 · Sun"
+    }
+   ]
+  },
+  {
+   "slug": "horizontal",
+   "title": "Professional Horizontal",
+   "blurb": "Most time prone in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "Kevs Dolmetscher",
+     "value": "4:23",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "Kevs Dolmetscher",
+     "value": "4:04",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "jules",
+     "value": "3:23",
+     "where": "railroad2_s9a · Sun"
+    },
+    {
+     "who": "Kevs Dolmetscher",
+     "value": "3:12",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "bR0M ＃wetya",
+     "value": "3:11",
+     "where": "lennon5_b1 · Sat"
+    }
+   ],
+   "leader": {
+    "who": "Kevs Dolmetscher",
+    "value": "4:23",
+    "where": "harrington · Sat",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "headhunter",
+   "title": "Headhunter",
+   "blurb": "Most headshot kills in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "bR0M ＃wetya",
+     "value": "20",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "e p y o n",
+     "value": "19",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "nein_",
+     "value": "19",
+     "where": "railroad2_s9a · Sun"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "value": "19",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "value": "19",
+     "where": "saints2_b3e · Sun"
+    }
+   ],
+   "leader": {
+    "who": "bR0M ＃wetya",
+    "value": "20",
+    "where": "anzio · Sat",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "sidearm",
+   "title": "Sidearm Specialist",
+   "blurb": "Most pistol kills in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "patten",
+     "value": "10",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "patten",
+     "value": "7",
+     "where": "lennon5_b1 · Sat"
+    },
+    {
+     "who": "nomistizzle",
+     "value": "7",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "patten",
+     "value": "7",
+     "where": "armory_b6 · Sun"
+    },
+    {
+     "who": "Sq =)))",
+     "value": "7",
+     "where": "saints2_b3e · Sun"
+    }
+   ],
+   "leader": {
+    "who": "patten",
+    "value": "10",
+    "where": "harrington · Sat",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "own-worst",
+   "title": "Own Worst Enemy",
+   "blurb": "Most suicides in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "Kevs Dolmetscher",
+     "value": "4",
+     "where": "saints2_b3e · Sat"
+    },
+    {
+     "who": "nein_",
+     "value": "3",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "Khoi",
+     "value": "3",
+     "where": "anzio · Sat"
+    },
+    {
+     "who": "1337$k337",
+     "value": "2",
+     "where": "armory_b6 · Sat"
+    },
+    {
+     "who": "hey hi <3 dustbin",
+     "value": "2",
+     "where": "thunder2 · Sat"
+    }
+   ],
+   "leader": {
+    "who": "Kevs Dolmetscher",
+    "value": "4",
+    "where": "saints2_b3e · Sat",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "sponge",
+   "title": "Human Shield",
+   "blurb": "Most damage taken in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "SirSnipeys",
+     "value": "13,406",
+     "where": "harrington · Sat"
+    },
+    {
+     "who": "o[bb]y",
+     "value": "12,878",
+     "where": "thunder2 · Sat"
+    },
+    {
+     "who": "billbsod",
+     "value": "12,751",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "nein_",
+     "value": "12,738",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "value": "12,562",
+     "where": "lennon5_b1 · Sat"
+    }
+   ],
+   "leader": {
+    "who": "SirSnipeys",
+    "value": "13,406",
+    "where": "harrington · Sat",
+    "ties": 1
+   },
+   "tied": null
+  },
+  {
+   "slug": "one-man",
+   "title": "One Man Army",
+   "blurb": "Most kills in a single match. HUD.",
+   "status": "proposed",
+   "top": [
+    {
+     "who": "sTarK_ x_0 <3＃77",
+     "value": "86",
+     "where": "saints2_b3e · Sun"
+    },
+    {
+     "who": "vertex",
+     "value": "83",
+     "where": "railroad2_s9a · Sun"
+    },
+    {
+     "who": "cK- ＃phillylan2026",
+     "value": "82",
+     "where": "harrington · Sun"
+    },
+    {
+     "who": "cK- ＃phillylan2026",
+     "value": "81",
+     "where": "lennon5_b1 · Sun"
+    },
+    {
+     "who": "nomistizzle",
+     "value": "80",
+     "where": "harrington · Sat"
+    }
+   ],
+   "leader": {
+    "who": "sTarK_ x_0 <3＃77",
+    "value": "86",
+    "where": "saints2_b3e · Sun",
+    "ties": 1
+   },
+   "tied": null
+  }
+ ],
+ "ballot": {
+  "title": "Best Rookie",
+  "blurb": "First World Series, played like it wasn't. The Asani award.",
+  "how": "Eligibility is a starting point, not a verdict. A player counts as a rookie here only if neither their name nor their SteamID appears on a 2025 roster. SteamID alone is not enough — people play on house machines under whatever account is to hand, and three players whose ids differ between the two LANs are on 2025 rosters under the same name. Staff can add or remove anyone before voting opens.",
+  "eligible": [
+   {
+    "name": "arachnid",
+    "team": "NoSoul"
+   },
+   {
+    "name": "Bausch",
+    "team": "NoSoul"
+   },
+   {
+    "name": "billymanbrewing",
+    "team": "Price is Right"
+   },
+   {
+    "name": "Ho0liii <3 nakk",
+    "team": "North Atlantic Treaty Org"
+   },
+   {
+    "name": "Hub",
+    "team": "North Atlantic Treaty Org"
+   },
+   {
+    "name": "ian",
+    "team": "onLAN thunder"
+   },
+   {
+    "name": "Jee＃minou.exe",
+    "team": "Uncle Rico's Time Machine"
+   },
+   {
+    "name": "Ke:>^1.de <3 FUN",
+    "team": "Uncle Rico's Time Machine"
+   },
+   {
+    "name": "Kevs Dolmetscher",
+    "team": "Uncle Rico's Time Machine"
+   },
+   {
+    "name": "nightmare＃old",
+    "team": "North Atlantic Treaty Org"
+   },
+   {
+    "name": "nomistizzle",
+    "team": "Price is Right"
+   },
+   {
+    "name": "NoName^",
+    "team": "North Atlantic Treaty Org"
+   },
+   {
+    "name": "p12",
+    "team": "Arrested Development"
+   },
+   {
+    "name": "Sq =)))",
+    "team": "North Atlantic Treaty Org"
+   },
+   {
+    "name": "steve",
+    "team": "b Team"
+   },
+   {
+    "name": "tokih",
+    "team": "Price is Right"
+   },
+   {
+    "name": "yayme",
+    "team": "NoSoul"
+   },
+   {
+    "name": "zamp0lit",
+    "team": "Uncle Rico's Time Machine"
+   }
+  ],
+  "returning_count": 43,
+  "id_changed_count": 3,
+  "status": "proposed"
+ }
+}

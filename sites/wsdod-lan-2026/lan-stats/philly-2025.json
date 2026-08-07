@@ -889,5 +889,27 @@
    "first_map": "dod_lennon2",
    "note": null
   }
+ ],
+ "credits": [
+  {
+   "who": "cK",
+   "what": "tournament director"
+  },
+  {
+   "who": "seanality",
+   "what": "LAN staff"
+  },
+  {
+   "who": "chi",
+   "what": "LAN staff"
+  },
+  {
+   "who": "Jane (@lilajane)",
+   "what": "compiled every statistic by hand from end-of-match screenshots"
+  },
+  {
+   "who": "Shmaltz",
+   "what": "covered the cost of the LAN centre"
+  }
  ]
 }
