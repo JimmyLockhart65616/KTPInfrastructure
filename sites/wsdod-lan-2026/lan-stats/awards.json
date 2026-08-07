@@ -185,7 +185,7 @@
   {
    "slug": "streak",
    "title": "On A Tear",
-   "blurb": "Longest single kill streak.",
+   "blurb": "Longest single kill streak, from the match record.",
    "status": "proposed",
    "top": [
     {
@@ -194,14 +194,14 @@
      "where": "icyHOT"
     },
     {
+     "who": "hildebrand?",
+     "value": "13",
+     "where": "icyHOT"
+    },
+    {
      "who": "jules",
      "value": "13",
      "where": "onLAN thunder"
-    },
-    {
-     "who": "hildebrand?",
-     "value": "12",
-     "where": "icyHOT"
     }
    ],
    "leader": {
