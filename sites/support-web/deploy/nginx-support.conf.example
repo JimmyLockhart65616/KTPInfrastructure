@@ -42,6 +42,11 @@ server {
     # detail.json is NOT here by design -- it lives in /var/lib/support-web and
     # is reachable only through an authenticated route in the app.
 
+    # Icons. Static, so nginx answers them instead of waking the app for every tab.
+    location = /favicon.ico          { alias /var/www/support.ktpdod.com/favicon.ico;          access_log off; expires 30d; }
+    location = /favicon-32.png       { alias /var/www/support.ktpdod.com/favicon-32.png;       access_log off; expires 30d; }
+    location = /apple-touch-icon.png { alias /var/www/support.ktpdod.com/apple-touch-icon.png; access_log off; expires 30d; }
+
     location = /api/report {
         limit_req zone=support_report burst=3 nodelay;
         limit_req_status 429;

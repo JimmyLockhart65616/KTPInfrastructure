@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#171c0a">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>KTP FastDL</title>
+<style>
+:root{
+  --bg:#171c0a; --panel:#252a14; --panel-2:#323920; --inset:#101407; --border:#3d432b;
+  --rule:rgba(61,67,43,0.5); --text:#eae7d4; --dim:#b6b299; --faint:#98947c;
+  --red:#d0513b; --red-soft:#e07a63; --blue:#819746; --blue-soft:#9fb45c; --amber:#c08b5c;
+  --radius:14px; --panel-grad:linear-gradient(180deg,var(--panel) 0%,#1e230f 100%);
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+  color-scheme:dark;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+html{scrollbar-gutter:stable}
+body{
+  background:radial-gradient(120% 80% at 50% -10%,#252a14 0%,rgba(37,42,20,0) 55%),var(--bg);
+  background-attachment:fixed;color:var(--text);font-family:var(--mono);font-size:15px;
+  line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh;
+}
+a{color:var(--blue);text-decoration:none}
+a:hover{color:var(--blue-soft)}
+code{font-family:var(--mono);color:var(--blue-soft)}
+::selection{background:var(--red);color:#150b04}
+a:focus-visible,button:focus-visible{outline:2px solid var(--blue-soft);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px;width:100%}
+.mt8{margin-top:8px}
+
+/* top bar — STATIC by operator requirement (not sticky, not animated) */
+nav{border-bottom:1px solid var(--border);background:rgba(16,20,7,0.72);position:static}
+nav .row{display:flex;align-items:center;gap:22px;height:58px}
+.brand{font-weight:800;letter-spacing:1px;font-size:1.05rem;color:var(--text)}
+.brand .k{color:var(--red)}
+nav .spacer{flex:1}
+nav .navlink{color:var(--dim);font-size:0.82rem;letter-spacing:0.6px}
+nav .navlink:hover{color:var(--text)}
+nav .navlink.here{color:var(--text)}
+@media (max-width:720px){nav .hidesm{display:none}}
+
+.eyebrow{font-size:0.72rem;letter-spacing:2.4px;text-transform:uppercase;color:var(--dim);
+  display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:26px;height:2px;background:var(--blue);display:inline-block;flex:none}
+.accent{color:var(--red)}
+header.hero{padding:56px 0 0}
+h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;letter-spacing:-1px;line-height:1.04;margin:16px 0 12px}
+.lede{color:var(--dim);max-width:68ch;font-size:0.92rem}
+.lede b{color:var(--text);font-weight:600}
+.sponsor-slot{margin-left:auto;font-size:0.72rem;font-weight:700;letter-spacing:0.4px;
+  color:var(--red-soft);border:1px solid var(--red);border-radius:999px;padding:4px 13px;
+  white-space:nowrap;text-transform:none}
+.sponsor-slot:hover{background:var(--red);color:#150b04}
+
+footer{border-top:1px solid var(--border);padding:32px 0 72px;color:var(--dim);
+  font-size:0.82rem;margin-top:48px}
+footer.split{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between}
+footer .col{max-width:46ch}
+footer h4{color:var(--text);font-size:0.72rem;letter-spacing:1.6px;text-transform:uppercase;margin-bottom:8px}
+footer p{margin:4px 0}
+footer .accent{color:var(--red);white-space:nowrap}
+
+.card{display:block;background:var(--panel-grad);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem 1.15rem;margin-bottom:.8rem;
+  transition:border-color .15s ease,transform .15s ease}
+.card:hover{border-color:var(--blue);transform:translateY(-1px)}
+.card .t{color:var(--text);font-weight:600;letter-spacing:.3px}
+.card .d{color:var(--dim);font-size:.83rem;margin-top:.28rem}
+.tag{display:inline-block;background:var(--inset);border:1px solid var(--rule);color:var(--faint);
+  border-radius:999px;padding:.05rem .55rem;font-size:.72rem;margin-left:.5rem;vertical-align:1px}
+.tag.new{color:var(--red-soft);border-color:rgba(208,81,59,.4)}
+h2{font-size:.78rem;text-transform:uppercase;letter-spacing:1.4px;color:var(--faint);
+  margin:2rem 0 .8rem;padding-bottom:.4rem;border-bottom:1px solid var(--rule);font-weight:600}
+.grid{margin-top:2rem}
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap row">
+    <span class="brand"><span class="k">KTP</span> — FastDL</span>
+    <span class="spacer"></span>
+    <a class="navlink hidesm here" href="https://fastdl.ktpdod.com/">Downloads</a>
+    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/demos/">Demos</a>
+    <a class="navlink hidesm" href="https://netcode.ktpdod.com/">Netcode</a>
+    <a class="navlink hidesm" href="https://profiles.ktpdod.com/">Profiles</a>
+    <a class="navlink hidesm" href="https://bundles.ktpdod.com/">My Data</a>
+    <a class="navlink hidesm" href="https://ac.ktpdod.com/">Anti-Cheat</a>
+    <a class="navlink" href="https://support.ktpdod.com">Support</a>
+  </div>
+</nav>
+<div class="wrap">
+<header class="hero">
+<div class="eyebrow">Keep the Practice · Competitive Day of Defeat<a class="sponsor-slot" href="https://github.com/sponsors/afraznein">❤ Sponsor KTP</a></div>
+<h1>Content <span class="accent">distribution</span>.</h1>
+<p class="lede">Everything your client pulls, plus every demo we record — <b>maps, sprites, sounds, match recordings</b>. Nothing here needs installing by hand &mdash; the client fetches what it needs on connect.</p>
+</header>
+<div class="grid">
+<h2>Game content</h2>
+<a class="card" href="/dod/"><div class="t">Client download files<span class="tag">1.3 GB</span></div><div class="d">Maps, WADs, sprites and sounds pulled automatically on connect.</div></a>
+<h2>Demos</h2>
+<a class="card" href="/demos/LAN-PHILLY2026/"><div class="t">WSDoD Philly 2026<span class="tag new">215 demos</span></div><div class="d">Every recorded match from the LAN, grouped by match and named by team. Kept indefinitely.</div></a>
+<a class="card" href="/demos/"><div class="t">Fleet demo archive</div><div class="d">HLTV recordings by server and match type. League and draft kept 180 days, pickups and scrims 90.</div></a>
+<div class="d">Client download, setup guide and release notes.</div></a>
+</div>
+<footer class="split">
+  <div class="col">
+    <h4>What this is</h4>
+    <p>Content distribution for KTP — competitive Day of Defeat 1.3, played the way it
+      was meant to be played. Twenty-four servers, five cities, every match recorded.</p>
+  </div>
+  <div class="col">
+    <h4>Keep it running</h4>
+    <p><a href="https://github.com/sponsors/afraznein">Sponsor the infrastructure</a> ·
+      <a href="https://support.ktpdod.com">Report a problem</a></p>
+    <p class="mt8"><span class="accent">Keep the Practice</span></p>
+  </div>
+</footer>
+</div>
+</body></html>
