@@ -706,7 +706,13 @@ footer .accent { color: var(--red); white-space: nowrap; }
     </div>
 {% endif %}
 
-{% if 'request_one3' in sections or 'request_ktp' in sections %}
+{# Two conditions, not one. This form is the 1.3 tier's ENTIRE permitted surface --
+   may_request() allows that tier exactly ONE_3_ADMIN at KICK_RESTART, which is what the
+   hidden fields below pin. For a KTP admin it is a strict subset of the privileges form
+   (that form's Group dropdown already covers 1.3 Discord admin), so showing both was pure
+   duplication. It happened because "Your requests" shares this row and needs the KTP
+   tier too; the `or` was for that panel and dragged this form along with it. #}
+{% if 'request_one3' in sections %}
     <div class="twocol">
       <div class="panel">
         <div class="head">Request moderator access · 1.3 community
@@ -731,23 +737,30 @@ footer .accent { color: var(--red); white-space: nowrap; }
             <div class="field">
               <label for="m-why">Context</label>
               <textarea id="m-why" name="note" maxlength="1000"
-                        placeholder="Who they are, which nights they mod&hellip;"></textarea>
+                        placeholder="Who this is for and why&hellip;"></textarea>
             </div>
             <button class="btn" type="submit">Submit request</button>
+            {# Same warning as the privileges form. A 1.3 moderator gets the same RCON
+               reach as a KTP admin at this level, so they should read the same sentence
+               about it -- the shorter wording undersold what the grant actually carries. #}
             <div class="note-box">
-              <b>This level includes RCON</b> &mdash; the account can restart a server as well
-              as kick. There is no kick-only option in the current scheme.
+              <b>This level includes RCON.</b> That means the account can also run
+              <code>.forcereset</code>, <code>.restart</code> and <code>.quit</code> &mdash;
+              there is no kick-without-restart option in the current scheme. Nobody has
+              immunity either, so any admin can kick or ban any other.
             </div>
           </form>
         </div>
       </div>
+    </div>
+{% endif %}
 
-
-      <div class="panel">
-        <div class="head">Your requests</div>
-        <div class="body prose">
-          <p>Requests you submit appear here with their status.</p>
-        </div>
+{# Shared by both admin tiers, so it keeps the condition the row above used to carry. #}
+{% if 'request_one3' in sections or 'request_ktp' in sections %}
+    <div class="panel">
+      <div class="head">Your requests</div>
+      <div class="body prose">
+        <p>Requests you submit appear here with their status.</p>
       </div>
     </div>
 {% endif %}
