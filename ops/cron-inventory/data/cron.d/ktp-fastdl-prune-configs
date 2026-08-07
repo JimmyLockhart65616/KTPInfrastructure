@@ -1,0 +1,11 @@
+# KTP FastDL — keep server-side config OUT of the public docroot.
+# Script: /usr/local/bin/ktp-fastdl-prune-configs.sh (canonical: KTPInfrastructure/scripts/).
+#
+# ktp-file-distributor lists /var/www/fastdl/dod as a target and watches *.cfg/*.ini, so any
+# plugin config deployed to /home/dod/distribute is published publicly within ~7 seconds.
+# The patterns cannot be narrowed -- the game servers need ac.ini and hltv_recorder.ini, and
+# the distributor has no per-target filter. So the public copy is pruned on a short cycle.
+#
+# nginx also 404s these paths. This is the disk-layer half: it means a rebuilt or reverted
+# nginx config cannot re-expose credentials that are no longer on disk.
+*/10 * * * *   root  /usr/local/bin/ktp-fastdl-prune-configs.sh >> /var/log/ktp-fastdl-prune.log 2>&1
