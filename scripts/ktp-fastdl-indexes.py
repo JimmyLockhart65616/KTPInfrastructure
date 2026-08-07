@@ -257,6 +257,48 @@ for s in servers:
         out.append((tp + "/index.html", page("KTP demos — " + s + " " + t, "Demo Archive", body,
                     "Every competitive match on the KTP fleet, recorded by HLTV.")))
 
+
+# ---------------------------------------------------------------- /dod subdirectories
+# Skips anything nginx now 404s: addons/ held the rcon password, the HLTV API key and the
+# Discord relay secret in plain text, and dlls/cl_dlls/logs are server-side too. Generating
+# a browsable index for a blocked path would only advertise it.
+DOD_BLOCKED = {"addons", "dlls", "cl_dlls", "logs"}
+for root, dirs, files in os.walk(FASTDL + "/dod"):
+    rel = os.path.relpath(root, FASTDL + "/dod")
+    if rel == ".":
+        continue
+    top = rel.split(os.sep)[0]
+    if top in DOD_BLOCKED:
+        dirs[:] = []
+        continue
+    subs = sorted(d for d in dirs)
+    fl = sorted(f for f in files if f != "index.html")
+    crumbs = ['<a href="/">fastdl</a>', '<a href="/dod/">dod</a>']
+    acc = ""
+    for part in rel.split(os.sep)[:-1]:
+        acc += part + "/"
+        crumbs.append('<a href="/dod/' + acc + '">' + html.escape(part) + '</a>')
+    crumbs.append(html.escape(rel.split(os.sep)[-1]))
+    cards = ""
+    if subs:
+        cards += '<h2>Folders</h2><div class="row2">' + "".join(
+            '<a class="card" href="' + html.escape(x) + '/"><div class="t">' + html.escape(x)
+            + '/</div><div class="d">' + str(len(os.listdir(os.path.join(root, x))))
+            + ' entries</div></a>' for x in subs) + '</div>'
+    if fl:
+        rows = "".join(
+            '<a class="f" href="' + html.escape(f) + '"><span class="h">' + html.escape(f)
+            + '</span><span class="sz">' + human(os.path.getsize(os.path.join(root, f)))
+            + '</span></a>' for f in fl)
+        cards += ('<h2>' + str(len(fl)) + ' files</h2><div class="files">' + rows + '</div>')
+    body = ('<div class="crumb">' + " / ".join(crumbs) + '</div>'
+            '<h1><span class="accent">' + html.escape(rel) + '</span></h1>'
+            '<p class="lede">Client content. Your game fetches these automatically on connect.</p>'
+            + cards)
+    out.append((os.path.join(root, "index.html"),
+                page("KTP FastDL — dod/" + rel, "Client Downloads", body,
+                     "Fast content distribution for KTP game servers.")))
+
 print("index pages: %d" % len(out))
 if args.apply:
     for p, b in out:
