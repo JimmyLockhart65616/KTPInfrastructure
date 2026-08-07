@@ -14,6 +14,22 @@ from ..templating import templates
 router = APIRouter()
 
 
+def _norm_steam(raw: str) -> str | None:
+    """Store Steam IDs in the STEAM_universe:Y:Z form the AC tables use.
+
+    60 of 62 rows were typed bare and one carried a trailing backtick, so a
+    verbatim join to ktp_ac_players matched 2. Prepends to whatever was entered
+    rather than composing a prefix -- the AC side is not uniformly STEAM_0, and
+    inventing the universe digit would point the row at a different account.
+    """
+    s = (raw or "").strip().strip("`'\"")
+    if not s:
+        return None
+    if s.upper().startswith("STEAM_"):
+        return "STEAM_" + s[6:]
+    return "STEAM_" + s if s.count(":") == 2 else s
+
+
 def _staff_view(me: int) -> tuple[list[dict], list[dict]]:
     """Returns (current admins, promotable players).
 
@@ -245,7 +261,7 @@ async def player_add(request: Request):
     display = (f.get("display_name") or "").strip()
     if not display:
         raise HTTPException(400, "Player alias required.")
-    steam = (f.get("steam_id") or "").strip()
+    steam = _norm_steam(f.get("steam_id"))
     if not steam:
         raise HTTPException(400, "Player Steam ID required.")
     raw_discord = (f.get("discord_id") or "").strip()
@@ -273,7 +289,7 @@ async def player_edit(request: Request):
     display = (f.get("display_name") or "").strip()
     if not display:
         raise HTTPException(400, "Player alias required.")
-    steam = (f.get("steam_id") or "").strip() or None
+    steam = _norm_steam(f.get("steam_id"))
     raw_discord = (f.get("discord_id") or "").strip()
     discord = int(raw_discord) if raw_discord.isdigit() else None
     try:
