@@ -178,6 +178,14 @@ def human(n):
         v /= 1024.0
 
 
+# Root-relative nav hrefs 404 on netcode/profiles/bundles, which each have their own docroot.
+# That was fixed on 2026-07-17 and regressed twice, so it is asserted rather than remembered.
+def _nav(markup):
+    hrefs = re.findall(r'class="navlink[^"]*" href="([^"]+)"', markup)
+    bad = [h for h in hrefs if not h.startswith("http")]
+    assert hrefs and not bad, "nav href must be absolute, got %s" % (bad or "no navlinks")
+    return markup
+
 def page(title, body):
     parts = [
       '<!DOCTYPE html>', '<html lang="en">', '<head>', '<meta charset="utf-8">',
@@ -188,7 +196,7 @@ def page(title, body):
       '<link rel="icon" href="/favicon.ico">',
       '<title>' + html.escape(title) + '</title>',
       '<style>' + CSS + '</style>', '</head>', '<body>',
-      NAV, '<div class="wrap">', EYEBROW, body, FOOTER, '</div>', SCRIPT, '</body></html>', '']
+      _nav(NAV), '<div class="wrap">', EYEBROW, body, FOOTER, '</div>', SCRIPT, '</body></html>', '']
     return "\n".join(parts)
 
 
