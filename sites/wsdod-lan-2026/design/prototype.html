@@ -2559,13 +2559,29 @@ if (el25) {
       slot.querySelector('.bkt-card').appendChild(line);
     }
 
-    var names = [].map.call(slot.querySelectorAll('.bkt-c .bkt-name'),
-                            function (n) { return n.textContent.trim(); });
-    // Higher seed is listed first on these cards; fall back to the raw label.
+    // TS/LS are SEED positions, so resolve them from the seed numbers the card
+    // already shows — not from row order. The bracket lists competitors by
+    // bracket position, which disagrees with seed order on 5 of the 15 cards
+    // (SF2, LS1, P34, P78, P910), and reading row order named the wrong team
+    // as the top seed on every one of them.
+    var comps = [].map.call(slot.querySelectorAll('.bkt-c'), function (c) {
+      var seed = c.querySelector('.bkt-seed');
+      var nm = c.querySelector('.bkt-name');
+      return {
+        name: nm ? nm.textContent.trim() : '',
+        seed: seed ? parseInt(seed.textContent, 10) : NaN
+      };
+    }).filter(function (c) { return c.name; });
+
+    var bySeed = comps.slice().sort(function (a, b) { return a.seed - b.seed; });
+    var seeded = comps.length === 2 && comps.every(function (c) { return !isNaN(c.seed); });
+
     function actor(a) {
-      if (a === 'TS') return names[0] || 'Top seed';
-      if (a === 'LS') return names[1] || 'Low seed';
-      return a;
+      if (a !== 'TS' && a !== 'LS') return a;
+      // without seeds on the card there is nothing to resolve against; say so
+      // rather than guessing from position
+      if (!seeded) return a === 'TS' ? 'Top seed' : 'Low seed';
+      return (a === 'TS' ? bySeed[0] : bySeed[1]).name;
     }
 
     var pop = el('div', 'bkt-veto');
