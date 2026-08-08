@@ -147,7 +147,15 @@ services:
       # nginx single-origin reverse proxy — overlay + REST + Socket.IO all served
       # from https://localhost (:443, with :80 redirect, no hosts file needed);
       # use this as the OBS / browser entry point. Same nginx setup runs prod at
-      # https://hud.ktpdod.com. Raw ports below stay published for direct debug.
+      # https://hud.ktpdod.com. Raw ports below stay published for direct debug,
+      # and config/local/config.yaml lists BOTH origins so Socket.IO's
+      # credentials CORS accepts either entry point.
+      #
+      # These are the first privileged/common ports this stack has needed, and
+      # they are frequently already held on a dev box (IIS, another compose
+      # stack). A bind collision fails the whole `data` service, so the symptom
+      # is "the stack won't come up" rather than "the proxy didn't start" —
+      # check `netstat -ano | findstr :443` before blaming the HUD.
       - "443:443"
       - "80:80"
       # Frontend (OBS browser source, direct)
