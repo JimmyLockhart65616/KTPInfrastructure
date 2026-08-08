@@ -404,7 +404,7 @@ footer .accent { color: var(--red); white-space: nowrap; }
     <h1>The <span class="accent">front door</span>.</h1>
     <p class="lede">Live status for every KTP game server, one place to report a problem,
       and the way in to everything else — <b>stats, demos, anti-cheat transparency, the
-      broadcast HUD</b> — without memorizing ten subdomains.</p>
+      broadcast HUD</b> — without memorizing a pile of subdomains.</p>
     <nav class="jump" aria-label="Jump to a section">
       <a class="btn ghost sm" href="#status">Server status</a>
       <a class="btn ghost sm" href="#commands">Server commands</a>
@@ -662,16 +662,19 @@ footer .accent { color: var(--red); white-space: nowrap; }
 
   <!-- ============================ HUB ============================ -->
   <section id="hub">
+    <!-- No site count here, deliberately: the header said "ten sites" over a
+         list of eight for as long as the list has existed. A number in prose
+         has nothing holding it true, and this one is edited every time a
+         subdomain comes or goes. -->
     <div class="sec-head"><h2>Everything KTP</h2>
-      <span class="meta">the ten sites, one place</span></div>
+      <span class="meta">every KTP site, one place</span></div>
     <div class="hub">
       <a class="hcard" href="https://profiles.ktpdod.com/"><b>Player profiles</b><span class="u">profiles.ktpdod.com</span><p>What the field runs — configs, rates, hardware posture.</p></a>
       <a class="hcard" href="https://ac.ktpdod.com/"><b>Anti-cheat</b><span class="u">ac.ktpdod.com</span><p>How the KTP anti-cheat works, in the open.</p></a>
       <a class="hcard" href="https://bundles.ktpdod.com/"><b>My AC data</b><span class="u">bundles.ktpdod.com</span><p>See and download everything the anti-cheat collected from you.</p></a>
       <a class="hcard" href="https://netcode.ktpdod.com/"><b>Netcode</b><span class="u">netcode.ktpdod.com</span><p>Hitreg, lag compensation and what we measured.</p></a>
-      <a class="hcard" href="https://watch.ktpdod.com/"><b>Watch</b><span class="u">watch.ktpdod.com</span><p>Spectate live matches.</p></a>
       <a class="hcard" href="https://hud.ktpdod.com/"><b>Broadcast HUD</b><span class="u">hud.ktpdod.com</span><p>The observer overlay for casted matches.</p></a>
-      <a class="hcard" href="https://fastdl.ktpdod.com/demos/"><b>Demo archive</b><span class="u">fastdl.ktpdod.com/demos</span><p>Every recorded HLTV demo, by match.</p></a>
+      <a class="hcard" href="https://fastdl.ktpdod.com/"><b>Demo archive</b><span class="u">fastdl.ktpdod.com</span><p>Every recorded HLTV demo, by match.</p></a>
       <a class="hcard" href="https://dodworldseries.com/"><b>World Series of DoD</b><span class="u">dodworldseries.com</span><p>The LAN — teams, brackets, results.</p></a>
     </div>
   </section>
@@ -955,6 +958,8 @@ footer .accent { color: var(--red); white-space: nowrap; }
       <h4>What this is</h4>
       <p>The front door for KTP — competitive Day of Defeat 1.3, played the way it was meant
         to be played. Twenty-four servers, five cities, every match recorded.</p>
+      <p class="mt8">Built and run by <b>nein_</b> — the servers, the engine fork, the
+        anti-cheat and these pages.</p>
     </div>
     <div class="col">
       <h4>Keep it running</h4>
