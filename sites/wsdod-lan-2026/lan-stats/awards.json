@@ -230,7 +230,7 @@
      "where": "icyHOT"
     },
     {
-     "who": "LaNGoNdd<3vt",
+     "who": "LaNGoNdd",
      "value": "1.32 K/D",
      "where": "onLAN thunder"
     },
@@ -392,7 +392,7 @@
      "as": "baiko ＃gubbe.se"
     },
     {
-     "who": "DAYMAN cory?",
+     "who": "cory?",
      "value": "105,199",
      "where": "Price is Right",
      "as": "cory <3 liah,jkimbro,rdk"
@@ -466,7 +466,7 @@
      "where": "Arrested Development"
     },
     {
-     "who": "omenayr 4 jGaleZ",
+     "who": "omenayr",
      "value": "10:27",
      "where": "onLAN thunder",
      "as": "1337$k337"
@@ -597,7 +597,7 @@
      "where": "harrington · Sun · v Price is Right"
     },
     {
-     "who": "LaNGoNdd<3vt",
+     "who": "LaNGoNdd",
      "value": "21",
      "where": "armory_b6 · Sat · v b Team"
     },
@@ -685,7 +685,7 @@
      "where": "thunder2 · Sat · v Uncle Rico's Time Machine"
     },
     {
-     "who": "LaNGoNdd<3vt",
+     "who": "LaNGoNdd",
      "value": "5,019",
      "where": "thunder2 · Sat · v Uncle Rico's Time Machine"
     }
@@ -962,7 +962,7 @@
      "where": "anzio · Sat · v Uncle Rico's Time Machine"
     },
     {
-     "who": "omenayr 4 jGaleZ",
+     "who": "omenayr",
      "value": "2",
      "where": "armory_b6 · Sat · v b Team",
      "as": "1337$k337"
@@ -1088,110 +1088,627 @@
    "status": "proposed"
   },
   {
-   "slug": "ninja",
-   "title": "The Ninja Capout",
-   "blurb": "The cheekiest decisive capture. The Leo award.",
+   "slug": "improved",
+   "title": "Most Improved",
+   "blurb": "Turned up a different player to last year.",
+   "status": "proposed"
+  }
+ ],
+ "ballots": [
+  {
+   "slug": "rookies",
+   "title": "Best Rookie",
+   "blurb": "First World Series, played like it wasn't. The Asani award.",
+   "criteria": [
+    "Played Philly 2026",
+    "Their name does not appear on a 2025 roster",
+    "Their SteamID does not appear on a 2025 roster either",
+    "Sorted by team, then by name"
+   ],
+   "how": "Eligibility is a starting point, not a verdict. SteamID alone is not enough — people play on house machines under whatever account is to hand, so a returning player can turn up with an id 2025 never saw. Name alone is not enough either. A player is a rookie here only when both miss. Staff can add or remove anyone before voting opens.",
+   "eligible": [
+    {
+     "name": "p12",
+     "team": "Arrested Development",
+     "note": null
+    },
+    {
+     "name": "steve",
+     "team": "b Team",
+     "note": null
+    },
+    {
+     "name": "Ho0liii",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "Hub",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "nightmare",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "NoName^",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "Sq =)))",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "arachnid",
+     "team": "NoSoul",
+     "note": null
+    },
+    {
+     "name": "Bausch",
+     "team": "NoSoul",
+     "note": null
+    },
+    {
+     "name": "yayme",
+     "team": "NoSoul",
+     "note": null
+    },
+    {
+     "name": "ian",
+     "team": "onLAN thunder",
+     "note": null
+    },
+    {
+     "name": "billbsod",
+     "team": "Price is Right",
+     "note": null
+    },
+    {
+     "name": "nomistizzle",
+     "team": "Price is Right",
+     "note": null
+    },
+    {
+     "name": "tokih",
+     "team": "Price is Right",
+     "note": null
+    },
+    {
+     "name": "Jee",
+     "team": "Uncle Rico's Time Machine",
+     "note": null
+    },
+    {
+     "name": "Ke:>^1.de",
+     "team": "Uncle Rico's Time Machine",
+     "note": null
+    },
+    {
+     "name": "Kevs Dolmetscher",
+     "team": "Uncle Rico's Time Machine",
+     "note": null
+    },
+    {
+     "name": "zamp0lit",
+     "team": "Uncle Rico's Time Machine",
+     "note": null
+    }
+   ],
+   "counts": [
+    "43 returning from 2025"
+   ],
    "status": "proposed"
   },
   {
-   "slug": "dodger",
-   "title": "Best Dodger",
-   "blurb": "You know what you did. The Beas award.",
+   "slug": "carry",
+   "title": "Carry Us, Daddy",
+   "blurb": "Held a team together on their back. The PDX award.",
+   "criteria": [
+    "Played Philly 2026",
+    "Weekend K/D of at least 1.0",
+    "K/D is weekend kills over weekend deaths, both days combined",
+    "Minimum halves played: 0",
+    "Sorted by team, then by name"
+   ],
+   "how": "Carrying is not a statistic, so this shortlist is only who finished the weekend above water — the vote decides who was holding a team up. It is derived from the published board: change the stats and this list changes with them.",
+   "eligible": [
+    {
+     "name": "nicholson",
+     "team": "Arrested Development",
+     "note": "1.06 K/D"
+    },
+    {
+     "name": "patten",
+     "team": "Arrested Development",
+     "note": "1.11 K/D"
+    },
+    {
+     "name": "TillJim",
+     "team": "Arrested Development",
+     "note": "1.14 K/D"
+    },
+    {
+     "name": "bR0M",
+     "team": "Best Buds",
+     "note": "1.13 K/D"
+    },
+    {
+     "name": "cK",
+     "team": "Best Buds",
+     "note": "1.04 K/D"
+    },
+    {
+     "name": "piff",
+     "team": "Best Buds",
+     "note": "1.17 K/D"
+    },
+    {
+     "name": "Polak",
+     "team": "Best Buds",
+     "note": "1.19 K/D"
+    },
+    {
+     "name": "element",
+     "team": "dicE",
+     "note": "1.16 K/D"
+    },
+    {
+     "name": "Gorilla[bc]",
+     "team": "dicE",
+     "note": "1.01 K/D"
+    },
+    {
+     "name": "m00cat :D",
+     "team": "dicE",
+     "note": "1.09 K/D"
+    },
+    {
+     "name": "player",
+     "team": "dicE",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "stealthlol",
+     "team": "dicE",
+     "note": "1.18 K/D"
+    },
+    {
+     "name": "hildebrand?",
+     "team": "icyHOT",
+     "note": "1.73 K/D"
+    },
+    {
+     "name": "kanguhhh?!",
+     "team": "icyHOT",
+     "note": "1.16 K/D"
+    },
+    {
+     "name": "monday",
+     "team": "icyHOT",
+     "note": "1.25 K/D"
+    },
+    {
+     "name": "s i k",
+     "team": "icyHOT",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "Seanality",
+     "team": "icyHOT",
+     "note": "1.26 K/D"
+    },
+    {
+     "name": "vertex",
+     "team": "icyHOT",
+     "note": "1.38 K/D"
+    },
+    {
+     "name": "baiko",
+     "team": "North Atlantic Treaty Org",
+     "note": "1.15 K/D"
+    },
+    {
+     "name": "nightmare",
+     "team": "North Atlantic Treaty Org",
+     "note": "1.05 K/D"
+    },
+    {
+     "name": "NoName^",
+     "team": "North Atlantic Treaty Org",
+     "note": "1.31 K/D"
+    },
+    {
+     "name": "Sq =)))",
+     "team": "North Atlantic Treaty Org",
+     "note": "1.04 K/D"
+    },
+    {
+     "name": "arachnid",
+     "team": "NoSoul",
+     "note": "1.15 K/D"
+    },
+    {
+     "name": "CrankinHawg",
+     "team": "NoSoul",
+     "note": "1.08 K/D"
+    },
+    {
+     "name": "Savage¬",
+     "team": "NoSoul",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "yayme",
+     "team": "NoSoul",
+     "note": "1.02 K/D"
+    },
+    {
+     "name": "ddorito",
+     "team": "onLAN thunder",
+     "note": "1.20 K/D"
+    },
+    {
+     "name": "ian",
+     "team": "onLAN thunder",
+     "note": "1.25 K/D"
+    },
+    {
+     "name": "jules",
+     "team": "onLAN thunder",
+     "note": "1.40 K/D"
+    },
+    {
+     "name": "LaNGoNdd",
+     "team": "onLAN thunder",
+     "note": "1.32 K/D"
+    },
+    {
+     "name": "mogers",
+     "team": "onLAN thunder",
+     "note": "1.00 K/D"
+    },
+    {
+     "name": "omenayr",
+     "team": "onLAN thunder",
+     "note": "1.12 K/D"
+    },
+    {
+     "name": "cory?",
+     "team": "Price is Right",
+     "note": "1.01 K/D"
+    }
+   ],
+   "counts": [
+    "61 players on the 2026 board"
+   ],
+   "status": "proposed"
+  },
+  {
+   "slug": "losing",
+   "title": "Best On A Losing Team",
+   "blurb": "The performance that deserved a better result.",
+   "criteria": [
+    "Played Philly 2026",
+    "Weekend K/D of at least 1.0",
+    "Not on North Atlantic Treaty Org — they won it, so nobody there was on a losing team",
+    "Minimum halves played: 0",
+    "Sorted by team, then by name"
+   ],
+   "how": "The same floor as Carry Us with the winning company struck out. Losing here means the weekend, not a single match — a company that lost the final still lost it.",
+   "eligible": [
+    {
+     "name": "nicholson",
+     "team": "Arrested Development",
+     "note": "1.06 K/D"
+    },
+    {
+     "name": "patten",
+     "team": "Arrested Development",
+     "note": "1.11 K/D"
+    },
+    {
+     "name": "TillJim",
+     "team": "Arrested Development",
+     "note": "1.14 K/D"
+    },
+    {
+     "name": "bR0M",
+     "team": "Best Buds",
+     "note": "1.13 K/D"
+    },
+    {
+     "name": "cK",
+     "team": "Best Buds",
+     "note": "1.04 K/D"
+    },
+    {
+     "name": "piff",
+     "team": "Best Buds",
+     "note": "1.17 K/D"
+    },
+    {
+     "name": "Polak",
+     "team": "Best Buds",
+     "note": "1.19 K/D"
+    },
+    {
+     "name": "element",
+     "team": "dicE",
+     "note": "1.16 K/D"
+    },
+    {
+     "name": "Gorilla[bc]",
+     "team": "dicE",
+     "note": "1.01 K/D"
+    },
+    {
+     "name": "m00cat :D",
+     "team": "dicE",
+     "note": "1.09 K/D"
+    },
+    {
+     "name": "player",
+     "team": "dicE",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "stealthlol",
+     "team": "dicE",
+     "note": "1.18 K/D"
+    },
+    {
+     "name": "hildebrand?",
+     "team": "icyHOT",
+     "note": "1.73 K/D"
+    },
+    {
+     "name": "kanguhhh?!",
+     "team": "icyHOT",
+     "note": "1.16 K/D"
+    },
+    {
+     "name": "monday",
+     "team": "icyHOT",
+     "note": "1.25 K/D"
+    },
+    {
+     "name": "s i k",
+     "team": "icyHOT",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "Seanality",
+     "team": "icyHOT",
+     "note": "1.26 K/D"
+    },
+    {
+     "name": "vertex",
+     "team": "icyHOT",
+     "note": "1.38 K/D"
+    },
+    {
+     "name": "arachnid",
+     "team": "NoSoul",
+     "note": "1.15 K/D"
+    },
+    {
+     "name": "CrankinHawg",
+     "team": "NoSoul",
+     "note": "1.08 K/D"
+    },
+    {
+     "name": "Savage¬",
+     "team": "NoSoul",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "yayme",
+     "team": "NoSoul",
+     "note": "1.02 K/D"
+    },
+    {
+     "name": "ddorito",
+     "team": "onLAN thunder",
+     "note": "1.20 K/D"
+    },
+    {
+     "name": "ian",
+     "team": "onLAN thunder",
+     "note": "1.25 K/D"
+    },
+    {
+     "name": "jules",
+     "team": "onLAN thunder",
+     "note": "1.40 K/D"
+    },
+    {
+     "name": "LaNGoNdd",
+     "team": "onLAN thunder",
+     "note": "1.32 K/D"
+    },
+    {
+     "name": "mogers",
+     "team": "onLAN thunder",
+     "note": "1.00 K/D"
+    },
+    {
+     "name": "omenayr",
+     "team": "onLAN thunder",
+     "note": "1.12 K/D"
+    },
+    {
+     "name": "cory?",
+     "team": "Price is Right",
+     "note": "1.01 K/D"
+    }
+   ],
+   "counts": [
+    "4 struck out on North Atlantic Treaty Org"
+   ],
    "status": "proposed"
   },
   {
    "slug": "improved",
    "title": "Most Improved",
    "blurb": "Turned up a different player to last year.",
-   "status": "proposed"
-  },
-  {
-   "slug": "stopdying",
-   "title": "Stop Dying, Bro",
-   "blurb": "Affectionately. The cK award.",
+   "criteria": [
+    "Played Philly 2025 and Philly 2026",
+    "2026 weekend K/D higher than their 2025 K/D, by more than 0.00",
+    "2025 K/D is group stage and playoffs combined, from Jane's workbook",
+    "Matched across years by SteamID on the 2025 roster, then by name",
+    "Sorted by team, then by name"
+   ],
+   "how": "The one vote category the numbers can narrow. 43 players were at both LANs and 28 of them improved. 3 returning players have no 2025 K/D on record and are not listed: LaNGoNdd, omenayr, sTarK_ x_0. The 2025 workbook records no SteamIDs, so the link to a 2025 K/D is the roster name — where the board used a different name to the roster and nothing corroborates the pair, the player is left off rather than guessed at.",
+   "eligible": [
+    {
+     "name": "TillJim",
+     "team": "Arrested Development",
+     "note": "1.03 → 1.14 K/D"
+    },
+    {
+     "name": "e p y o n",
+     "team": "b Team",
+     "note": "0.78 → 1.00 K/D"
+    },
+    {
+     "name": "hey hi",
+     "team": "b Team",
+     "note": "0.73 → 0.89 K/D"
+    },
+    {
+     "name": "o[bb]y",
+     "team": "b Team",
+     "note": "0.66 → 0.79 K/D"
+    },
+    {
+     "name": "тωὶﮐт",
+     "team": "b Team",
+     "note": "0.63 → 0.72 K/D"
+    },
+    {
+     "name": "3SidedQuarter",
+     "team": "Best Buds",
+     "note": "0.84 → 0.91 K/D"
+    },
+    {
+     "name": "bR0M",
+     "team": "Best Buds",
+     "note": "0.86 → 1.13 K/D"
+    },
+    {
+     "name": "cK",
+     "team": "Best Buds",
+     "note": "0.91 → 1.04 K/D"
+    },
+    {
+     "name": "piff",
+     "team": "Best Buds",
+     "note": "0.88 → 1.17 K/D"
+    },
+    {
+     "name": "Polak",
+     "team": "Best Buds",
+     "note": "0.76 → 1.19 K/D"
+    },
+    {
+     "name": "reppoĦ",
+     "team": "Best Buds",
+     "note": "0.81 → 0.89 K/D"
+    },
+    {
+     "name": "Gorilla[bc]",
+     "team": "dicE",
+     "note": "0.97 → 1.01 K/D"
+    },
+    {
+     "name": "player",
+     "team": "dicE",
+     "note": "1.21 → 1.22 K/D"
+    },
+    {
+     "name": "hildebrand?",
+     "team": "icyHOT",
+     "note": "1.19 → 1.73 K/D"
+    },
+    {
+     "name": "kanguhhh?!",
+     "team": "icyHOT",
+     "note": "1.04 → 1.16 K/D"
+    },
+    {
+     "name": "monday",
+     "team": "icyHOT",
+     "note": "1.16 → 1.25 K/D"
+    },
+    {
+     "name": "s i k",
+     "team": "icyHOT",
+     "note": "1.16 → 1.22 K/D"
+    },
+    {
+     "name": "vertex",
+     "team": "icyHOT",
+     "note": "1.23 → 1.38 K/D"
+    },
+    {
+     "name": "baiko",
+     "team": "North Atlantic Treaty Org",
+     "note": "0.99 → 1.15 K/D"
+    },
+    {
+     "name": "CrankinHawg",
+     "team": "NoSoul",
+     "note": "0.97 → 1.08 K/D"
+    },
+    {
+     "name": "Khoi",
+     "team": "NoSoul",
+     "note": "0.57 → 0.71 K/D"
+    },
+    {
+     "name": "Savage¬",
+     "team": "NoSoul",
+     "note": "1.21 → 1.22 K/D"
+    },
+    {
+     "name": "ddorito",
+     "team": "onLAN thunder",
+     "note": "1.17 → 1.20 K/D"
+    },
+    {
+     "name": "jules",
+     "team": "onLAN thunder",
+     "note": "1.30 → 1.40 K/D"
+    },
+    {
+     "name": "mogers",
+     "team": "onLAN thunder",
+     "note": "0.92 → 1.00 K/D"
+    },
+    {
+     "name": "cory?",
+     "team": "Price is Right",
+     "note": "0.81 → 1.01 K/D"
+    },
+    {
+     "name": "nein",
+     "team": "Price is Right",
+     "note": "0.68 → 0.71 K/D"
+    },
+    {
+     "name": "HLAH",
+     "team": "Uncle Rico's Time Machine",
+     "note": "0.57 → 0.87 K/D"
+    }
+   ],
+   "counts": [
+    "43 played both LANs"
+   ],
    "status": "proposed"
   }
- ],
- "ballot": {
-  "title": "Best Rookie",
-  "blurb": "First World Series, played like it wasn't. The Asani award.",
-  "how": "Eligibility is a starting point, not a verdict. A player counts as a rookie here only if neither their name nor their SteamID appears on a 2025 roster. SteamID alone is not enough — people play on house machines under whatever account is to hand, and three players whose ids differ between the two LANs are on 2025 rosters under the same name. Staff can add or remove anyone before voting opens.",
-  "eligible": [
-   {
-    "name": "p12",
-    "team": "Arrested Development"
-   },
-   {
-    "name": "steve",
-    "team": "b Team"
-   },
-   {
-    "name": "Ho0liii <3 nakk",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "Hub",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "nightmare＃old",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "NoName^",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "Sq =)))",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "arachnid",
-    "team": "NoSoul"
-   },
-   {
-    "name": "Bausch",
-    "team": "NoSoul"
-   },
-   {
-    "name": "yayme",
-    "team": "NoSoul"
-   },
-   {
-    "name": "ian",
-    "team": "onLAN thunder"
-   },
-   {
-    "name": "billymanbrewing",
-    "team": "Price is Right"
-   },
-   {
-    "name": "nomistizzle",
-    "team": "Price is Right"
-   },
-   {
-    "name": "tokih",
-    "team": "Price is Right"
-   },
-   {
-    "name": "Jee＃minou.exe",
-    "team": "Uncle Rico's Time Machine"
-   },
-   {
-    "name": "Ke:>^1.de <3 FUN",
-    "team": "Uncle Rico's Time Machine"
-   },
-   {
-    "name": "Kevs Dolmetscher",
-    "team": "Uncle Rico's Time Machine"
-   },
-   {
-    "name": "zamp0lit",
-    "team": "Uncle Rico's Time Machine"
-   }
-  ],
-  "returning_count": 43,
-  "id_changed_count": 3,
-  "status": "proposed"
- }
+ ]
 }
