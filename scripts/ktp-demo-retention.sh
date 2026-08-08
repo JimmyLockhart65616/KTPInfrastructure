@@ -22,7 +22,7 @@
 #   ARCHIVE_URL=...     override archive URL shown in preview
 #
 # Logs: /var/log/ktp-demo-retention.log
-# Archive browser: http://74.91.112.242/demos/
+# Archive browser: https://fastdl.ktpdod.com/demos/
 
 set -euo pipefail
 
@@ -40,7 +40,7 @@ PRUNE_EXCLUDES_STR="${PRUNE_EXCLUDES[*]}"
 PREVIEW_WINDOW_DAYS="${PREVIEW_WINDOW_DAYS:-7}"
 DRY_RUN="${DRY_RUN:-0}"
 SKIP_DISCORD="${SKIP_DISCORD:-0}"
-ARCHIVE_URL="${ARCHIVE_URL:-http://74.91.112.242/demos/}"
+ARCHIVE_URL="${ARCHIVE_URL:-https://fastdl.ktpdod.com/demos/}"
 MODE="${1:-delete}"
 
 # Event archives under demos/LAN-*/ are EXCLUDED from retention. They are
