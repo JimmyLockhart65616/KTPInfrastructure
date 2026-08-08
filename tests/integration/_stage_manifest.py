@@ -63,6 +63,23 @@ def staged_md5(plugin_basename: str) -> str | None:
     return (_load().get(plugin_basename) or {}).get("md5")
 
 
+def as_tuple(version: str) -> tuple[int, ...]:
+    """Comparable form of a dotted version.
+
+    For gating a test on the capability its plugin gained in a known release —
+    the runner mirrors the LIVE fleet, so a suite can legitimately be newer than
+    the build it runs against. String comparison would rank "0.10.9" above
+    "0.10.10", which is exactly the range this project lives in.
+    """
+    parts = []
+    for part in (version or "").split("."):
+        try:
+            parts.append(int(part))
+        except ValueError:
+            parts.append(0)
+    return tuple(parts)
+
+
 def source() -> str:
     """Where a pin came from — for test failure messages, so a drift failure
     says whether it is arguing with the manifest or with a hardcoded floor."""
