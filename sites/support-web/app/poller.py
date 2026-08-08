@@ -136,8 +136,18 @@ def public_document(results: list[dict], now: float | None = None) -> dict:
             # An HLTV proxy holds a real slot, so advertising the raw A2S max
             # overstates how many people can actually join. Report the human
             # capacity and flag the proxy separately -- the page renders "0/12 +H".
+            #
+            # The slot is reserved whether or not a proxy answers right now.
+            # Subtracting only the OBSERVED proxies made capacity flip to 13
+            # every time the proxies bounced -- and `hltv-restart.timer` bounces
+            # all 24 of them at 03:00 and 11:00 daily, so a status page would
+            # have advertised a 13th seat twice a day that nothing can keep.
+            # Every fleet instance is permanently paired with a proxy, so one
+            # slot is never a human's. Operator's call 2026-08-07: show /12.
             proxies = r.get("hltv", 0)
-            entry["max_players"] = max(0, info.max_players - proxies)
+            entry["max_players"] = max(0, info.max_players - max(proxies, 1))
+            # Flag stays observation-driven: capacity is what you can join,
+            # this is whether the proxy is actually attached right now.
             if proxies:
                 entry["hltv"] = True
             if name.match_type:

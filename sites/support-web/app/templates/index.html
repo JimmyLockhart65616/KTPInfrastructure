@@ -102,6 +102,7 @@ nav .row { display:flex; align-items:center; gap: 22px; height: 58px; }
 nav .spacer { flex: 1; }
 nav .navlink { color: var(--dim); font-size: 0.82rem; letter-spacing: 0.6px; }
 nav .navlink:hover { color: var(--text); }
+nav .navlink.here { color: var(--text); }
 .who {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 0.72rem; color: var(--dim); letter-spacing: 0.4px;
@@ -161,6 +162,9 @@ h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -1px
    shifts the nav's right edge and breaks the header geometry lock. */
 .eyebrow .who { margin-left: auto; }
 .eyebrow .who:empty { display: none; }
+/* the chip takes the auto margin; without this the two auto margins split the
+   slack and the sponsor pill floats inboard of where every sibling page puts it */
+.eyebrow .who + .sponsor-slot { margin-left: 0; }
 
 /* Section jumps. The nav carries the other KTP sites now, so in-page navigation lives here.
    This is a <nav> for semantics, so it has to undo the bare `nav {}` top-bar rule above --
@@ -383,7 +387,6 @@ footer .accent { color: var(--red); white-space: nowrap; }
     <span class="brand"><span class="k">KTP</span> &mdash; Support</span>
     <span class="spacer"></span>
     <a class="navlink hidesm" href="https://fastdl.ktpdod.com/">Downloads</a>
-    <a class="navlink hidesm" href="https://fastdl.ktpdod.com/demos/">Demos</a>
     <a class="navlink hidesm" href="https://netcode.ktpdod.com/">Netcode</a>
     <a class="navlink hidesm" href="https://profiles.ktpdod.com/">Profiles</a>
     <a class="navlink hidesm" href="https://bundles.ktpdod.com/">My Data</a>
@@ -401,7 +404,7 @@ footer .accent { color: var(--red); white-space: nowrap; }
     <h1>The <span class="accent">front door</span>.</h1>
     <p class="lede">Live status for every KTP game server, one place to report a problem,
       and the way in to everything else — <b>stats, demos, anti-cheat transparency, the
-      broadcast HUD</b> — without memorizing ten subdomains.</p>
+      broadcast HUD</b> — without memorizing a pile of subdomains.</p>
     <nav class="jump" aria-label="Jump to a section">
       <a class="btn ghost sm" href="#status">Server status</a>
       <a class="btn ghost sm" href="#commands">Server commands</a>
@@ -631,10 +634,9 @@ footer .accent { color: var(--red); white-space: nowrap; }
                 missing from the mirror is a real fault we can fix quickly.</p>
             </details>
             <details>
-              <summary>Looking for a demo, or want to watch?</summary>
+              <summary>Looking for a demo?</summary>
               <p>Every match is recorded — demos live at
-                <a href="https://fastdl.ktpdod.com/demos/">fastdl.ktpdod.com/demos</a>.
-                Spectate live matches at <a href="https://watch.ktpdod.com/">watch.ktpdod.com</a>.</p>
+                <a href="https://fastdl.ktpdod.com/demos/">fastdl.ktpdod.com/demos</a>.</p>
             </details>
           </div>
         </div>
@@ -659,16 +661,19 @@ footer .accent { color: var(--red); white-space: nowrap; }
 
   <!-- ============================ HUB ============================ -->
   <section id="hub">
+    <!-- No site count here, deliberately: the header said "ten sites" over a
+         list of eight for as long as the list has existed. A number in prose
+         has nothing holding it true, and this one is edited every time a
+         subdomain comes or goes. -->
     <div class="sec-head"><h2>Everything KTP</h2>
-      <span class="meta">the ten sites, one place</span></div>
+      <span class="meta">every KTP site, one place</span></div>
     <div class="hub">
       <a class="hcard" href="https://profiles.ktpdod.com/"><b>Player profiles</b><span class="u">profiles.ktpdod.com</span><p>What the field runs — configs, rates, hardware posture.</p></a>
       <a class="hcard" href="https://ac.ktpdod.com/"><b>Anti-cheat</b><span class="u">ac.ktpdod.com</span><p>How the KTP anti-cheat works, in the open.</p></a>
       <a class="hcard" href="https://bundles.ktpdod.com/"><b>My AC data</b><span class="u">bundles.ktpdod.com</span><p>See and download everything the anti-cheat collected from you.</p></a>
       <a class="hcard" href="https://netcode.ktpdod.com/"><b>Netcode</b><span class="u">netcode.ktpdod.com</span><p>Hitreg, lag compensation and what we measured.</p></a>
-      <a class="hcard" href="https://watch.ktpdod.com/"><b>Watch</b><span class="u">watch.ktpdod.com</span><p>Spectate live matches.</p></a>
       <a class="hcard" href="https://hud.ktpdod.com/"><b>Broadcast HUD</b><span class="u">hud.ktpdod.com</span><p>The observer overlay for casted matches.</p></a>
-      <a class="hcard" href="https://fastdl.ktpdod.com/demos/"><b>Demo archive</b><span class="u">fastdl.ktpdod.com/demos</span><p>Every recorded HLTV demo, by match.</p></a>
+      <a class="hcard" href="https://fastdl.ktpdod.com/"><b>Downloads &amp; demos</b><span class="u">fastdl.ktpdod.com</span><p>Maps, WADs, sprites and sounds your client pulls on connect — plus every HLTV demo we record.</p></a>
       <a class="hcard" href="https://dodworldseries.com/"><b>World Series of DoD</b><span class="u">dodworldseries.com</span><p>The LAN — teams, brackets, results.</p></a>
     </div>
   </section>
@@ -703,7 +708,13 @@ footer .accent { color: var(--red); white-space: nowrap; }
     </div>
 {% endif %}
 
-{% if 'request_one3' in sections or 'request_ktp' in sections %}
+{# Two conditions, not one. This form is the 1.3 tier's ENTIRE permitted surface --
+   may_request() allows that tier exactly ONE_3_ADMIN at KICK_RESTART, which is what the
+   hidden fields below pin. For a KTP admin it is a strict subset of the privileges form
+   (that form's Group dropdown already covers 1.3 Discord admin), so showing both was pure
+   duplication. It happened because "Your requests" shares this row and needs the KTP
+   tier too; the `or` was for that panel and dragged this form along with it. #}
+{% if 'request_one3' in sections %}
     <div class="twocol">
       <div class="panel">
         <div class="head">Request moderator access · 1.3 community
@@ -728,23 +739,30 @@ footer .accent { color: var(--red); white-space: nowrap; }
             <div class="field">
               <label for="m-why">Context</label>
               <textarea id="m-why" name="note" maxlength="1000"
-                        placeholder="Who they are, which nights they mod&hellip;"></textarea>
+                        placeholder="Who this is for and why&hellip;"></textarea>
             </div>
             <button class="btn" type="submit">Submit request</button>
+            {# Same warning as the privileges form. A 1.3 moderator gets the same RCON
+               reach as a KTP admin at this level, so they should read the same sentence
+               about it -- the shorter wording undersold what the grant actually carries. #}
             <div class="note-box">
-              <b>This level includes RCON</b> &mdash; the account can restart a server as well
-              as kick. There is no kick-only option in the current scheme.
+              <b>This level includes RCON.</b> That means the account can also run
+              <code>.forcereset</code>, <code>.restart</code> and <code>.quit</code> &mdash;
+              there is no kick-without-restart option in the current scheme. Nobody has
+              immunity either, so any admin can kick or ban any other.
             </div>
           </form>
         </div>
       </div>
+    </div>
+{% endif %}
 
-
-      <div class="panel">
-        <div class="head">Your requests</div>
-        <div class="body prose">
-          <p>Requests you submit appear here with their status.</p>
-        </div>
+{# Shared by both admin tiers, so it keeps the condition the row above used to carry. #}
+{% if 'request_one3' in sections or 'request_ktp' in sections %}
+    <div class="panel">
+      <div class="head">Your requests</div>
+      <div class="body prose">
+        <p>Requests you submit appear here with their status.</p>
       </div>
     </div>
 {% endif %}
@@ -939,6 +957,8 @@ footer .accent { color: var(--red); white-space: nowrap; }
       <h4>What this is</h4>
       <p>The front door for KTP — competitive Day of Defeat 1.3, played the way it was meant
         to be played. Twenty-four servers, five cities, every match recorded.</p>
+      <p class="mt8">Built and run by <b>nein_</b> — the servers, the engine fork, the
+        anti-cheat and these pages.</p>
     </div>
     <div class="col">
       <h4>Keep it running</h4>

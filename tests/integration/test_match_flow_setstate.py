@@ -45,7 +45,30 @@ from pathlib import Path
 
 import pytest
 
+from . import _stage_manifest
 from .match_flow import MatchDriver, MatchType
+
+# `amx_ktp_test_setstate` landed in 0.10.150 (see the module docstring). The
+# runner mirrors the LIVE fleet, so whenever the fleet sits below that, the rcon
+# these tests drive is genuinely absent and all 20 fail with an empty reply —
+# 20 red results that say nothing about `.setstate`, and enough noise to hide a
+# real failure elsewhere. That is what happened 2026-08-04..07.
+#
+# Keyed on what stage-runner.py recorded, so the coverage arms itself the moment
+# a 0.10.150 build reaches the runner instead of waiting on someone to remember.
+# It cannot mask a regression: at or above the floor these run normally, and
+# test_1_plugin_load_and_version_pin independently asserts that the version the
+# manifest claims is the version the server actually loaded — so a manifest that
+# went missing or stale fails there rather than silently skipping here.
+_SETSTATE_MIN = "0.10.150"
+_STAGED = _stage_manifest.expected_version(
+    "KTPMatchHandler.amxx", "KTP_EXPECTED_MATCHHANDLER_VERSION", "0.10.147"
+)
+pytestmark = pytest.mark.skipif(
+    _stage_manifest.as_tuple(_STAGED) < _stage_manifest.as_tuple(_SETSTATE_MIN),
+    reason=(f"amx_ktp_test_setstate needs KTPMatchHandler >= {_SETSTATE_MIN}; "
+            f"runner holds {_STAGED} (pin from {_stage_manifest.source()})"),
+)
 
 
 def _serverfiles() -> Path | None:

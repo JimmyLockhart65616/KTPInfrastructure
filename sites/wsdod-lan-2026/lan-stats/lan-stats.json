@@ -31,7 +31,7 @@
      "caps_hud": 36,
      "cap_breaks": 1,
      "obj_score": 61,
-     "best_streak": 12,
+     "best_streak": 13,
      "nade_kills": 0,
      "gun_kills": 310,
      "classes": {
@@ -79,7 +79,18 @@
      },
      "prone_seconds": 75.7,
      "prone_events": 22,
-     "prone_per_half": 6.3
+     "prone_per_half": 6.3,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "12 scoped K98",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 14
     },
     {
      "steam_id": "1:1699528",
@@ -151,7 +162,18 @@
      },
      "prone_seconds": 138.1,
      "prone_events": 20,
-     "prone_per_half": 11.5
+     "prone_per_half": 11.5,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "9 BAR",
+       "4 K98"
+      ]
+     },
+     "hud_best_streak": 13
     },
     {
      "steam_id": "1:2052836",
@@ -223,7 +245,18 @@
      },
      "prone_seconds": 37.2,
      "prone_events": 12,
-     "prone_per_half": 3.7
+     "prone_per_half": 3.7,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "anzio",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "5 STG44",
+       "2 BAR"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:748805",
@@ -297,7 +330,17 @@
      },
      "prone_seconds": 29.3,
      "prone_events": 9,
-     "prone_per_half": 2.4
+     "prone_per_half": 2.4,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "14 K98"
+      ]
+     },
+     "hud_best_streak": 14
     },
     {
      "steam_id": "0:2996359",
@@ -371,7 +414,20 @@
      },
      "prone_seconds": 61.8,
      "prone_events": 13,
-     "prone_per_half": 5.2
+     "prone_per_half": 5.2,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 Garand",
+       "3 grenade",
+       "1 K43",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "1:2312843",
@@ -449,7 +505,19 @@
      },
      "prone_seconds": 144.1,
      "prone_events": 30,
-     "prone_per_half": 14.4
+     "prone_per_half": 14.4,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "anzio",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "6 K98",
+       "5 BAR",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 12
     },
     {
      "steam_id": "0:3612473",
@@ -523,7 +591,17 @@
      },
      "prone_seconds": 122.6,
      "prone_events": 26,
-     "prone_per_half": 10.2
+     "prone_per_half": 10.2,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "8 BAR"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:78863",
@@ -595,7 +673,18 @@
      },
      "prone_seconds": 10.5,
      "prone_events": 4,
-     "prone_per_half": 0.9
+     "prone_per_half": 0.9,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "9 K98",
+       "1 Colt"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "1:10468563",
@@ -667,7 +756,18 @@
      },
      "prone_seconds": 37.9,
      "prone_events": 11,
-     "prone_per_half": 3.2
+     "prone_per_half": 3.2,
+     "streak_detail": {
+      "vs": "North Atlantic Treaty Org",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 Garand",
+       "1 K98"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:11692441",
@@ -703,7 +803,7 @@
       "Heavy": 244,
       "3rd": 58
      },
-     "primary_role": "Rifle",
+     "primary_role": "Heavy",
      "role_source": "roster",
      "hitboxes": {
       "Left arm": {
@@ -741,7 +841,19 @@
      },
      "prone_seconds": 54.4,
      "prone_events": 12,
-     "prone_per_half": 4.5
+     "prone_per_half": 4.5,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "5 K98",
+       "3 STG44",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "0:363246168",
@@ -813,7 +925,19 @@
      },
      "prone_seconds": 95.6,
      "prone_events": 32,
-     "prone_per_half": 8.0
+     "prone_per_half": 8.0,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "2 K98",
+       "2 Luger",
+       "2 stick grenade"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:16983",
@@ -837,7 +961,7 @@
      "caps_hud": 43,
      "cap_breaks": 1,
      "obj_score": 68,
-     "best_streak": 6,
+     "best_streak": 7,
      "nade_kills": 51,
      "gun_kills": 219,
      "classes": {
@@ -885,7 +1009,17 @@
      },
      "prone_seconds": 105.9,
      "prone_events": 30,
-     "prone_per_half": 8.8
+     "prone_per_half": 8.8,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "7 K98"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "0:642008661",
@@ -957,7 +1091,19 @@
      },
      "prone_seconds": 27.2,
      "prone_events": 8,
-     "prone_per_half": 2.3
+     "prone_per_half": 2.3,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 K98",
+       "1 Luger",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:31962398",
@@ -981,7 +1127,7 @@
      "caps_hud": 51,
      "cap_breaks": 6,
      "obj_score": 68,
-     "best_streak": 8,
+     "best_streak": 7,
      "nade_kills": 42,
      "gun_kills": 236,
      "classes": {
@@ -1031,7 +1177,18 @@
      },
      "prone_seconds": 66.6,
      "prone_events": 21,
-     "prone_per_half": 5.6
+     "prone_per_half": 5.6,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "6 Garand",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:6122950",
@@ -1106,7 +1263,18 @@
      },
      "prone_seconds": 101.1,
      "prone_events": 21,
-     "prone_per_half": 8.4
+     "prone_per_half": 8.4,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "saints2_b3e",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "9 Springfield",
+       "1 Colt"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "0:25429845",
@@ -1178,7 +1346,19 @@
      },
      "prone_seconds": 69.8,
      "prone_events": 23,
-     "prone_per_half": 5.8
+     "prone_per_half": 5.8,
+     "streak_detail": {
+      "vs": "dicE",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 K98",
+       "1 Luger",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:8702451",
@@ -1250,7 +1430,17 @@
      },
      "prone_seconds": 15.1,
      "prone_events": 4,
-     "prone_per_half": 1.3
+     "prone_per_half": 1.3,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "11 scoped K98"
+      ]
+     },
+     "hud_best_streak": 11
     },
     {
      "steam_id": "0:74027",
@@ -1324,7 +1514,18 @@
      },
      "prone_seconds": 131.5,
      "prone_events": 19,
-     "prone_per_half": 11.0
+     "prone_per_half": 11.0,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "8 K98",
+       "2 Garand"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "0:90794",
@@ -1398,7 +1599,17 @@
      },
      "prone_seconds": 204.9,
      "prone_events": 36,
-     "prone_per_half": 17.1
+     "prone_per_half": 17.1,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "9 K98"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "1:18676541",
@@ -1472,7 +1683,18 @@
      },
      "prone_seconds": 77.7,
      "prone_events": 11,
-     "prone_per_half": 6.5
+     "prone_per_half": 6.5,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "7 K98",
+       "3 BAR"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "0:836459725",
@@ -1544,7 +1766,18 @@
      },
      "prone_seconds": 96.0,
      "prone_events": 15,
-     "prone_per_half": 8.0
+     "prone_per_half": 8.0,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "anzio",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "6 Garand",
+       "2 grenade"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:1547256",
@@ -1623,7 +1856,17 @@
      },
      "prone_seconds": 48.1,
      "prone_events": 12,
-     "prone_per_half": 4.0
+     "prone_per_half": 4.0,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "10 scoped K98"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "1:351766339",
@@ -1695,7 +1938,18 @@
      },
      "prone_seconds": 94.3,
      "prone_events": 24,
-     "prone_per_half": 7.9
+     "prone_per_half": 7.9,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "4 BAR",
+       "2 K98"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:11494215",
@@ -1769,7 +2023,18 @@
      },
      "prone_seconds": 3.6,
      "prone_events": 3,
-     "prone_per_half": 0.3
+     "prone_per_half": 0.3,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 K98",
+       "4 BAR"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "1:443810",
@@ -1793,7 +2058,7 @@
      "caps_hud": 68,
      "cap_breaks": 4,
      "obj_score": 79,
-     "best_streak": 8,
+     "best_streak": 7,
      "nade_kills": 39,
      "gun_kills": 271,
      "classes": {
@@ -1841,7 +2106,19 @@
      },
      "prone_seconds": 71.3,
      "prone_events": 17,
-     "prone_per_half": 5.9
+     "prone_per_half": 5.9,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "saints2_b3e",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "5 BAR",
+       "1 STG44",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:99398",
@@ -1913,7 +2190,18 @@
      },
      "prone_seconds": 94.1,
      "prone_events": 20,
-     "prone_per_half": 7.8
+     "prone_per_half": 7.8,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "7 K98",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:77934219",
@@ -1937,7 +2225,7 @@
      "caps_hud": 45,
      "cap_breaks": 2,
      "obj_score": 63,
-     "best_streak": 6,
+     "best_streak": 7,
      "nade_kills": 25,
      "gun_kills": 220,
      "classes": {
@@ -1990,7 +2278,19 @@
      },
      "prone_seconds": 96.2,
      "prone_events": 23,
-     "prone_per_half": 9.6
+     "prone_per_half": 9.6,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "saints2_b3e",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "4 K98",
+       "2 BAR",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "0:8832199",
@@ -2064,7 +2364,19 @@
      },
      "prone_seconds": 95.6,
      "prone_events": 22,
-     "prone_per_half": 8.0
+     "prone_per_half": 8.0,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "3 BAR",
+       "3 K98",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:64041420",
@@ -2139,7 +2451,19 @@
      },
      "prone_seconds": 318.6,
      "prone_events": 48,
-     "prone_per_half": 26.5
+     "prone_per_half": 26.5,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "4 K98",
+       "1 Colt",
+       "1 Garand"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:741614372",
@@ -2216,7 +2540,18 @@
      },
      "prone_seconds": 238.8,
      "prone_events": 32,
-     "prone_per_half": 18.4
+     "prone_per_half": 18.4,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "7 BAR",
+       "1 STG44"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:6155141",
@@ -2289,7 +2624,19 @@
      },
      "prone_seconds": 211.1,
      "prone_events": 32,
-     "prone_per_half": 17.6
+     "prone_per_half": 17.6,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "3 K98",
+       "3 MP40",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:7735372",
@@ -2366,7 +2713,18 @@
      },
      "prone_seconds": 56.3,
      "prone_events": 14,
-     "prone_per_half": 4.7
+     "prone_per_half": 4.7,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "8 BAR",
+       "1 K98"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "1:9865547",
@@ -2440,7 +2798,18 @@
      },
      "prone_seconds": 58.2,
      "prone_events": 9,
-     "prone_per_half": 4.8
+     "prone_per_half": 4.8,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "6 K43",
+       "3 stick grenade"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "0:15083886",
@@ -2514,7 +2883,18 @@
      },
      "prone_seconds": 20.1,
      "prone_events": 5,
-     "prone_per_half": 1.7
+     "prone_per_half": 1.7,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 K98",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "0:1794",
@@ -2589,7 +2969,18 @@
      },
      "prone_seconds": 144.1,
      "prone_events": 27,
-     "prone_per_half": 12.0
+     "prone_per_half": 12.0,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "4 K43",
+       "3 Springfield"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:16016464",
@@ -2670,7 +3061,19 @@
      },
      "prone_seconds": 407.6,
      "prone_events": 48,
-     "prone_per_half": 40.8
+     "prone_per_half": 40.8,
+     "streak_detail": {
+      "vs": "North Atlantic Treaty Org",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "5 BAR",
+       "1 K43",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:777438",
@@ -2742,7 +3145,17 @@
      },
      "prone_seconds": 68.7,
      "prone_events": 22,
-     "prone_per_half": 5.7
+     "prone_per_half": 5.7,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "anzio",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "10 Springfield"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "1:67913",
@@ -2816,7 +3229,18 @@
      },
      "prone_seconds": 71.8,
      "prone_events": 12,
-     "prone_per_half": 6.0
+     "prone_per_half": 6.0,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 K98",
+       "2 BAR"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:9446506",
@@ -2891,7 +3315,19 @@
      },
      "prone_seconds": 69.2,
      "prone_events": 19,
-     "prone_per_half": 5.8
+     "prone_per_half": 5.8,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "3 Springfield",
+       "2 Garand",
+       "2 scoped K98"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:9833731",
@@ -2963,7 +3399,18 @@
      },
      "prone_seconds": 59.9,
      "prone_events": 16,
-     "prone_per_half": 5.0
+     "prone_per_half": 5.0,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "saints2_b3e",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 K98",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "0:32793027",
@@ -3042,7 +3489,20 @@
      },
      "prone_seconds": 49.0,
      "prone_events": 15,
-     "prone_per_half": 4.5
+     "prone_per_half": 4.5,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "3 grenade",
+       "2 K43",
+       "1 K98",
+       "1 Springfield"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:6758404",
@@ -3078,7 +3538,7 @@
       "Heavy": 316,
       "3rd": 8
      },
-     "primary_role": "Rifle",
+     "primary_role": "Heavy",
      "role_source": "roster",
      "hitboxes": {
       "Left arm": {
@@ -3116,7 +3576,19 @@
      },
      "prone_seconds": 194.1,
      "prone_events": 25,
-     "prone_per_half": 16.2
+     "prone_per_half": 16.2,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "4 BAR",
+       "2 STG44",
+       "2 Thompson"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:68033122",
@@ -3188,7 +3660,17 @@
      },
      "prone_seconds": 64.9,
      "prone_events": 17,
-     "prone_per_half": 5.4
+     "prone_per_half": 5.4,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "8 K98"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:104450108",
@@ -3264,7 +3746,18 @@
      },
      "prone_seconds": 358.9,
      "prone_events": 44,
-     "prone_per_half": 29.9
+     "prone_per_half": 29.9,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "5 K98",
+       "3 BAR"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:72967",
@@ -3337,7 +3830,19 @@
      },
      "prone_seconds": 54.3,
      "prone_events": 18,
-     "prone_per_half": 4.5
+     "prone_per_half": 4.5,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "4 K43",
+       "1 Luger",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:93610",
@@ -3409,7 +3914,18 @@
      },
      "prone_seconds": 127.9,
      "prone_events": 25,
-     "prone_per_half": 10.7
+     "prone_per_half": 10.7,
+     "streak_detail": {
+      "vs": "icyHOT",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "7 Springfield",
+       "1 Colt"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:10054114",
@@ -3433,7 +3949,7 @@
      "caps_hud": 37,
      "cap_breaks": 1,
      "obj_score": 57,
-     "best_streak": 7,
+     "best_streak": 8,
      "nade_kills": 1,
      "gun_kills": 176,
      "classes": {
@@ -3487,7 +4003,20 @@
      },
      "prone_seconds": 66.8,
      "prone_events": 14,
-     "prone_per_half": 6.7
+     "prone_per_half": 6.7,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "anzio",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 Springfield",
+       "1 Colt",
+       "1 Garand",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:4492",
@@ -3511,7 +4040,7 @@
      "caps_hud": 31,
      "cap_breaks": 2,
      "obj_score": 43,
-     "best_streak": 6,
+     "best_streak": 7,
      "nade_kills": 44,
      "gun_kills": 175,
      "classes": {
@@ -3564,7 +4093,18 @@
      },
      "prone_seconds": 22.9,
      "prone_events": 5,
-     "prone_per_half": 1.9
+     "prone_per_half": 1.9,
+     "streak_detail": {
+      "vs": "icyHOT",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 K98",
+       "2 Garand"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:24850",
@@ -3638,7 +4178,18 @@
      },
      "prone_seconds": 65.7,
      "prone_events": 18,
-     "prone_per_half": 5.5
+     "prone_per_half": 5.5,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "8 scoped K98",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "0:3906550",
@@ -3712,7 +4263,17 @@
      },
      "prone_seconds": 29.1,
      "prone_events": 6,
-     "prone_per_half": 2.4
+     "prone_per_half": 2.4,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "7 K98"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:51476452",
@@ -3786,7 +4347,17 @@
      },
      "prone_seconds": 574.6,
      "prone_events": 44,
-     "prone_per_half": 47.9
+     "prone_per_half": 47.9,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "saints2_b3e",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "6 BAR"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:25292511",
@@ -3858,7 +4429,19 @@
      },
      "prone_seconds": 111.1,
      "prone_events": 11,
-     "prone_per_half": 9.3
+     "prone_per_half": 9.3,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "4 BAR",
+       "1 Luger",
+       "1 STG44"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "0:123285",
@@ -3932,7 +4515,18 @@
      },
      "prone_seconds": 96.8,
      "prone_events": 3,
-     "prone_per_half": 8.1
+     "prone_per_half": 8.1,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "saints2_b3e",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "6 K98",
+       "2 Garand"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:25130574",
@@ -4004,7 +4598,17 @@
      },
      "prone_seconds": 12.5,
      "prone_events": 3,
-     "prone_per_half": 1.0
+     "prone_per_half": 1.0,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "5 K98"
+      ]
+     },
+     "hud_best_streak": 12
     },
     {
      "steam_id": "0:237126",
@@ -4081,7 +4685,18 @@
      },
      "prone_seconds": 40.3,
      "prone_events": 10,
-     "prone_per_half": 3.4
+     "prone_per_half": 3.4,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "harrington",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "4 K98",
+       "2 scoped K98"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:10437288",
@@ -4156,7 +4771,19 @@
      },
      "prone_seconds": 146.8,
      "prone_events": 25,
-     "prone_per_half": 12.2
+     "prone_per_half": 12.2,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "2 Garand",
+       "1 K98",
+       "1 Springfield"
+      ]
+     },
+     "hud_best_streak": 4
     },
     {
      "steam_id": "0:749715",
@@ -4228,7 +4855,17 @@
      },
      "prone_seconds": 13.5,
      "prone_events": 3,
-     "prone_per_half": 1.1
+     "prone_per_half": 1.1,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "6 K98"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "0:281787",
@@ -4308,7 +4945,18 @@
      },
      "prone_seconds": 49.4,
      "prone_events": 10,
-     "prone_per_half": 4.1
+     "prone_per_half": 4.1,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "thunder2",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "4 Garand",
+       "1 rifle butt"
+      ]
+     },
+     "hud_best_streak": 5
     },
     {
      "steam_id": "0:2221518",
@@ -4382,7 +5030,17 @@
      },
      "prone_seconds": 111.6,
      "prone_events": 16,
-     "prone_per_half": 9.3
+     "prone_per_half": 9.3,
+     "streak_detail": {
+      "vs": "dicE",
+      "map": "armory_b6",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "4 BAR"
+      ]
+     },
+     "hud_best_streak": 5
     },
     {
      "steam_id": "0:6291720",
@@ -4454,7 +5112,18 @@
      },
      "prone_seconds": 157.0,
      "prone_events": 13,
-     "prone_per_half": 13.1
+     "prone_per_half": 13.1,
+     "streak_detail": {
+      "vs": "North Atlantic Treaty Org",
+      "map": "lennon5_b1",
+      "day": "Saturday",
+      "half": 2,
+      "guns": [
+       "4 BAR",
+       "2 STG44"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:955338590",
@@ -4532,7 +5201,18 @@
      },
      "prone_seconds": 912.4,
      "prone_events": 103,
-     "prone_per_half": 76.0
+     "prone_per_half": 76.0,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "anzio",
+      "day": "Saturday",
+      "half": 1,
+      "guns": [
+       "4 Springfield",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 5
     }
    ],
    "maps": {
@@ -10028,7 +10708,18 @@
      },
      "prone_seconds": 119.5,
      "prone_events": 31,
-     "prone_per_half": 10.9
+     "prone_per_half": 10.9,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "8 K98",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "1:16016464",
@@ -10101,7 +10792,20 @@
      },
      "prone_seconds": 154.1,
      "prone_events": 20,
-     "prone_per_half": 25.7
+     "prone_per_half": 25.7,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "3 BAR",
+       "3 Springfield",
+       "1 K43",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:3906550",
@@ -10175,7 +10879,18 @@
      },
      "prone_seconds": 91.6,
      "prone_events": 8,
-     "prone_per_half": 22.9
+     "prone_per_half": 22.9,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "4 BAR",
+       "3 Garand"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:748805",
@@ -10249,7 +10964,18 @@
      },
      "prone_seconds": 19.3,
      "prone_events": 6,
-     "prone_per_half": 1.8
+     "prone_per_half": 1.8,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "10 Garand",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 12
     },
     {
      "steam_id": "1:2052836",
@@ -10321,7 +11047,18 @@
      },
      "prone_seconds": 85.5,
      "prone_events": 14,
-     "prone_per_half": 8.5
+     "prone_per_half": 8.5,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "lennon5_b1",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "9 BAR",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 11
     },
     {
      "steam_id": "1:1699528",
@@ -10393,7 +11130,19 @@
      },
      "prone_seconds": 262.7,
      "prone_events": 18,
-     "prone_per_half": 26.3
+     "prone_per_half": 26.3,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "4 BAR",
+       "2 K98",
+       "1 Colt"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:32793027",
@@ -10467,7 +11216,19 @@
      },
      "prone_seconds": 243.0,
      "prone_events": 30,
-     "prone_per_half": 24.3
+     "prone_per_half": 24.3,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "8 BAR",
+       "1 K98",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "0:25429845",
@@ -10539,7 +11300,19 @@
      },
      "prone_seconds": 76.9,
      "prone_events": 22,
-     "prone_per_half": 6.4
+     "prone_per_half": 6.4,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "4 K98",
+       "4 stick grenade",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "1:10468563",
@@ -10613,7 +11386,17 @@
      },
      "prone_seconds": 35.4,
      "prone_events": 9,
-     "prone_per_half": 2.5
+     "prone_per_half": 2.5,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "10 Carbine"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "0:72967",
@@ -10686,7 +11469,19 @@
      },
      "prone_seconds": 4.0,
      "prone_events": 2,
-     "prone_per_half": 1.0
+     "prone_per_half": 1.0,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "6 BAR",
+       "1 K43",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:363246168",
@@ -10762,7 +11557,18 @@
      },
      "prone_seconds": 81.5,
      "prone_events": 14,
-     "prone_per_half": 6.3
+     "prone_per_half": 6.3,
+     "streak_detail": {
+      "vs": "dicE",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 K98",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:11692441",
@@ -10798,7 +11604,7 @@
       "Heavy": 168,
       "3rd": 108
      },
-     "primary_role": "Rifle",
+     "primary_role": "Heavy",
      "role_source": "roster",
      "hitboxes": {
       "Left arm": {
@@ -10836,7 +11642,19 @@
      },
      "prone_seconds": 40.7,
      "prone_events": 12,
-     "prone_per_half": 3.7
+     "prone_per_half": 3.7,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "5 scoped K98",
+       "2 MP40",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:10230748",
@@ -10908,7 +11726,18 @@
      },
      "prone_seconds": 110.4,
      "prone_events": 32,
-     "prone_per_half": 10.0
+     "prone_per_half": 10.0,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 scoped K98",
+       "1 Luger"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:6758404",
@@ -10944,7 +11773,7 @@
       "Heavy": 61,
       "3rd": 42
      },
-     "primary_role": "Rifle",
+     "primary_role": "Heavy",
      "role_source": "roster",
      "hitboxes": {
       "Left arm": {
@@ -10982,7 +11811,18 @@
      },
      "prone_seconds": 62.5,
      "prone_events": 11,
-     "prone_per_half": 15.6
+     "prone_per_half": 15.6,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "5 K98",
+       "2 MP40"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:24850",
@@ -11054,7 +11894,17 @@
      },
      "prone_seconds": 7.3,
      "prone_events": 1,
-     "prone_per_half": 1.8
+     "prone_per_half": 1.8,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "6 Springfield"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "0:7735372",
@@ -11128,7 +11978,18 @@
      },
      "prone_seconds": 11.9,
      "prone_events": 2,
-     "prone_per_half": 3.0
+     "prone_per_half": 3.0,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "3 K98",
+       "1 STG44"
+      ]
+     },
+     "hud_best_streak": 4
     },
     {
      "steam_id": "0:3612473",
@@ -11152,7 +12013,7 @@
      "caps_hud": 60,
      "cap_breaks": 5,
      "obj_score": 67,
-     "best_streak": 7,
+     "best_streak": 8,
      "nade_kills": 18,
      "gun_kills": 335,
      "classes": {
@@ -11203,7 +12064,20 @@
      },
      "prone_seconds": 186.3,
      "prone_events": 42,
-     "prone_per_half": 13.3
+     "prone_per_half": 13.3,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "3 BAR",
+       "3 K98",
+       "1 Colt",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:2312843",
@@ -11277,7 +12151,20 @@
      },
      "prone_seconds": 91.0,
      "prone_events": 18,
-     "prone_per_half": 11.4
+     "prone_per_half": 11.4,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "5 Garand",
+       "2 K98",
+       "2 grenade",
+       "2 scoped K98"
+      ]
+     },
+     "hud_best_streak": 11
     },
     {
      "steam_id": "0:74027",
@@ -11351,7 +12238,20 @@
      },
      "prone_seconds": 23.4,
      "prone_events": 6,
-     "prone_per_half": 2.3
+     "prone_per_half": 2.3,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "8 BAR",
+       "1 Garand",
+       "1 Luger",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 11
     },
     {
      "steam_id": "0:836459725",
@@ -11423,7 +12323,17 @@
      },
      "prone_seconds": 54.4,
      "prone_events": 11,
-     "prone_per_half": 4.5
+     "prone_per_half": 4.5,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "8 K98"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:1547256",
@@ -11499,7 +12409,17 @@
      },
      "prone_seconds": 137.9,
      "prone_events": 28,
-     "prone_per_half": 9.9
+     "prone_per_half": 9.9,
+     "streak_detail": {
+      "vs": "North Atlantic Treaty Org",
+      "map": "thunder2",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "8 scoped K98"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:78863",
@@ -11571,7 +12491,19 @@
      },
      "prone_seconds": 54.8,
      "prone_events": 10,
-     "prone_per_half": 5.5
+     "prone_per_half": 5.5,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "9 K98",
+       "1 Colt",
+       "1 Garand"
+      ]
+     },
+     "hud_best_streak": 11
     },
     {
      "steam_id": "0:90794",
@@ -11645,7 +12577,19 @@
      },
      "prone_seconds": 164.3,
      "prone_events": 34,
-     "prone_per_half": 14.9
+     "prone_per_half": 14.9,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "5 Springfield",
+       "3 STG44",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "0:99398",
@@ -11717,7 +12661,18 @@
      },
      "prone_seconds": 68.1,
      "prone_events": 15,
-     "prone_per_half": 5.7
+     "prone_per_half": 5.7,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "5 K98",
+       "4 Garand"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "1:443810",
@@ -11791,7 +12746,18 @@
      },
      "prone_seconds": 234.8,
      "prone_events": 16,
-     "prone_per_half": 19.6
+     "prone_per_half": 19.6,
+     "streak_detail": {
+      "vs": "icyHOT",
+      "map": "lennon5_b1",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "4 BAR",
+       "2 STG44"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:93610",
@@ -11863,7 +12829,17 @@
      },
      "prone_seconds": 140.2,
      "prone_events": 27,
-     "prone_per_half": 11.7
+     "prone_per_half": 11.7,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "6 scoped K98"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:31962398",
@@ -11937,7 +12913,19 @@
      },
      "prone_seconds": 225.6,
      "prone_events": 39,
-     "prone_per_half": 17.4
+     "prone_per_half": 17.4,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "lennon5_b1",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "5 K98",
+       "2 Garand",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:2996359",
@@ -12011,7 +12999,18 @@
      },
      "prone_seconds": 117.8,
      "prone_events": 22,
-     "prone_per_half": 10.7
+     "prone_per_half": 10.7,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 K98",
+       "3 stick grenade"
+      ]
+     },
+     "hud_best_streak": 10
     },
     {
      "steam_id": "0:741614372",
@@ -12085,7 +13084,18 @@
      },
      "prone_seconds": 388.7,
      "prone_events": 39,
-     "prone_per_half": 38.9
+     "prone_per_half": 38.9,
+     "streak_detail": {
+      "vs": "North Atlantic Treaty Org",
+      "map": "lennon5_b1",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "5 STG44",
+       "2 stick grenade"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:68033122",
@@ -12159,7 +13169,17 @@
      },
      "prone_seconds": 34.3,
      "prone_events": 6,
-     "prone_per_half": 8.6
+     "prone_per_half": 8.6,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "4 Garand"
+      ]
+     },
+     "hud_best_streak": 4
     },
     {
      "steam_id": "0:77934219",
@@ -12241,7 +13261,18 @@
      },
      "prone_seconds": 105.8,
      "prone_events": 25,
-     "prone_per_half": 10.6
+     "prone_per_half": 10.6,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "lennon5_b1",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "6 Springfield",
+       "1 K98"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:237126",
@@ -12315,7 +13346,17 @@
      },
      "prone_seconds": 6.9,
      "prone_events": 1,
-     "prone_per_half": 1.7
+     "prone_per_half": 1.7,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "9 Springfield"
+      ]
+     },
+     "hud_best_streak": 9
     },
     {
      "steam_id": "0:8832199",
@@ -12389,7 +13430,20 @@
      },
      "prone_seconds": 186.7,
      "prone_events": 29,
-     "prone_per_half": 13.3
+     "prone_per_half": 13.3,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "2 K98",
+       "2 grenade",
+       "1 Garand",
+       "1 scoped K98"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:67913",
@@ -12463,7 +13517,19 @@
      },
      "prone_seconds": 68.6,
      "prone_events": 15,
-     "prone_per_half": 5.7
+     "prone_per_half": 5.7,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "5 K98",
+       "2 BAR",
+       "1 Colt"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:6155141",
@@ -12487,7 +13553,7 @@
      "caps_hud": 45,
      "cap_breaks": 7,
      "obj_score": 50,
-     "best_streak": 6,
+     "best_streak": 9,
      "nade_kills": 34,
      "gun_kills": 264,
      "classes": {
@@ -12536,7 +13602,18 @@
      },
      "prone_seconds": 236.4,
      "prone_events": 34,
-     "prone_per_half": 16.9
+     "prone_per_half": 16.9,
+     "streak_detail": {
+      "vs": "North Atlantic Treaty Org",
+      "map": "thunder2",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "8 BAR",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:11494215",
@@ -12608,7 +13685,19 @@
      },
      "prone_seconds": 202.4,
      "prone_events": 15,
-     "prone_per_half": 15.6
+     "prone_per_half": 15.6,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "4 K98",
+       "1 STG44",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:18676541",
@@ -12682,7 +13771,18 @@
      },
      "prone_seconds": 51.8,
      "prone_events": 12,
-     "prone_per_half": 4.3
+     "prone_per_half": 4.3,
+     "streak_detail": {
+      "vs": "Price is Right",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "4 BAR",
+       "2 STG44"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:6122950",
@@ -12754,7 +13854,18 @@
      },
      "prone_seconds": 78.9,
      "prone_events": 16,
-     "prone_per_half": 6.6
+     "prone_per_half": 6.6,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "6 Springfield",
+       "1 K98"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:9833731",
@@ -12826,7 +13937,18 @@
      },
      "prone_seconds": 92.4,
      "prone_events": 19,
-     "prone_per_half": 7.7
+     "prone_per_half": 7.7,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "4 K98",
+       "3 Garand"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:8702451",
@@ -12898,7 +14020,17 @@
      },
      "prone_seconds": 117.1,
      "prone_events": 16,
-     "prone_per_half": 11.7
+     "prone_per_half": 11.7,
+     "streak_detail": {
+      "vs": "North Atlantic Treaty Org",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "8 Springfield"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:642008661",
@@ -12970,7 +14102,18 @@
      },
      "prone_seconds": 39.9,
      "prone_events": 8,
-     "prone_per_half": 3.3
+     "prone_per_half": 3.3,
+     "streak_detail": {
+      "vs": "icyHOT",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "3 Garand",
+       "2 scoped K98"
+      ]
+     },
+     "hud_best_streak": 5
     },
     {
      "steam_id": "0:15083886",
@@ -13042,7 +14185,19 @@
      },
      "prone_seconds": 35.6,
      "prone_events": 6,
-     "prone_per_half": 2.7
+     "prone_per_half": 2.7,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "5 K98",
+       "1 Luger",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:4492",
@@ -13066,7 +14221,7 @@
      "caps_hud": 25,
      "cap_breaks": 0,
      "obj_score": 35,
-     "best_streak": 6,
+     "best_streak": 8,
      "nade_kills": 33,
      "gun_kills": 108,
      "classes": {
@@ -13118,7 +14273,19 @@
      },
      "prone_seconds": 148.6,
      "prone_events": 9,
-     "prone_per_half": 14.9
+     "prone_per_half": 14.9,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "6 Garand",
+       "1 K98",
+       "1 grenade"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:64041420",
@@ -13193,7 +14360,19 @@
      },
      "prone_seconds": 406.0,
      "prone_events": 42,
-     "prone_per_half": 33.8
+     "prone_per_half": 33.8,
+     "streak_detail": {
+      "vs": "dicE",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "5 scoped K98",
+       "2 grenade",
+       "1 Garand"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:10054114",
@@ -13217,7 +14396,7 @@
      "caps_hud": 27,
      "cap_breaks": 0,
      "obj_score": 33,
-     "best_streak": 5,
+     "best_streak": 7,
      "nade_kills": 1,
      "gun_kills": 122,
      "classes": {
@@ -13268,7 +14447,17 @@
      },
      "prone_seconds": 84.0,
      "prone_events": 20,
-     "prone_per_half": 10.5
+     "prone_per_half": 10.5,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 Springfield"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:351766339",
@@ -13342,7 +14531,17 @@
      },
      "prone_seconds": 352.2,
      "prone_events": 49,
-     "prone_per_half": 27.1
+     "prone_per_half": 27.1,
+     "streak_detail": {
+      "vs": "onLAN thunder",
+      "map": "lennon5_b1",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 STG44"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:123285",
@@ -13415,7 +14614,18 @@
      },
      "prone_seconds": 46.2,
      "prone_events": 6,
-     "prone_per_half": 3.9
+     "prone_per_half": 3.9,
+     "streak_detail": {
+      "vs": "dicE",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "5 scoped K98",
+       "1 Garand"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "0:2221518",
@@ -13489,7 +14699,18 @@
      },
      "prone_seconds": 83.1,
      "prone_events": 9,
-     "prone_per_half": 6.9
+     "prone_per_half": 6.9,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 BAR",
+       "1 stick grenade"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:749715",
@@ -13513,7 +14734,7 @@
      "caps_hud": 13,
      "cap_breaks": 0,
      "obj_score": 19,
-     "best_streak": 5,
+     "best_streak": 6,
      "nade_kills": 9,
      "gun_kills": 52,
      "classes": {
@@ -13561,7 +14782,19 @@
      },
      "prone_seconds": 0.0,
      "prone_events": 0,
-     "prone_per_half": 0.0
+     "prone_per_half": 0.0,
+     "streak_detail": {
+      "vs": "Uncle Rico's Time Machine",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "3 Springfield",
+       "2 K98",
+       "1 Garand"
+      ]
+     },
+     "hud_best_streak": 5
     },
     {
      "steam_id": "0:104450108",
@@ -13585,7 +14818,7 @@
      "caps_hud": 29,
      "cap_breaks": 1,
      "obj_score": 38,
-     "best_streak": 6,
+     "best_streak": 7,
      "nade_kills": 20,
      "gun_kills": 101,
      "classes": {
@@ -13635,7 +14868,17 @@
      },
      "prone_seconds": 147.0,
      "prone_events": 20,
-     "prone_per_half": 18.4
+     "prone_per_half": 18.4,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 BAR"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "0:1794",
@@ -13710,7 +14953,19 @@
      },
      "prone_seconds": 148.6,
      "prone_events": 30,
-     "prone_per_half": 12.4
+     "prone_per_half": 12.4,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "4 BAR",
+       "2 MP40",
+       "2 Springfield"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "0:281787",
@@ -13785,7 +15040,18 @@
      },
      "prone_seconds": 147.4,
      "prone_events": 27,
-     "prone_per_half": 10.5
+     "prone_per_half": 10.5,
+     "streak_detail": {
+      "vs": "Arrested Development",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "6 K98",
+       "1 Garand"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:777438",
@@ -13859,7 +15125,17 @@
      },
      "prone_seconds": 63.0,
      "prone_events": 19,
-     "prone_per_half": 5.3
+     "prone_per_half": 5.3,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "railroad2_s9a",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 scoped K98"
+      ]
+     },
+     "hud_best_streak": 7
     },
     {
      "steam_id": "1:9865547",
@@ -13936,7 +15212,18 @@
      },
      "prone_seconds": 80.5,
      "prone_events": 14,
-     "prone_per_half": 6.7
+     "prone_per_half": 6.7,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 BAR",
+       "1 Garand"
+      ]
+     },
+     "hud_best_streak": 8
     },
     {
      "steam_id": "1:9446506",
@@ -13960,7 +15247,7 @@
      "caps_hud": 45,
      "cap_breaks": 0,
      "obj_score": 70,
-     "best_streak": 6,
+     "best_streak": 7,
      "nade_kills": 1,
      "gun_kills": 231,
      "classes": {
@@ -14014,7 +15301,17 @@
      },
      "prone_seconds": 64.1,
      "prone_events": 25,
-     "prone_per_half": 4.9
+     "prone_per_half": 4.9,
+     "streak_detail": {
+      "vs": "dicE",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "7 scoped K98"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:51476452",
@@ -14092,7 +15389,18 @@
      },
      "prone_seconds": 318.8,
      "prone_events": 43,
-     "prone_per_half": 26.6
+     "prone_per_half": 26.6,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "4 BAR",
+       "1 K98"
+      ]
+     },
+     "hud_best_streak": 6
     },
     {
      "steam_id": "1:25292511",
@@ -14164,7 +15472,17 @@
      },
      "prone_seconds": 241.3,
      "prone_events": 17,
-     "prone_per_half": 20.1
+     "prone_per_half": 20.1,
+     "streak_detail": {
+      "vs": "Best Buds",
+      "map": "harrington",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "5 BAR"
+      ]
+     },
+     "hud_best_streak": 5
     },
     {
      "steam_id": "1:955338590",
@@ -14238,7 +15556,17 @@
      },
      "prone_seconds": 152.3,
      "prone_events": 20,
-     "prone_per_half": 38.1
+     "prone_per_half": 38.1,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "4 STG44"
+      ]
+     },
+     "hud_best_streak": 4
     },
     {
      "steam_id": "1:10437288",
@@ -14310,7 +15638,17 @@
      },
      "prone_seconds": 37.3,
      "prone_events": 10,
-     "prone_per_half": 9.3
+     "prone_per_half": 9.3,
+     "streak_detail": {
+      "vs": "NoSoul",
+      "map": "armory_b6",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "4 K98"
+      ]
+     },
+     "hud_best_streak": 4
     },
     {
      "steam_id": "0:6291720",
@@ -14382,7 +15720,17 @@
      },
      "prone_seconds": 0.0,
      "prone_events": 0,
-     "prone_per_half": 0.0
+     "prone_per_half": 0.0,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 1,
+      "guns": [
+       "4 BAR"
+      ]
+     },
+     "hud_best_streak": 4
     },
     {
      "steam_id": "1:25130574",
@@ -14406,7 +15754,7 @@
      "caps_hud": 8,
      "cap_breaks": 1,
      "obj_score": 9,
-     "best_streak": 3,
+     "best_streak": 4,
      "nade_kills": 3,
      "gun_kills": 39,
      "classes": {
@@ -14454,7 +15802,17 @@
      },
      "prone_seconds": 0.0,
      "prone_events": 0,
-     "prone_per_half": 0.0
+     "prone_per_half": 0.0,
+     "streak_detail": {
+      "vs": "b Team",
+      "map": "saints2_b3e",
+      "day": "Sunday",
+      "half": 2,
+      "guns": [
+       "4 K98"
+      ]
+     },
+     "hud_best_streak": 4
     }
    ],
    "maps": {

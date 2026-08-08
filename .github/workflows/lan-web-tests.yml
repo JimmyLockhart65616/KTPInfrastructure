@@ -1,0 +1,90 @@
+# KTP Tier 1 — lan-web pure-function gate
+#
+# sites/lan-web/tests/ existed for months and was run by NOTHING. The cost was
+# concrete: on 2026-08-02 the group-stage head-to-head tiebreak was found dead
+# mid-event with a test sitting right there that claimed to cover it — and that
+# test passed, because its fixture never produced the tie it asserted on, so it
+# was decided on win count alone. Nothing ran it, and nothing would have caught
+# the fixture either.
+#
+# Needs pytest and nothing else. app/__init__.py is empty and the tested modules
+# import only fractions/itertools/json, so none of requirements.txt is reachable
+# from the tests — verified by running the suite with fastapi, starlette, pymysql,
+# jinja2, authlib, httpx, itsdangerous and uvicorn blocked at the import hook:
+# 43 passed. No database, no fixtures, no network.
+#
+# Covers: standings tiebreak ladder, bracket slot resolution, seeding, veto
+# sequence, map-skip tally, schedule, publish gate.
+
+name: Tier 1 lan-web Tests
+
+on:
+  # No `paths:` filter, matching config-tests.yml: a paths-filtered required
+  # check is silently skipped on unrelated PRs and leaves them un-mergeable
+  # without an admin override. The job decides for itself whether to run.
+  push: {}
+  pull_request: {}
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  lan-web-tests:
+    name: lan-web pure-function tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect relevant changes
+        id: changes
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "run=1" >> "$GITHUB_OUTPUT"
+            echo "Non-PR event ${{ github.event_name }}; will run pytest."
+            exit 0
+          fi
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          if git diff --name-only "$base" "$head" \
+              | grep -qE '^(sites/lan-web/|\.github/workflows/lan-web-tests\.yml$)'; then
+            echo "run=1" >> "$GITHUB_OUTPUT"
+            echo "lan-web files changed; will run pytest."
+          else
+            echo "run=0" >> "$GITHUB_OUTPUT"
+            echo "::notice::No sites/lan-web changes in this PR; skipping pytest (job still passes so the required check is satisfied)."
+          fi
+
+      - name: Set up Python
+        if: steps.changes.outputs.run == '1'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        if: steps.changes.outputs.run == '1'
+        run: pip install pytest
+
+      - name: Run lan-web tests
+        if: steps.changes.outputs.run == '1'
+        working-directory: sites/lan-web
+        run: python -m pytest tests/ -v --tb=short
+
+      # The suite is only worth having if it is actually loading tests. A
+      # collection error, a renamed directory or a bad rootdir all exit 0 with
+      # "no tests ran", which reads exactly like a pass in a green check.
+      - name: Assert the suite is not empty
+        if: steps.changes.outputs.run == '1'
+        working-directory: sites/lan-web
+        run: |
+          set -e
+          n=$(python -m pytest tests/ --collect-only -q 2>/dev/null | grep -cE '::test_')
+          echo "collected $n tests"
+          if [ "$n" -lt 40 ]; then
+            echo "::error::Only $n tests collected (expected 40+). Tests were lost, not fixed."
+            exit 1
+          fi

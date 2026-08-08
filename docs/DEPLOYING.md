@@ -372,16 +372,20 @@ These fixes MUST be applied before enabling monitor cron jobs.
 grep -i 'old type\|error' ~/log/monitor.log | tail -20
 ```
 
-**Fix (REQUIRED before enabling monitor cron):**
+**Fix (REQUIRED before enabling monitor cron):** see **docs/LINUXGSM.md § the correct repair**,
+and use that. Do **not** use the line-range `sed` this section used to carry:
 
-Comment out lines 203-212 in all instances:
+- The range is version-specific. `203,212` was right for the LinuxGSM shipped in January 2026;
+  on **v26.2.0** it lands one block earlier, swallows the opening `if` of the duplicate-PID check
+  and leaves a file that does not parse — which is how the 2026-07-31 LAN incident happened, when
+  *repairing that syntax* re-armed the check and it `pkill`ed a live server 13 times mid-match.
+- It only disables the old-type check. **Two sibling `pkill` branches sit immediately above it**
+  ("identical tmux sessions", "same session and socket names") and the range never touched them.
+  They are live on all 24 fleet instances today.
 
-```bash
-# Apply to all server instances
-for dir in dod-27015 dod-27016 dod-27017 dod-27018 dod-27019; do
-  sed -i '203,212s/^/# KTP-DISABLED: /' ~/$dir/lgsm/modules/command_monitor.sh
-done
-```
+The canonical repair neutralises all three **conditions** (`if false; then`) instead of commenting
+a line range, so the file stays syntactically whole and the genuine dead-server branch still works.
+`provision/clone-ktp-stack.sh` already applies that version, so new deployments are correct.
 
 **Verification:**
 ```bash
@@ -393,12 +397,10 @@ grep -n "KTP-DISABLED" ~/dod-27015/lgsm/modules/command_monitor.sh | head -5
 
 **Automation:** This fix is automatically applied by `clone-ktp-stack.sh` (section 9) during deployment. No manual action needed for new deployments.
 
-**After LinuxGSM Updates:** If you run `./dodserver update-lgsm`, you MUST reapply the patch:
-```bash
-for dir in dod-27015 dod-27016 dod-27017 dod-27018 dod-27019; do
-  sed -i '203,212s/^/# KTP-DISABLED: /' ~/$dir/lgsm/modules/command_monitor.sh
-done
-```
+**After LinuxGSM Updates:** if you run `./dodserver update-lgsm`, you MUST reapply the patch —
+LinuxGSM overwrites the module. Reapply with the repair in **docs/LINUXGSM.md**, then confirm the
+file still parses (`bash -n`), because a marker grep only proves something was written and a valid
+file with armed checks is the worst of the outcomes.
 
 ---
 

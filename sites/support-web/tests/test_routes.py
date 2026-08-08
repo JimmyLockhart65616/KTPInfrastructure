@@ -77,9 +77,16 @@ def client(tmp_path, monkeypatch):
 
 # --- what a logged-out visitor actually receives --------------------------
 
+# ".forcereset" is deliberately NOT a discriminator any more: the 1.3 form now carries
+# the same RCON warning, because a 1.3 moderator gets the same RCON reach at that level
+# and deserves the same sentence about it. "Season captain" replaces it -- a group only
+# the KTP privileges form offers.
 KTP_ONLY = ("Approval queue", "Request game server privileges", "Bot command hub",
-            "/ops fleet-health", ".forcereset", "Booking a server",
+            "/ops fleet-health", "Season captain", "Booking a server",
             "AC review console")
+# Now genuinely one3-only. It used to render for KTP too, via an `or` that existed for
+# the "Your requests" panel sharing the row -- so KTP admins saw a form that is a strict
+# subset of their own (the privileges form's Group dropdown already covers 1.3 admin).
 ONE3_ONLY = ("Request moderator access",)
 
 
@@ -99,10 +106,25 @@ def test_one3_gets_its_form_and_none_of_the_ktp_surface(client):
         assert ktp_only not in html, f"1.3 tier leaked {ktp_only!r}"
 
 
-def test_ktp_gets_everything(client):
+def test_ktp_gets_its_own_surface_and_not_the_1_3_form(client):
+    """KTP sees every KTP section and NOT the 1.3 moderator form.
+
+    The 1.3 form is one fixed cell -- may_request() permits that tier exactly
+    ONE3_ADMIN at KICK_RESTART -- and the privileges form's Group dropdown already
+    expresses it. Rendering both put two routes to the same ticket on one page.
+    """
     html = client("111").get("/").text
-    for section in KTP_ONLY + ONE3_ONLY:
+    for section in KTP_ONLY:
         assert section in html, f"KTP tier missing {section!r}"
+    for one3_only in ONE3_ONLY:
+        assert one3_only not in html, f"KTP tier still shows the 1.3-only {one3_only!r}"
+
+
+def test_both_admin_tiers_get_the_requests_panel(client):
+    """"Your requests" is shared, and splitting the row is what could have dropped it
+    from one tier -- the `or` it used to ride on lived on the 1.3 form's condition."""
+    for discord_id in ("111", "333"):
+        assert "Your requests" in client(discord_id).get("/").text,             f"{discord_id} lost the requests panel"
 
 
 def test_public_page_renders_the_real_sections(client):

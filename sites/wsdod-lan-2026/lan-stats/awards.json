@@ -27,9 +27,21 @@
      "where": "onLAN thunder"
     },
     {
-     "who": "piff ＃4Monty",
+     "who": "piff",
      "value": "1.274 KTPR",
-     "where": "Best Buds"
+     "where": "Best Buds",
+     "as": "piff ＃4Monty"
+    },
+    {
+     "who": "Seanality",
+     "value": "1.223 KTPR",
+     "where": "icyHOT"
+    },
+    {
+     "who": "s i k",
+     "value": "1.199 KTPR",
+     "where": "icyHOT",
+     "as": "s i k <3 n a t"
     }
    ],
    "leader": {
@@ -50,14 +62,27 @@
      "where": "icyHOT"
     },
     {
-     "who": "bR0M ＃wetya",
+     "who": "bR0M",
      "value": "1.349 KTPR",
-     "where": "Best Buds"
+     "where": "Best Buds",
+     "as": "bR0M ＃wetya"
     },
     {
-     "who": "sTarK_ x_0 <3＃77",
+     "who": "sTarK_ x_0",
      "value": "1.266 KTPR",
-     "where": "b Team"
+     "where": "b Team",
+     "as": "sTarK_ x_0 <3＃77"
+    },
+    {
+     "who": "Seanality",
+     "value": "1.242 KTPR",
+     "where": "icyHOT"
+    },
+    {
+     "who": "piff",
+     "value": "1.240 KTPR",
+     "where": "Best Buds",
+     "as": "piff ＃4Monty"
     }
    ],
    "leader": {
@@ -86,6 +111,16 @@
      "who": "vertex",
      "value": "684",
      "where": "icyHOT"
+    },
+    {
+     "who": "Savage¬",
+     "value": "654",
+     "where": "NoSoul"
+    },
+    {
+     "who": "NoName^",
+     "value": "652",
+     "where": "North Atlantic Treaty Org"
     }
    ],
    "leader": {
@@ -101,7 +136,7 @@
    "status": "proposed",
    "top": [
     {
-     "who": "seanality",
+     "who": "Seanality",
      "value": "159",
      "where": "icyHOT"
     },
@@ -114,10 +149,21 @@
      "who": "Khoi",
      "value": "146",
      "where": "NoSoul"
+    },
+    {
+     "who": "warchyld[dd]",
+     "value": "143",
+     "where": "dicE"
+    },
+    {
+     "who": "kroD",
+     "value": "136",
+     "where": "Arrested Development",
+     "as": "kroD-"
     }
    ],
    "leader": {
-    "who": "seanality",
+    "who": "Seanality",
     "value": "159",
     "where": "icyHOT"
    }
@@ -129,7 +175,7 @@
    "status": "proposed",
    "top": [
     {
-     "who": "seanality",
+     "who": "Seanality",
      "value": "6.91 / half",
      "where": "icyHOT"
     },
@@ -139,13 +185,25 @@
      "where": "Price is Right"
     },
     {
-     "who": "piff ＃4Monty",
+     "who": "piff",
      "value": "6.15 / half",
-     "where": "Best Buds"
+     "where": "Best Buds",
+     "as": "piff ＃4Monty"
+    },
+    {
+     "who": "Khoi",
+     "value": "6.08 / half",
+     "where": "NoSoul"
+    },
+    {
+     "who": "kroD",
+     "value": "5.67 / half",
+     "where": "Arrested Development",
+     "as": "kroD-"
     }
    ],
    "leader": {
-    "who": "seanality",
+    "who": "Seanality",
     "value": "6.91 / half",
     "where": "icyHOT"
    }
@@ -170,6 +228,16 @@
      "who": "vertex",
      "value": "1.38 K/D",
      "where": "icyHOT"
+    },
+    {
+     "who": "LaNGoNdd",
+     "value": "1.32 K/D",
+     "where": "onLAN thunder"
+    },
+    {
+     "who": "NoName^",
+     "value": "1.31 K/D",
+     "where": "North Atlantic Treaty Org"
     }
    ],
    "leader": {
@@ -181,12 +249,17 @@
   {
    "slug": "streak",
    "title": "On A Tear",
-   "blurb": "Longest single kill streak.",
+   "blurb": "Longest single kill streak, from the match record.",
    "status": "proposed",
    "top": [
     {
-     "who": "seanality",
+     "who": "Seanality",
      "value": "14",
+     "where": "icyHOT"
+    },
+    {
+     "who": "hildebrand?",
+     "value": "13",
      "where": "icyHOT"
     },
     {
@@ -195,13 +268,18 @@
      "where": "onLAN thunder"
     },
     {
-     "who": "hildebrand?",
+     "who": "Polak",
      "value": "12",
-     "where": "icyHOT"
+     "where": "Best Buds"
+    },
+    {
+     "who": "ddorito",
+     "value": "11",
+     "where": "onLAN thunder"
     }
    ],
    "leader": {
-    "who": "seanality",
+    "who": "Seanality",
     "value": "14",
     "where": "icyHOT"
    }
@@ -218,13 +296,24 @@
      "where": "Arrested Development"
     },
     {
-     "who": "SilverPlayer",
+     "who": "TillJim",
      "value": "16",
-     "where": "Arrested Development"
+     "where": "Arrested Development",
+     "as": "SilverPlayer"
     },
     {
      "who": "player",
      "value": "14",
+     "where": "dicE"
+    },
+    {
+     "who": "Hub",
+     "value": "12",
+     "where": "North Atlantic Treaty Org"
+    },
+    {
+     "who": "m00cat :D",
+     "value": "12",
      "where": "dicE"
     }
    ],
@@ -241,25 +330,38 @@
    "status": "proposed",
    "top": [
     {
-     "who": "p12 ＃7-33",
+     "who": "p12",
      "value": "144",
-     "where": "Arrested Development"
+     "where": "Arrested Development",
+     "as": "p12 ＃7-33"
     },
     {
-     "who": "baiko ＃gubbe.se",
+     "who": "baiko",
      "value": "131",
-     "where": "North Atlantic Treaty Org"
+     "where": "North Atlantic Treaty Org",
+     "as": "baiko ＃gubbe.se"
     },
     {
      "who": "incite[bc]",
      "value": "131",
      "where": "Arrested Development"
+    },
+    {
+     "who": "kanguhhh?!",
+     "value": "128",
+     "where": "icyHOT"
+    },
+    {
+     "who": "m00cat :D",
+     "value": "127",
+     "where": "dicE"
     }
    ],
    "leader": {
-    "who": "p12 ＃7-33",
+    "who": "p12",
     "value": "144",
-    "where": "Arrested Development"
+    "where": "Arrested Development",
+    "as": "p12 ＃7-33"
    }
   },
   {
@@ -282,6 +384,18 @@
      "who": "nomistizzle",
      "value": "106,127",
      "where": "Price is Right"
+    },
+    {
+     "who": "baiko",
+     "value": "105,855",
+     "where": "North Atlantic Treaty Org",
+     "as": "baiko ＃gubbe.se"
+    },
+    {
+     "who": "cory?",
+     "value": "105,199",
+     "where": "Price is Right",
+     "as": "cory <3 liah,jkimbro,rdk"
     }
    ],
    "leader": {
@@ -310,6 +424,18 @@
      "who": "jules",
      "value": "132",
      "where": "onLAN thunder"
+    },
+    {
+     "who": "nein",
+     "value": "121",
+     "where": "Price is Right",
+     "as": "nein_"
+    },
+    {
+     "who": "nightmare",
+     "value": "120",
+     "where": "North Atlantic Treaty Org",
+     "as": "nightmare＃old"
     }
    ],
    "leader": {
@@ -338,6 +464,18 @@
      "who": "nicholson",
      "value": "12:04",
      "where": "Arrested Development"
+    },
+    {
+     "who": "omenayr",
+     "value": "10:27",
+     "where": "onLAN thunder",
+     "as": "1337$k337"
+    },
+    {
+     "who": "bR0M",
+     "value": "9:21",
+     "where": "Best Buds",
+     "as": "bR0M ＃wetya"
     }
    ],
    "leader": {
@@ -358,28 +496,28 @@
     "where": "Sun · icyHOT"
    },
    {
-    "role": "Rifle #2",
-    "who": "s i k <3 n a t",
-    "value": "1.199 KTPR",
-    "where": "Sat · icyHOT"
-   },
-   {
     "role": "Heavy #1",
     "who": "jules",
     "value": "1.299 KTPR",
     "where": "Sat · onLAN thunder"
    },
    {
-    "role": "Heavy #2",
-    "who": "piff ＃4Monty",
-    "value": "1.274 KTPR",
-    "where": "Sat · Best Buds"
-   },
-   {
     "role": "3rd",
-    "who": "bR0M ＃wetya",
+    "who": "bR0M",
     "value": "1.349 KTPR",
     "where": "Sun · Best Buds"
+   },
+   {
+    "role": "Rifle #2",
+    "who": "s i k",
+    "value": "1.199 KTPR",
+    "where": "Sat · icyHOT"
+   },
+   {
+    "role": "Heavy #2",
+    "who": "piff",
+    "value": "1.274 KTPR",
+    "where": "Sat · Best Buds"
    },
    {
     "role": "Sniper",
@@ -398,9 +536,10 @@
    "status": "proposed",
    "top": [
     {
-     "who": "sTarK_ x_0 <3＃77",
+     "who": "sTarK_ x_0",
      "value": "23",
-     "where": "saints2_b3e · Sat · v Uncle Rico's Time Machine"
+     "where": "saints2_b3e · Sat · v Uncle Rico's Time Machine",
+     "as": "sTarK_ x_0 <3＃77"
     },
     {
      "who": "incite[bc]",
@@ -408,15 +547,28 @@
      "where": "harrington · Sat · v b Team"
     },
     {
-     "who": "s i k <3 n a t",
+     "who": "s i k",
      "value": "20",
-     "where": "lennon5_b1 · Sat · v Arrested Development"
+     "where": "lennon5_b1 · Sat · v Arrested Development",
+     "as": "s i k <3 n a t"
+    },
+    {
+     "who": "baiko",
+     "value": "20",
+     "where": "lennon5_b1 · Sat · v Uncle Rico's Time Machine",
+     "as": "baiko ＃gubbe.se"
+    },
+    {
+     "who": "kanguhhh?!",
+     "value": "19",
+     "where": "armory_b6 · Sun · v Arrested Development"
     }
    ],
    "leader": {
-    "who": "sTarK_ x_0 <3＃77",
+    "who": "sTarK_ x_0",
     "value": "23",
     "where": "saints2_b3e · Sat · v Uncle Rico's Time Machine",
+    "as": "sTarK_ x_0 <3＃77",
     "ties": 1
    },
    "tied": null
@@ -428,25 +580,38 @@
    "status": "proposed",
    "top": [
     {
-     "who": "cK- ＃phillylan2026",
+     "who": "cK",
      "value": "29",
-     "where": "lennon5_b1 · Sun · v Price is Right"
+     "where": "lennon5_b1 · Sun · v Price is Right",
+     "as": "cK- ＃phillylan2026"
     },
     {
-     "who": "s i k <3 n a t",
+     "who": "s i k",
      "value": "26",
-     "where": "lennon5_b1 · Sat · v Arrested Development"
+     "where": "lennon5_b1 · Sat · v Arrested Development",
+     "as": "s i k <3 n a t"
     },
     {
      "who": "vertex",
      "value": "23",
      "where": "harrington · Sun · v Price is Right"
+    },
+    {
+     "who": "LaNGoNdd",
+     "value": "21",
+     "where": "armory_b6 · Sat · v b Team"
+    },
+    {
+     "who": "warchyld[dd]",
+     "value": "19",
+     "where": "harrington · Sat · v North Atlantic Treaty Org"
     }
    ],
    "leader": {
-    "who": "cK- ＃phillylan2026",
+    "who": "cK",
     "value": "29",
     "where": "lennon5_b1 · Sun · v Price is Right",
+    "as": "cK- ＃phillylan2026",
     "ties": 1
    },
    "tied": null
@@ -471,6 +636,17 @@
      "who": "Hub",
      "value": "5",
      "where": "harrington · Sat · v dicE"
+    },
+    {
+     "who": "cK",
+     "value": "5",
+     "where": "harrington · Sat · v NoSoul",
+     "as": "cK- ＃phillylan2026"
+    },
+    {
+     "who": "warchyld[dd]",
+     "value": "5",
+     "where": "anzio · Sat · v icyHOT"
     }
    ],
    "leader": {
@@ -493,14 +669,25 @@
      "where": "thunder2 · Sat · v b Team"
     },
     {
-     "who": "hildebrand?",
-     "value": "3,367",
-     "where": "armory_b6 · Sat · v Uncle Rico's Time Machine"
+     "who": "ian",
+     "value": "3,844",
+     "where": "anzio · Sat · v North Atlantic Treaty Org",
+     "as": "bonchon"
     },
     {
-     "who": "bonchon",
-     "value": "3,844",
-     "where": "anzio · Sat · v North Atlantic Treaty Org"
+     "who": "arachnid",
+     "value": "4,765",
+     "where": "armory_b6 · Sun · v Uncle Rico's Time Machine"
+    },
+    {
+     "who": "jules",
+     "value": "4,859",
+     "where": "thunder2 · Sat · v Uncle Rico's Time Machine"
+    },
+    {
+     "who": "LaNGoNdd",
+     "value": "5,019",
+     "where": "thunder2 · Sat · v Uncle Rico's Time Machine"
     }
    ],
    "leader": {
@@ -531,6 +718,16 @@
      "who": "billbsod",
      "value": "74",
      "where": "harrington · Sun · v icyHOT"
+    },
+    {
+     "who": "nomistizzle",
+     "value": "73",
+     "where": "lennon5_b1 · Sun · v Best Buds"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "value": "72",
+     "where": "lennon5_b1 · Sat · v North Atlantic Treaty Org"
     }
    ],
    "leader": {
@@ -548,9 +745,10 @@
    "status": "proposed",
    "top": [
     {
-     "who": "piff ＃4Monty",
+     "who": "piff",
      "value": "4",
-     "where": "armory_b6 · Sat · v North Atlantic Treaty Org"
+     "where": "armory_b6 · Sat · v North Atlantic Treaty Org",
+     "as": "piff ＃4Monty"
     },
     {
      "who": "billbsod",
@@ -561,18 +759,30 @@
      "who": "player",
      "value": "4",
      "where": "saints2_b3e · Sat · v onLAN thunder"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "value": "4",
+     "where": "harrington · Sat · v Price is Right"
+    },
+    {
+     "who": "o[bb]y",
+     "value": "4",
+     "where": "harrington · Sat · v Arrested Development"
     }
    ],
    "leader": {
-    "who": "piff ＃4Monty",
+    "who": "piff",
     "value": "4",
     "where": "armory_b6 · Sat · v North Atlantic Treaty Org",
+    "as": "piff ＃4Monty",
     "ties": 8
    },
    "tied": [
     {
-     "who": "piff ＃4Monty",
-     "where": "armory_b6 · Sat · v North Atlantic Treaty Org"
+     "who": "piff",
+     "where": "armory_b6 · Sat · v North Atlantic Treaty Org",
+     "as": "piff ＃4Monty"
     },
     {
      "who": "billbsod",
@@ -595,8 +805,9 @@
      "where": "harrington · Sat · v b Team"
     },
     {
-     "who": "SilverPlayer",
-     "where": "anzio · Sat · v Price is Right"
+     "who": "TillJim",
+     "where": "anzio · Sat · v Price is Right",
+     "as": "SilverPlayer"
     },
     {
      "who": "nicholson",
@@ -616,14 +827,25 @@
      "where": "harrington · Sat · v Price is Right"
     },
     {
-     "who": "Kevs Dolmetscher",
-     "value": "4:04",
-     "where": "thunder2 · Sat · v onLAN thunder"
-    },
-    {
      "who": "jules",
      "value": "3:23",
      "where": "railroad2_s9a · Sun · v Best Buds"
+    },
+    {
+     "who": "bR0M",
+     "value": "3:11",
+     "where": "lennon5_b1 · Sat · v onLAN thunder",
+     "as": "bR0M ＃wetya"
+    },
+    {
+     "who": "incite[bc]",
+     "value": "3:09",
+     "where": "lennon5_b1 · Sat · v icyHOT"
+    },
+    {
+     "who": "Hub",
+     "value": "3:08",
+     "where": "lennon5_b1 · Sun · v dicE"
     }
    ],
    "leader": {
@@ -641,9 +863,10 @@
    "status": "proposed",
    "top": [
     {
-     "who": "bR0M ＃wetya",
+     "who": "bR0M",
      "value": "20",
-     "where": "anzio · Sat · v b Team"
+     "where": "anzio · Sat · v b Team",
+     "as": "bR0M ＃wetya"
     },
     {
      "who": "e p y o n",
@@ -651,15 +874,27 @@
      "where": "thunder2 · Sat · v icyHOT"
     },
     {
-     "who": "nein_",
+     "who": "nein",
      "value": "19",
-     "where": "railroad2_s9a · Sun · v b Team"
+     "where": "railroad2_s9a · Sun · v b Team",
+     "as": "nein_"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "value": "19",
+     "where": "armory_b6 · Sun · v NoSoul"
+    },
+    {
+     "who": "element",
+     "value": "19",
+     "where": "armory_b6 · Sun · v Arrested Development"
     }
    ],
    "leader": {
-    "who": "bR0M ＃wetya",
+    "who": "bR0M",
     "value": "20",
     "where": "anzio · Sat · v b Team",
+    "as": "bR0M ＃wetya",
     "ties": 1
    },
    "tied": null
@@ -676,14 +911,24 @@
      "where": "harrington · Sat · v b Team"
     },
     {
-     "who": "patten",
-     "value": "7",
-     "where": "lennon5_b1 · Sat · v icyHOT"
-    },
-    {
      "who": "nomistizzle",
      "value": "7",
      "where": "harrington · Sat · v Uncle Rico's Time Machine"
+    },
+    {
+     "who": "Sq =)))",
+     "value": "7",
+     "where": "saints2_b3e · Sun · v onLAN thunder"
+    },
+    {
+     "who": "element",
+     "value": "6",
+     "where": "armory_b6 · Sat · v Price is Right"
+    },
+    {
+     "who": "Ho0liii",
+     "value": "6",
+     "where": "lennon5_b1 · Sun · v onLAN thunder"
     }
    ],
    "leader": {
@@ -706,14 +951,27 @@
      "where": "saints2_b3e · Sat · v b Team"
     },
     {
-     "who": "nein_",
+     "who": "nein",
      "value": "3",
-     "where": "thunder2 · Sat · v Best Buds"
+     "where": "thunder2 · Sat · v Best Buds",
+     "as": "nein_"
     },
     {
      "who": "Khoi",
      "value": "3",
      "where": "anzio · Sat · v Uncle Rico's Time Machine"
+    },
+    {
+     "who": "omenayr",
+     "value": "2",
+     "where": "armory_b6 · Sat · v b Team",
+     "as": "1337$k337"
+    },
+    {
+     "who": "hey hi",
+     "value": "2",
+     "where": "thunder2 · Sat · v icyHOT",
+     "as": "hey hi <3 dustbin"
     }
    ],
    "leader": {
@@ -744,6 +1002,17 @@
      "who": "billbsod",
      "value": "12,751",
      "where": "harrington · Sun · v icyHOT"
+    },
+    {
+     "who": "nein",
+     "value": "12,738",
+     "where": "harrington · Sun · v icyHOT",
+     "as": "nein_"
+    },
+    {
+     "who": "Ke:>^1.de",
+     "value": "12,562",
+     "where": "lennon5_b1 · Sat · v North Atlantic Treaty Org"
     }
    ],
    "leader": {
@@ -761,9 +1030,10 @@
    "status": "proposed",
    "top": [
     {
-     "who": "sTarK_ x_0 <3＃77",
+     "who": "sTarK_ x_0",
      "value": "86",
-     "where": "saints2_b3e · Sun · v Uncle Rico's Time Machine"
+     "where": "saints2_b3e · Sun · v Uncle Rico's Time Machine",
+     "as": "sTarK_ x_0 <3＃77"
     },
     {
      "who": "vertex",
@@ -771,15 +1041,28 @@
      "where": "railroad2_s9a · Sun · v Price is Right"
     },
     {
-     "who": "cK- ＃phillylan2026",
+     "who": "cK",
      "value": "82",
-     "where": "harrington · Sun · v Price is Right"
+     "where": "harrington · Sun · v Price is Right",
+     "as": "cK- ＃phillylan2026"
+    },
+    {
+     "who": "nomistizzle",
+     "value": "80",
+     "where": "harrington · Sat · v Uncle Rico's Time Machine"
+    },
+    {
+     "who": "piff",
+     "value": "79",
+     "where": "lennon5_b1 · Sun · v Price is Right",
+     "as": "piff ＃4Monty"
     }
    ],
    "leader": {
-    "who": "sTarK_ x_0 <3＃77",
+    "who": "sTarK_ x_0",
     "value": "86",
     "where": "saints2_b3e · Sun · v Uncle Rico's Time Machine",
+    "as": "sTarK_ x_0 <3＃77",
     "ties": 1
    },
    "tied": null
@@ -805,110 +1088,627 @@
    "status": "proposed"
   },
   {
-   "slug": "ninja",
-   "title": "The Ninja Capout",
-   "blurb": "The cheekiest decisive capture. The Leo award.",
+   "slug": "improved",
+   "title": "Most Improved",
+   "blurb": "Turned up a different player to last year.",
+   "status": "proposed"
+  }
+ ],
+ "ballots": [
+  {
+   "slug": "rookies",
+   "title": "Best Rookie",
+   "blurb": "First World Series, played like it wasn't. The Asani award.",
+   "criteria": [
+    "Played Philly 2026",
+    "Their name does not appear on a 2025 roster",
+    "Their SteamID does not appear on a 2025 roster either",
+    "Sorted by team, then by name"
+   ],
+   "how": "Eligibility is a starting point, not a verdict. SteamID alone is not enough — people play on house machines under whatever account is to hand, so a returning player can turn up with an id 2025 never saw. Name alone is not enough either. A player is a rookie here only when both miss. Staff can add or remove anyone before voting opens.",
+   "eligible": [
+    {
+     "name": "p12",
+     "team": "Arrested Development",
+     "note": null
+    },
+    {
+     "name": "steve",
+     "team": "b Team",
+     "note": null
+    },
+    {
+     "name": "Ho0liii",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "Hub",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "nightmare",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "NoName^",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "Sq =)))",
+     "team": "North Atlantic Treaty Org",
+     "note": null
+    },
+    {
+     "name": "arachnid",
+     "team": "NoSoul",
+     "note": null
+    },
+    {
+     "name": "Bausch",
+     "team": "NoSoul",
+     "note": null
+    },
+    {
+     "name": "yayme",
+     "team": "NoSoul",
+     "note": null
+    },
+    {
+     "name": "ian",
+     "team": "onLAN thunder",
+     "note": null
+    },
+    {
+     "name": "billbsod",
+     "team": "Price is Right",
+     "note": null
+    },
+    {
+     "name": "nomistizzle",
+     "team": "Price is Right",
+     "note": null
+    },
+    {
+     "name": "tokih",
+     "team": "Price is Right",
+     "note": null
+    },
+    {
+     "name": "Jee",
+     "team": "Uncle Rico's Time Machine",
+     "note": null
+    },
+    {
+     "name": "Ke:>^1.de",
+     "team": "Uncle Rico's Time Machine",
+     "note": null
+    },
+    {
+     "name": "Kevs Dolmetscher",
+     "team": "Uncle Rico's Time Machine",
+     "note": null
+    },
+    {
+     "name": "zamp0lit",
+     "team": "Uncle Rico's Time Machine",
+     "note": null
+    }
+   ],
+   "counts": [
+    "43 returning from 2025"
+   ],
    "status": "proposed"
   },
   {
-   "slug": "dodger",
-   "title": "Best Dodger",
-   "blurb": "You know what you did. The Beas award.",
+   "slug": "carry",
+   "title": "Carry Us, Daddy",
+   "blurb": "Held a team together on their back. The PDX award.",
+   "criteria": [
+    "Played Philly 2026",
+    "Weekend K/D of at least 1.0",
+    "K/D is weekend kills over weekend deaths, both days combined",
+    "Minimum halves played: 0",
+    "Sorted by team, then by name"
+   ],
+   "how": "Carrying is not a statistic, so this shortlist is only who finished the weekend above water — the vote decides who was holding a team up. It is derived from the published board: change the stats and this list changes with them.",
+   "eligible": [
+    {
+     "name": "nicholson",
+     "team": "Arrested Development",
+     "note": "1.06 K/D"
+    },
+    {
+     "name": "patten",
+     "team": "Arrested Development",
+     "note": "1.11 K/D"
+    },
+    {
+     "name": "TillJim",
+     "team": "Arrested Development",
+     "note": "1.14 K/D"
+    },
+    {
+     "name": "bR0M",
+     "team": "Best Buds",
+     "note": "1.13 K/D"
+    },
+    {
+     "name": "cK",
+     "team": "Best Buds",
+     "note": "1.04 K/D"
+    },
+    {
+     "name": "piff",
+     "team": "Best Buds",
+     "note": "1.17 K/D"
+    },
+    {
+     "name": "Polak",
+     "team": "Best Buds",
+     "note": "1.19 K/D"
+    },
+    {
+     "name": "element",
+     "team": "dicE",
+     "note": "1.16 K/D"
+    },
+    {
+     "name": "Gorilla[bc]",
+     "team": "dicE",
+     "note": "1.01 K/D"
+    },
+    {
+     "name": "m00cat :D",
+     "team": "dicE",
+     "note": "1.09 K/D"
+    },
+    {
+     "name": "player",
+     "team": "dicE",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "stealthlol",
+     "team": "dicE",
+     "note": "1.18 K/D"
+    },
+    {
+     "name": "hildebrand?",
+     "team": "icyHOT",
+     "note": "1.73 K/D"
+    },
+    {
+     "name": "kanguhhh?!",
+     "team": "icyHOT",
+     "note": "1.16 K/D"
+    },
+    {
+     "name": "monday",
+     "team": "icyHOT",
+     "note": "1.25 K/D"
+    },
+    {
+     "name": "s i k",
+     "team": "icyHOT",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "Seanality",
+     "team": "icyHOT",
+     "note": "1.26 K/D"
+    },
+    {
+     "name": "vertex",
+     "team": "icyHOT",
+     "note": "1.38 K/D"
+    },
+    {
+     "name": "baiko",
+     "team": "North Atlantic Treaty Org",
+     "note": "1.15 K/D"
+    },
+    {
+     "name": "nightmare",
+     "team": "North Atlantic Treaty Org",
+     "note": "1.05 K/D"
+    },
+    {
+     "name": "NoName^",
+     "team": "North Atlantic Treaty Org",
+     "note": "1.31 K/D"
+    },
+    {
+     "name": "Sq =)))",
+     "team": "North Atlantic Treaty Org",
+     "note": "1.04 K/D"
+    },
+    {
+     "name": "arachnid",
+     "team": "NoSoul",
+     "note": "1.15 K/D"
+    },
+    {
+     "name": "CrankinHawg",
+     "team": "NoSoul",
+     "note": "1.08 K/D"
+    },
+    {
+     "name": "Savage¬",
+     "team": "NoSoul",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "yayme",
+     "team": "NoSoul",
+     "note": "1.02 K/D"
+    },
+    {
+     "name": "ddorito",
+     "team": "onLAN thunder",
+     "note": "1.20 K/D"
+    },
+    {
+     "name": "ian",
+     "team": "onLAN thunder",
+     "note": "1.25 K/D"
+    },
+    {
+     "name": "jules",
+     "team": "onLAN thunder",
+     "note": "1.40 K/D"
+    },
+    {
+     "name": "LaNGoNdd",
+     "team": "onLAN thunder",
+     "note": "1.32 K/D"
+    },
+    {
+     "name": "mogers",
+     "team": "onLAN thunder",
+     "note": "1.00 K/D"
+    },
+    {
+     "name": "omenayr",
+     "team": "onLAN thunder",
+     "note": "1.12 K/D"
+    },
+    {
+     "name": "cory?",
+     "team": "Price is Right",
+     "note": "1.01 K/D"
+    }
+   ],
+   "counts": [
+    "61 players on the 2026 board"
+   ],
+   "status": "proposed"
+  },
+  {
+   "slug": "losing",
+   "title": "Best On A Losing Team",
+   "blurb": "The performance that deserved a better result.",
+   "criteria": [
+    "Played Philly 2026",
+    "Weekend K/D of at least 1.0",
+    "Not on North Atlantic Treaty Org — they won it, so nobody there was on a losing team",
+    "Minimum halves played: 0",
+    "Sorted by team, then by name"
+   ],
+   "how": "The same floor as Carry Us with the winning company struck out. Losing here means the weekend, not a single match — a company that lost the final still lost it.",
+   "eligible": [
+    {
+     "name": "nicholson",
+     "team": "Arrested Development",
+     "note": "1.06 K/D"
+    },
+    {
+     "name": "patten",
+     "team": "Arrested Development",
+     "note": "1.11 K/D"
+    },
+    {
+     "name": "TillJim",
+     "team": "Arrested Development",
+     "note": "1.14 K/D"
+    },
+    {
+     "name": "bR0M",
+     "team": "Best Buds",
+     "note": "1.13 K/D"
+    },
+    {
+     "name": "cK",
+     "team": "Best Buds",
+     "note": "1.04 K/D"
+    },
+    {
+     "name": "piff",
+     "team": "Best Buds",
+     "note": "1.17 K/D"
+    },
+    {
+     "name": "Polak",
+     "team": "Best Buds",
+     "note": "1.19 K/D"
+    },
+    {
+     "name": "element",
+     "team": "dicE",
+     "note": "1.16 K/D"
+    },
+    {
+     "name": "Gorilla[bc]",
+     "team": "dicE",
+     "note": "1.01 K/D"
+    },
+    {
+     "name": "m00cat :D",
+     "team": "dicE",
+     "note": "1.09 K/D"
+    },
+    {
+     "name": "player",
+     "team": "dicE",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "stealthlol",
+     "team": "dicE",
+     "note": "1.18 K/D"
+    },
+    {
+     "name": "hildebrand?",
+     "team": "icyHOT",
+     "note": "1.73 K/D"
+    },
+    {
+     "name": "kanguhhh?!",
+     "team": "icyHOT",
+     "note": "1.16 K/D"
+    },
+    {
+     "name": "monday",
+     "team": "icyHOT",
+     "note": "1.25 K/D"
+    },
+    {
+     "name": "s i k",
+     "team": "icyHOT",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "Seanality",
+     "team": "icyHOT",
+     "note": "1.26 K/D"
+    },
+    {
+     "name": "vertex",
+     "team": "icyHOT",
+     "note": "1.38 K/D"
+    },
+    {
+     "name": "arachnid",
+     "team": "NoSoul",
+     "note": "1.15 K/D"
+    },
+    {
+     "name": "CrankinHawg",
+     "team": "NoSoul",
+     "note": "1.08 K/D"
+    },
+    {
+     "name": "Savage¬",
+     "team": "NoSoul",
+     "note": "1.22 K/D"
+    },
+    {
+     "name": "yayme",
+     "team": "NoSoul",
+     "note": "1.02 K/D"
+    },
+    {
+     "name": "ddorito",
+     "team": "onLAN thunder",
+     "note": "1.20 K/D"
+    },
+    {
+     "name": "ian",
+     "team": "onLAN thunder",
+     "note": "1.25 K/D"
+    },
+    {
+     "name": "jules",
+     "team": "onLAN thunder",
+     "note": "1.40 K/D"
+    },
+    {
+     "name": "LaNGoNdd",
+     "team": "onLAN thunder",
+     "note": "1.32 K/D"
+    },
+    {
+     "name": "mogers",
+     "team": "onLAN thunder",
+     "note": "1.00 K/D"
+    },
+    {
+     "name": "omenayr",
+     "team": "onLAN thunder",
+     "note": "1.12 K/D"
+    },
+    {
+     "name": "cory?",
+     "team": "Price is Right",
+     "note": "1.01 K/D"
+    }
+   ],
+   "counts": [
+    "4 struck out on North Atlantic Treaty Org"
+   ],
    "status": "proposed"
   },
   {
    "slug": "improved",
    "title": "Most Improved",
    "blurb": "Turned up a different player to last year.",
-   "status": "proposed"
-  },
-  {
-   "slug": "stopdying",
-   "title": "Stop Dying, Bro",
-   "blurb": "Affectionately. The cK award.",
+   "criteria": [
+    "Played Philly 2025 and Philly 2026",
+    "2026 weekend K/D higher than their 2025 K/D, by more than 0.00",
+    "2025 K/D is group stage and playoffs combined, from Jane's workbook",
+    "Matched across years by SteamID on the 2025 roster, then by name",
+    "Sorted by team, then by name"
+   ],
+   "how": "The one vote category the numbers can narrow. 43 players were at both LANs and 28 of them improved. 3 returning players have no 2025 K/D on record and are not listed: LaNGoNdd, omenayr, sTarK_ x_0. The 2025 workbook records no SteamIDs, so the link to a 2025 K/D is the roster name — where the board used a different name to the roster and nothing corroborates the pair, the player is left off rather than guessed at.",
+   "eligible": [
+    {
+     "name": "TillJim",
+     "team": "Arrested Development",
+     "note": "1.03 → 1.14 K/D"
+    },
+    {
+     "name": "e p y o n",
+     "team": "b Team",
+     "note": "0.78 → 1.00 K/D"
+    },
+    {
+     "name": "hey hi",
+     "team": "b Team",
+     "note": "0.73 → 0.89 K/D"
+    },
+    {
+     "name": "o[bb]y",
+     "team": "b Team",
+     "note": "0.66 → 0.79 K/D"
+    },
+    {
+     "name": "тωὶﮐт",
+     "team": "b Team",
+     "note": "0.63 → 0.72 K/D"
+    },
+    {
+     "name": "3SidedQuarter",
+     "team": "Best Buds",
+     "note": "0.84 → 0.91 K/D"
+    },
+    {
+     "name": "bR0M",
+     "team": "Best Buds",
+     "note": "0.86 → 1.13 K/D"
+    },
+    {
+     "name": "cK",
+     "team": "Best Buds",
+     "note": "0.91 → 1.04 K/D"
+    },
+    {
+     "name": "piff",
+     "team": "Best Buds",
+     "note": "0.88 → 1.17 K/D"
+    },
+    {
+     "name": "Polak",
+     "team": "Best Buds",
+     "note": "0.76 → 1.19 K/D"
+    },
+    {
+     "name": "reppoĦ",
+     "team": "Best Buds",
+     "note": "0.81 → 0.89 K/D"
+    },
+    {
+     "name": "Gorilla[bc]",
+     "team": "dicE",
+     "note": "0.97 → 1.01 K/D"
+    },
+    {
+     "name": "player",
+     "team": "dicE",
+     "note": "1.21 → 1.22 K/D"
+    },
+    {
+     "name": "hildebrand?",
+     "team": "icyHOT",
+     "note": "1.19 → 1.73 K/D"
+    },
+    {
+     "name": "kanguhhh?!",
+     "team": "icyHOT",
+     "note": "1.04 → 1.16 K/D"
+    },
+    {
+     "name": "monday",
+     "team": "icyHOT",
+     "note": "1.16 → 1.25 K/D"
+    },
+    {
+     "name": "s i k",
+     "team": "icyHOT",
+     "note": "1.16 → 1.22 K/D"
+    },
+    {
+     "name": "vertex",
+     "team": "icyHOT",
+     "note": "1.23 → 1.38 K/D"
+    },
+    {
+     "name": "baiko",
+     "team": "North Atlantic Treaty Org",
+     "note": "0.99 → 1.15 K/D"
+    },
+    {
+     "name": "CrankinHawg",
+     "team": "NoSoul",
+     "note": "0.97 → 1.08 K/D"
+    },
+    {
+     "name": "Khoi",
+     "team": "NoSoul",
+     "note": "0.57 → 0.71 K/D"
+    },
+    {
+     "name": "Savage¬",
+     "team": "NoSoul",
+     "note": "1.21 → 1.22 K/D"
+    },
+    {
+     "name": "ddorito",
+     "team": "onLAN thunder",
+     "note": "1.17 → 1.20 K/D"
+    },
+    {
+     "name": "jules",
+     "team": "onLAN thunder",
+     "note": "1.30 → 1.40 K/D"
+    },
+    {
+     "name": "mogers",
+     "team": "onLAN thunder",
+     "note": "0.92 → 1.00 K/D"
+    },
+    {
+     "name": "cory?",
+     "team": "Price is Right",
+     "note": "0.81 → 1.01 K/D"
+    },
+    {
+     "name": "nein",
+     "team": "Price is Right",
+     "note": "0.68 → 0.71 K/D"
+    },
+    {
+     "name": "HLAH",
+     "team": "Uncle Rico's Time Machine",
+     "note": "0.57 → 0.87 K/D"
+    }
+   ],
+   "counts": [
+    "43 played both LANs"
+   ],
    "status": "proposed"
   }
- ],
- "ballot": {
-  "title": "Best Rookie",
-  "blurb": "First World Series, played like it wasn't. The Asani award.",
-  "how": "Eligibility is a starting point, not a verdict. A player counts as a rookie here only if neither their name nor their SteamID appears on a 2025 roster. SteamID alone is not enough — people play on house machines under whatever account is to hand, and three players whose ids differ between the two LANs are on 2025 rosters under the same name. Staff can add or remove anyone before voting opens.",
-  "eligible": [
-   {
-    "name": "arachnid",
-    "team": "NoSoul"
-   },
-   {
-    "name": "Bausch",
-    "team": "NoSoul"
-   },
-   {
-    "name": "billymanbrewing",
-    "team": "Price is Right"
-   },
-   {
-    "name": "Ho0liii <3 nakk",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "Hub",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "ian",
-    "team": "onLAN thunder"
-   },
-   {
-    "name": "Jee＃minou.exe",
-    "team": "Uncle Rico's Time Machine"
-   },
-   {
-    "name": "Ke:>^1.de <3 FUN",
-    "team": "Uncle Rico's Time Machine"
-   },
-   {
-    "name": "Kevs Dolmetscher",
-    "team": "Uncle Rico's Time Machine"
-   },
-   {
-    "name": "nightmare＃old",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "nomistizzle",
-    "team": "Price is Right"
-   },
-   {
-    "name": "NoName^",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "p12",
-    "team": "Arrested Development"
-   },
-   {
-    "name": "Sq =)))",
-    "team": "North Atlantic Treaty Org"
-   },
-   {
-    "name": "steve",
-    "team": "b Team"
-   },
-   {
-    "name": "tokih",
-    "team": "Price is Right"
-   },
-   {
-    "name": "yayme",
-    "team": "NoSoul"
-   },
-   {
-    "name": "zamp0lit",
-    "team": "Uncle Rico's Time Machine"
-   }
-  ],
-  "returning_count": 43,
-  "id_changed_count": 3,
-  "status": "proposed"
- }
+ ]
 }
