@@ -72,9 +72,11 @@ def test_public_document_carries_map_players_and_match_state():
         [_ok("Atlanta 1", "Atlanta", "KTP - Atlanta 1 - 12MAN - LIVE - 2ND HALF", players=9)]
     )
     s = doc["servers"][0]
+    # max_players is 12, not the 13 A2S reports: one slot is the HLTV proxy's
+    # and is reserved whether or not it is attached (see the capacity tests).
     assert s == {"region": "Atlanta", "label": "Atlanta 1", "up": True,
                  "connect": "10.9.8.7:27015",
-                 "map": "dod_donner", "players": 9, "max_players": 13,
+                 "map": "dod_donner", "players": 9, "max_players": 12,
                  "match_type": "12MAN", "state": "LIVE - 2ND HALF"}
 
 
@@ -165,11 +167,22 @@ def test_capacity_excludes_the_hltv_slot_and_flags_it():
     assert (s["players"], s["max_players"], s["hltv"]) == (0, 12, True)
 
 
-def test_no_proxy_means_full_capacity_and_no_flag():
+def test_capacity_holds_at_12_while_the_proxy_is_bouncing():
+    # `hltv-restart.timer` bounces all 24 proxies at 03:00 and 11:00. Capacity
+    # must not advertise the freed slot for those windows -- it is reserved,
+    # not vacant. The flag still drops, because that one reports what is
+    # actually attached.
     r = _ok("Dallas 1", "Dallas", "KTP - Dallas 1", players=0, mx=13)
     r["humans"], r["hltv"] = 0, 0
     s = P.public_document([r])["servers"][0]
-    assert s["max_players"] == 13 and "hltv" not in s
+    assert s["max_players"] == 12 and "hltv" not in s
+
+
+def test_capacity_never_goes_negative_on_a_tiny_slot_count():
+    r = _ok("Dallas 1", "Dallas", "KTP - Dallas 1", players=0, mx=0)
+    r["humans"], r["hltv"] = 0, 0
+    s = P.public_document([r])["servers"][0]
+    assert s["max_players"] == 0
 
 
 @pytest.mark.skipif(os.name != "posix", reason="Windows ignores POSIX file modes")
