@@ -33,8 +33,11 @@ MAX_AGE_SECONDS="${KTP_TIER2_MAX_AGE:-129600}"
 CHANNEL_DEFAULT="1498813261263405097"
 
 # Relay creds (KEY="value" lines). Same file the workflow embed step reads.
+# `if`, not `[ -f x ] && .`: with `set -e` a missing conf made the watcher exit
+# 1 before it checked anything, so the one thing that reports silence would
+# itself have gone silent. The no-creds path below is the intended behaviour.
 # shellcheck disable=SC1090
-[ -f "$CONFIG" ] && . "$CONFIG"
+if [ -f "$CONFIG" ]; then . "$CONFIG"; fi
 RELAY_URL="${RELAY_URL:-}"
 AUTH_SECRET="${AUTH_SECRET:-}"
 CHANNEL="${TIER2_REPORT_CHANNEL:-$CHANNEL_DEFAULT}"
@@ -61,23 +64,48 @@ else
     fi
 fi
 
-# ── Stack-drift check (only when otherwise healthy — dead/failed outranks) ───
+# ── Stack-drift check — runs whatever the last run did ───────────────────────
 # The runner's module stack must track the fleet (tier2-runner-architecture);
 # this makes drift loud instead of checklist-enforced. Deliberate leads (runner
 # ahead of fleet as a pre-activation gate) alert once and self-recover after
 # the fleet activates. Checker exit 2 = couldn't check (transient SSH etc.) —
 # log only, never flap the state.
+#
+# This used to be gated on `state = ok`, which meant a red Tier 2 switched the
+# wave tripwire off: the suite went red 2026-08-04 and the drift check did not
+# run again for four days, with a .930 engine staged the whole time. One check
+# quietly disarming another is the failure mode to design against, so the two
+# are now independent — a failing run still outranks drift for the headline,
+# but drift is always measured and always carried in the body.
 DRIFT_CHECKER="${KTP_TIER2_DRIFT_CHECKER:-/usr/local/bin/ktp-tier2-stack-drift.py}"
 AGG_ENV="${KTP_AGGREGATOR_ENV:-/opt/ktp-profile-aggregator/.env}"
 AGG_PY="${KTP_AGGREGATOR_PY:-/opt/ktp-profile-aggregator/venv/bin/python}"
-if [ "$state" = "ok" ] && [ -x "$AGG_PY" ] && [ -f "$DRIFT_CHECKER" ]; then
+drifted=0
+if [ -x "$AGG_PY" ] && [ -f "$DRIFT_CHECKER" ]; then
     drift_out="$(set -a; . "$AGG_ENV" 2>/dev/null; set +a; "$AGG_PY" "$DRIFT_CHECKER" 2>&1)" && drift_rc=0 || drift_rc=$?
     if [ "$drift_rc" -eq 1 ]; then
-        state="drift"
-        detail="$drift_out — re-sync the runner stack from the fleet (or dismiss if the runner is deliberately leading a staged wave)."
+        drifted=1
+        drift_note="$drift_out — re-sync the runner stack from the fleet (or dismiss if the runner is deliberately leading a staged wave)."
+        if [ "$state" = "ok" ]; then
+            state="drift"
+            detail="$drift_note"
+        else
+            detail="$detail"$'\n\n'"⚠️ **Stack drift too:** $drift_note"
+        fi
     elif [ "$drift_rc" -ge 2 ]; then
         echo "tier2-heartbeat: drift check inconclusive (rc=$drift_rc): $drift_out"
     fi
+fi
+
+# Drift arriving during an already-red run is new information, so it has to be
+# its own edge — otherwise it waits up to a full re-alert period to be spoken.
+# The state FILE therefore keys on both; the embed still leads with the worse
+# of the two.
+# `if`, not `[ x ] && y`: under `set -e` a false test at statement level takes
+# the whole script down with it.
+key="$state"
+if [ "$drifted" = "1" ] && [ "$state" != "drift" ]; then
+    key="$state+drift"
 fi
 
 # State file is "<state>|<epoch of last alert>". Older files hold a bare state;
@@ -96,21 +124,17 @@ now="$(date +%s)"
 # to nag about once recovered.
 REALERT_SECONDS="${KTP_TIER2_REALERT_SECONDS:-86400}"
 repeat=0
-if [ "$state" = "$prev" ]; then
-    if [ "$state" = "ok" ]; then
+if [ "$key" = "$prev" ]; then
+    if [ "$key" = "ok" ]; then
         echo "tier2-heartbeat: state=ok (unchanged) — no alert"
         exit 0
     fi
     if [ "$((now - prev_alert))" -lt "$REALERT_SECONDS" ]; then
-        echo "tier2-heartbeat: state=$state (unchanged, last alert $(( (now - prev_alert) / 3600 ))h ago) — no alert"
+        echo "tier2-heartbeat: state=$key (unchanged, last alert $(( (now - prev_alert) / 3600 ))h ago) — no alert"
         exit 0
     fi
     repeat=1
 fi
-
-# Stamp the alert time only when we are actually about to alert, so a failed
-# relay post does not start the re-alert clock.
-echo "$state|$now" > "$STATE" 2>/dev/null || true
 
 # ── Build + post the transition embed ────────────────────────────────────────
 case "$state" in
@@ -120,9 +144,15 @@ case "$state" in
     *)      title="⚠️ KTP Tier 2 — not running"; desc="$detail"; color=16763904 ;;
 esac
 if [ "$repeat" = "1" ]; then
-    down_h=$(( (now - prev_alert) / 3600 ))
     title="$title — STILL DOWN"
-    desc="$desc"$'\n\n'"Still in this state; last alerted ${down_h}h ago. This is a repeat, not a new failure."
+    if [ "$prev_alert" -eq 0 ]; then
+        # legacy bare state file: there is no alert timestamp to subtract from,
+        # and "496151h ago" (epoch 0) is worse than saying we don't know
+        note="Still in this state. No previous alert on record — this watcher was upgraded since the last one."
+    else
+        note="Still in this state; last alerted $(( (now - prev_alert) / 3600 ))h ago. This is a repeat, not a new failure."
+    fi
+    desc="$desc"$'\n\n'"$note"
 fi
 footer="ktp-tier2-heartbeat @ $(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z')"
 
@@ -141,4 +171,14 @@ http="$(curl -sS -o /tmp/ktp-tier2-heartbeat-resp.txt -w '%{http_code}' \
     -H "X-Relay-Auth: $AUTH_SECRET" \
     -H "Content-Type: application/json" \
     -d "$payload" 2>&1 || echo "000")"
-echo "tier2-heartbeat: state $prev -> $state, relay HTTP $http"
+
+# Consume the edge only once the alert is actually out. Stamping before the
+# post — which is what the old code did, despite its comment saying otherwise —
+# meant a relay blip silently ate the transition, and a dropped `ok` is gone for
+# good because recovery never re-alerts. A persistent relay outage re-posting
+# every cycle is the correct louder failure.
+case "$http" in
+    2*) echo "$key|$now" > "$STATE" 2>/dev/null || true ;;
+    *)  echo "tier2-heartbeat: relay POST failed (HTTP $http) — state file NOT advanced, will retry" >&2 ;;
+esac
+echo "tier2-heartbeat: state $prev -> $key, relay HTTP $http"
