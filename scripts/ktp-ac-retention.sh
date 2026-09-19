@@ -25,7 +25,10 @@
 set -euo pipefail
 
 UPLOADS_DIR="${UPLOADS_DIR:-/opt/ktp-ac-api/uploads}"
-UPLOAD_RETENTION_DAYS="${UPLOAD_RETENTION_DAYS:-60}"
+# Opt-in by design: unset means DO NOT SWEEP. A default that deletes evidence is the
+# wrong failure mode for an append-only archive -- an operator who forgets to set it
+# loses bundles, which is what happened before the 2026-08-16 hold. 0 = retain all.
+UPLOAD_RETENTION_DAYS="${UPLOAD_RETENTION_DAYS:-0}"
 WEAPON_RETENTION_DAYS="${WEAPON_RETENTION_DAYS:-30}"
 TOKEN_RETENTION_DAYS="${TOKEN_RETENTION_DAYS:-7}"
 BATCH_SIZE="${BATCH_SIZE:-10000}"
@@ -34,7 +37,10 @@ DRY_RUN="${DRY_RUN:-0}"
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
 # ── 1. Upload day-dirs ────────────────────────────────────────────────
-if [ -d "$UPLOADS_DIR" ]; then
+# 0 or unset means RETAIN EVERYTHING. The guard has to be HERE, not only in the
+# default: "-0 days" resolves to TODAY, so a bare default of 0 would sweep the
+# entire archive rather than none of it.
+if [ -d "$UPLOADS_DIR" ] && [ "${UPLOAD_RETENTION_DAYS}" -gt 0 ]; then
     cutoff=$(date -d "-${UPLOAD_RETENTION_DAYS} days" '+%Y-%m-%d')
     swept=0
     for d in "$UPLOADS_DIR"/????-??-??; do
