@@ -334,6 +334,7 @@ def producer_marker_scopes(
     malformed: list[str] = []
     foreign_context: list[str] = []
     context_mismatches: list[str] = []
+    manifest_lines_seen: dict[int, set[str]] = {}
 
     for line_index, line in enumerate(lines):
         if not _ENGINE_CAPTURE_MANIFEST_RE.match(line):
@@ -353,8 +354,19 @@ def producer_marker_scopes(
                     and manifest_half == scope["half"]
                     and manifest_epoch == scope["producer_activation_epoch"]
                     and manifest_sequence == 1):
+                # KTPAMXX 1.24.4+ re-logs the identical manifest line every
+                # 10 s so one lost UDP packet cannot orphan a whole half; the
+                # daemon treats the replay as idempotent and so does this
+                # count. A DIFFERENT sequence-one manifest for the same
+                # context is still counted, and still disqualifies.
+                stripped_manifest = line.strip()
+                seen = manifest_lines_seen.setdefault(id(scope), set())
+                if stripped_manifest in seen:
+                    continue
+                seen.add(stripped_manifest)
                 scope["manifest_line_count"] += 1
-                scope["manifest_line_index"] = line_index
+                if scope["manifest_line_index"] is None:
+                    scope["manifest_line_index"] = line_index
 
     for line_index, line in enumerate(lines):
         if needle not in line:

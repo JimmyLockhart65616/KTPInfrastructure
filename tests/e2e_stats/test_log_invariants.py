@@ -474,13 +474,24 @@ def test_same_second_sentinel_requires_one_unique_exact_manifest_line():
     missing = li.producer_marker_scopes(
         sentinel, 'triggered "frag_context"', contexts=contexts
     )
-    duplicate = li.producer_marker_scopes(
+    # KTPAMXX 1.24.4+ re-logs the IDENTICAL manifest line every 10 s so one
+    # lost packet cannot orphan a half; a byte-identical replay is one line.
+    replayed = li.producer_marker_scopes(
         "\n".join([sentinel, manifest, manifest]),
+        'triggered "frag_context"', contexts=contexts,
+    )
+    # A different sequence-one manifest for the same context is not a replay.
+    different = li.producer_marker_scopes(
+        "\n".join([sentinel, manifest,
+                   manifest.replace("04:18:12", "04:18:13")]),
         'triggered "frag_context"', contexts=contexts,
     )
 
     assert missing["context_mismatches"] == [sentinel]
-    assert duplicate["context_mismatches"] == [sentinel]
+    assert replayed["context_mismatches"] == []
+    assert replayed["scopes"]["report"]["buffered_pre_interval"] == [sentinel]
+    assert replayed["scopes"]["report"]["manifest_line_count"] == 1
+    assert different["context_mismatches"] == [sentinel]
 
 
 def test_transition_sentinels_cannot_hide_missing_diagnostic_warning():
