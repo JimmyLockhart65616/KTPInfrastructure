@@ -38,7 +38,7 @@ grants: they also cover `hlstatsx_lan` and `ktp_lan`, which the pipeline never
 reads, and `SHOW GRANTS` prints lines with no trailing `;`, so piping them back
 into `mysql` fails at line 2.
 
-This block is generated-by-hand but machine-checked: `check_report_grants.py`
+This block is written by hand but checked by machine: `check_report_grants.py`
 derives the same set from the code and fails if the two disagree, so treat the
 script's output as the source of truth and this block as a copy of it.
 
