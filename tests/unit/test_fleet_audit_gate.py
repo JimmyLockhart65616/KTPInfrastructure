@@ -225,3 +225,62 @@ def test_threshold_is_tunable(tmp_path):
         assert _run(work, state)["needs_triage"] == "true"
     finally:
         del os.environ["KTP_GATE_LONG_OPEN_DAYS"]
+
+
+# --- the age is the FAULT's, not this estate's first sighting of it -----------
+# `since` is stamped by the run that first saw an item, so a fault older than
+# the producer watching it reads as new -- and under-counting is the direction
+# that keeps a fault below this gate forever.
+
+def _aged(items: dict, updated_ago=timedelta(minutes=20)) -> dict:
+    """items: key -> (detected_ago, fault_ago | None)."""
+    doc = {"updated_at": _ts(updated_ago), "down": list(items),
+           "since": {k: _ts(v[0]) for k, v in items.items()}, "detail": {},
+           "fault_since": {k: _ts(v[1]) for k, v in items.items() if v[1]}}
+    return doc
+
+
+def test_a_fault_older_than_its_watcher_is_aged_from_the_fault(tmp_path):
+    """The measured case: stamped 2026-09-17 because `systemctl --failed` only
+    became a producer on 09-16, for a unit that failed on 09-08. Four days
+    against a three-day gate, for thirteen days of outage."""
+    work, state = tmp_path / "w", tmp_path / "s"
+    _lay(work, health=_aged({"failed-unit:ktp-identity-reconcile.service":
+                             (timedelta(days=4, hours=14), timedelta(days=13, hours=6))}))
+    out = _run(work, state)
+    assert out["needs_triage"] == "true"
+    # Both numbers: the age decides, the detection date explains the silence.
+    assert "ktp-identity-reconcile.service (13d, first seen 4d ago)" in out["reason"]
+
+
+def test_a_fault_under_the_gate_by_detection_alone_still_fires(tmp_path):
+    """The failure this change exists for. Detected yesterday, broken for two
+    weeks: every threshold keyed on `since` stays quiet, indefinitely."""
+    work, state = tmp_path / "w", tmp_path / "s"
+    _lay(work, health=_aged({"failed-unit:x.service":
+                             (timedelta(hours=20), timedelta(days=14))}))
+    out = _run(work, state)
+    assert out["needs_triage"] == "true" and "(14d, first seen 0d ago)" in out["reason"]
+    # ...and is silent without the onset, which is exactly the bug.
+    _lay(work, health=_aged({"failed-unit:x.service": (timedelta(hours=20), None)}))
+    assert _run(work, state)["needs_triage"] == "false"
+
+
+def test_an_absent_onset_falls_back_rather_than_reading_as_age_zero(tmp_path):
+    """Sparse by design: most item classes have no durable onset signal. An
+    absent entry must mean "nothing knows", never "not a fault"."""
+    work, state = tmp_path / "w", tmp_path / "s"
+    _lay(work, health=_aged({"failed-unit:x.service": (timedelta(days=9), None)}))
+    out = _run(work, state)
+    assert out["needs_triage"] == "true" and "x.service (9d)" in out["reason"]
+    assert "first seen" not in out["reason"]
+
+
+def test_a_junk_onset_does_not_take_the_item_out_of_the_reckoning(tmp_path):
+    """An unparseable `fault_since` degrades to `since`; it must not swallow
+    the item, which would turn a bad field into a silent gate."""
+    work, state = tmp_path / "w", tmp_path / "s"
+    doc = _aged({"failed-unit:x.service": (timedelta(days=9), None)})
+    doc["fault_since"] = {"failed-unit:x.service": "not a timestamp"}
+    _lay(work, health=doc)
+    assert _run(work, state)["needs_triage"] == "true"
