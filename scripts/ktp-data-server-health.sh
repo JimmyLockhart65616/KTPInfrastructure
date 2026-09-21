@@ -766,29 +766,70 @@ mapfile -t recovered < <(comm -13 "$TMP_CURR" "$TMP_PREV")
 # recovered state matches the stale prev). Sub-hour flap + relay outage
 # coinciding — rarer and less important than losing a persistent-down alert.
 # >>> ktp-health-state — extracted verbatim by tests/unit/test_health_state_since.py
-# health_state_document <down-json-array> <prev-state-json> <detail-json-object> <ts>
-# `since` is the one thing this file knows that nothing else does: the run that
-# first saw each item. Carried forward while the item stays down, stamped now
-# when it is new, dropped when it clears -- so a reader can answer "since when"
-# without the log, which is root-only. `detail` is the same text the Discord
-# line carries, kept so a page can show it. An older state file has no .since;
-# every current item then reads as since-now, once, and is right from then on.
+# health_state_document <down-json-array> <prev-state-json> <detail-json-object> <ts> [fault-json-object]
+# `since` is a DETECTION date: the first run of THIS check that saw the item.
+# Carried forward while the item stays down, stamped now when it is new, dropped
+# when it clears. It is not when the fault started, and a fault older than the
+# check that watches it reads as new -- ktp-identity-reconcile failed 2026-09-08
+# and was stamped 2026-09-17, the hour the `failed-unit:` producer first ran.
+# `fault_since` is the onset where an independent durable signal says so: sparse
+# like `detail`, absent rather than null when nothing knows. It is clamped to
+# `since` and to its own carried value, so it only ever moves EARLIER while an
+# item stays down -- the reported age can grow but never shrink, which keeps a
+# consumer's threshold on the safe side of this change.
 health_state_document() {
-    local down_json="$1" prev_json="$2" detail_json="$3" now="$4"
+    local down_json="$1" prev_json="$2" detail_json="$3" now="$4" fault_json="${5:-}"
+    [ -n "$fault_json" ] || fault_json='{}'
     jq -n --argjson d "$down_json" --argjson prev "$prev_json" \
-          --argjson det "$detail_json" --arg ts "$now" '
+          --argjson det "$detail_json" --argjson flt "$fault_json" --arg ts "$now" '
         ($prev.since // {}) as $was
+        | ($prev.fault_since // {}) as $wasf
+        | ($d | map({key: ., value: ($was[.] // $ts)}) | from_entries) as $since
         | {updated_at: $ts,
            down: $d,
-           since: ($d | map({key: ., value: ($was[.] // $ts)}) | from_entries),
+           since: $since,
+           fault_since: ($d
+             | map({key: ., value: ([$wasf[.], $flt[.], $since[.]]
+                                    | map(select(. != null and . != "")) | min)})
+             | from_entries | with_entries(select(.value != null and .value != $since[.key]))),
            detail: ($d | map({key: ., value: ($det[.] // "")}) | from_entries
                     | with_entries(select(.value != "")))}'
+}
+
+# fault_since_probe <down-item> -> an onset timestamp on stdout, or nothing.
+# Only `failed-unit:<name>` has a durable independent signal here: systemd's
+# InactiveEnterTimestamp, which outlives journald (about two days on this box)
+# and syslog rotation (about a week). It resets when a periodic unit re-runs and
+# fails again, so it is a LOWER BOUND on the outage, not its start -- the carry
+# forward in health_state_document is what keeps the earlier answer once seen.
+# Nothing is printed for any other item class; guessing is worse than silence.
+fault_since_probe() {
+    local item="$1" unit show raw
+    case "$item" in failed-unit:*) unit="${item#failed-unit:}" ;; *) return 0 ;; esac
+    # One call, parsed BY NAME: systemd returns properties in its own order,
+    # never the requested one. LoadState is the mandatory guard -- a unit that
+    # does not exist answers inactive/dead, byte-identical to a stopped one, and
+    # only not-found vs loaded tells them apart. ActiveState matters because
+    # InactiveEnterTimestamp on a RUNNING unit is the last time it stopped,
+    # which would date a fault from a healthy restart weeks ago.
+    show=$(systemctl show "$unit" -p LoadState -p ActiveState -p InactiveEnterTimestamp 2>/dev/null || true)
+    [ "$(sed -n 's/^LoadState=//p' <<< "$show")" = "loaded" ] || return 0
+    [ "$(sed -n 's/^ActiveState=//p' <<< "$show")" = "failed" ] || return 0
+    raw=$(sed -n 's/^InactiveEnterTimestamp=//p' <<< "$show")
+    # `date -d ""` prints TODAY at midnight and exits 0, so an unset property
+    # would land as a fresh timestamp -- the one direction that hides a fault.
+    # Match systemd's own shape before letting date near it.
+    case "$raw" in
+        [A-Z][a-z][a-z]" "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]" "[0-9][0-9]:[0-9][0-9]:[0-9][0-9]*) ;;
+        *) return 0 ;;
+    esac
+    date -d "$raw" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || true
 }
 # <<< ktp-health-state
 
 save_state() {
     mkdir -p "$(dirname "$STATE_FILE")"
-    local down_json prev_json detail_json k
+    local down_json prev_json detail_json fault_json k onset
     if [ -s "$TMP_CURR" ]; then
         down_json=$(jq -R . < "$TMP_CURR" | jq -s .)
     else
@@ -807,12 +848,22 @@ save_state() {
             detail_json=$(jq -c --arg k "$k" --arg v "${detail[$k]}" '. + {($k): $v}' <<< "$detail_json")
         done
     fi
+    # One `systemctl show` per currently-down item, on a set that is normally
+    # empty and has never been large. Silent for every item class that has no
+    # durable signal, which is most of them.
+    fault_json='{}'
+    while read -r k; do
+        [ -n "${k:-}" ] || continue
+        onset=$(fault_since_probe "$k")
+        [ -n "$onset" ] || continue
+        fault_json=$(jq -c --arg k "$k" --arg v "$onset" '. + {($k): $v}' <<< "$fault_json")
+    done < "$TMP_CURR"
     # Via a temp file, because `> "$STATE_FILE"` truncates BEFORE jq runs: a jq
     # that fails here left a zero-byte state file, which the read above then
     # turned into an empty --argjson and an abort — on this run and on every run
     # after it, until someone deleted the file by hand. A check that breaks
     # itself permanently on its first bad hour is worse than no check.
-    health_state_document "$down_json" "$prev_json" "$detail_json" "$(ts)" > "$STATE_FILE.tmp"
+    health_state_document "$down_json" "$prev_json" "$detail_json" "$(ts)" "$fault_json" > "$STATE_FILE.tmp"
     mv -f "$STATE_FILE.tmp" "$STATE_FILE"
 }
 

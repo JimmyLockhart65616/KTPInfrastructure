@@ -157,6 +157,11 @@ def _load_sibling(mod_name, filename):
 d2f = _load_sibling("deploy_to_fleet", "deploy-to-fleet.py")
 ledger = _load_sibling("ktp_wave_ledger", "ktp-wave-ledger.py")
 
+# A wave stager that is itself behind origin/main stages happily and skips, in
+# silence, every gate it has never heard of. Checks the siblings too: a fresh
+# stage-wave.py on top of a stale deploy-to-fleet.py is the same defect.
+freshness = _load_sibling("ktp_script_freshness", "ktp_script_freshness.py")
+
 # The four swap globs the nightly restart script activates (explicit, not
 # recursive -- mirrors ktp-scheduled-restart.sh). Any .new here activates.
 SWAP_GLOBS = [
@@ -513,6 +518,9 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="Print intent, do not connect to stage.")
     ap.add_argument("--parallel", type=int, default=5)
     args = ap.parse_args()
+    freshness.require_current(
+        __file__, also=["deploy-to-fleet.py", "ktp-wave-ledger.py"],
+        purpose="stage a wave to all 24 instances")
 
     host_keys = list(d2f.SERVERS) if args.hosts == "all" else [h.strip() for h in args.hosts.split(",")]
     for hk in host_keys:

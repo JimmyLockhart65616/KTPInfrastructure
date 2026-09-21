@@ -160,6 +160,11 @@ try:
 except Exception:  # no tzdata (common on Windows without the tzdata package)
     _ET = None
 
+# Fleet-writing entry point: refuse to run from a checkout behind origin/main
+# (ktp_script_freshness.py). An older copy never SEES the flags it lacks.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ktp_script_freshness import require_current  # noqa: E402
+
 
 def next_activation(staged_at: float) -> int:
     """Epoch of the first 03:00 ET nightly swap strictly after staged_at."""
@@ -904,6 +909,8 @@ def main(argv=None) -> int:
     w.set_defaults(func=_cmd_record)
 
     args = ap.parse_args(argv)
+    require_current(__file__, also=["deploy-to-fleet.py"],
+                    purpose="write the ledger the fleet is reconciled against")
     return args.func(args)
 
 
