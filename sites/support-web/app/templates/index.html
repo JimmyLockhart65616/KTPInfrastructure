@@ -979,13 +979,14 @@ footer .accent { color: var(--red); white-space: nowrap; }
             <tr>
               <td><code>{{ i.key }}</code></td>
               <td class="d">{{ i.detail }}</td>
-              <td class="d">{% if i.since %}{{ i.since }}{% else %}<span class="none">before this check kept time</span>{% endif %}</td>
+              <td class="d">{% if i.since %}{{ i.since }}{% if i.first_seen %} <span class="none">(first seen {{ i.first_seen }})</span>{% endif %}{% else %}<span class="none">before this check kept time</span>{% endif %}</td>
               <td class="num">{{ i.age }}</td>
             </tr>
 {% endfor %}
           </table>
           <div class="fineprint">Longest-open first. An item here has already been posted to Discord once, when it appeared;
-            nothing posts again while it stays down. This list is the answer to "is anyone on it."</div>
+            nothing posts again while it stays down. This list is the answer to "is anyone on it."
+            A "first seen" beside a date means the fault predates this check watching for it, and the age is the fault's, not the check's.</div>
 {% endif %}
         </div>
       </div>

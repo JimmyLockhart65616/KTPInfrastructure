@@ -269,11 +269,20 @@ def test_the_state_file_is_written_through_a_temp_and_moved():
     """`> "$STATE_FILE"` truncates BEFORE the jq that fills it runs. A jq that
     failed there left a zero-byte state file, which the next run read back as an
     empty `--argjson prev` and died on — and so did every run after it, for good.
-    Found by running the script against a broken jq, not by reading it."""
-    code = "\n".join(code_lines())
-    assert 'health_state_document "$down_json" "$prev_json" "$detail_json" "$(ts)" > "$STATE_FILE.tmp"' in code
+    Found by running the script against a broken jq, not by reading it.
+
+    Asserted as the property, not as the call's exact argument list: the
+    spelling moved when the document grew a `fault_since` argument, and a test
+    pinned to a spelling fails for a reason that has nothing to do with the
+    thing it guards."""
+    code_ls = code_lines()
+    code = "\n".join(code_ls)
+    calls = [ln for ln in code_ls if "health_state_document " in ln and ">" in ln]
+    assert len(calls) == 1, calls
+    assert calls[0].rstrip().endswith('> "$STATE_FILE.tmp"'), calls[0]
     assert 'mv -f "$STATE_FILE.tmp" "$STATE_FILE"' in code
-    assert '"$(ts)" > "$STATE_FILE"\n' not in code + "\n"
+    # The `.tmp` keeps the closing quote off, so this catches a direct write only.
+    assert '> "$STATE_FILE"' not in code
 
 
 def test_an_empty_state_file_reads_as_an_empty_object():
