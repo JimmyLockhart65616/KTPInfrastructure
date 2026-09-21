@@ -68,7 +68,10 @@ def view(doc: dict | None, now: datetime | None = None) -> dict:
         # so the row at the top is the longest-open FAULT and not merely the one
         # noticed first.
         detected = _parse(since_map.get(key))
-        onset = _parse(fault_map.get(key)) or detected
+        # min, not "the onset if there is one": the producer already clamps to
+        # `since`, and a file that arrived some other way must not be able to
+        # make an item read YOUNGER than this check has watched it.
+        onset = min([t for t in (detected, _parse(fault_map.get(key))) if t], default=None)
         items.append({
             "key": key,
             "detail": detail_map.get(key) or "",

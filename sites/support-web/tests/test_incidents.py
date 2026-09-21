@@ -90,3 +90,15 @@ def test_age_units():
     assert age(datetime(2026, 9, 16, 9, 30), NOW) == "2h"
     assert age(datetime(2026, 9, 14, 12, 0), NOW) == "2d 0h"
     assert age(datetime(2026, 9, 17, 12, 0), NOW) == "0m"     # clock skew never goes negative
+
+
+def test_an_onset_can_never_make_a_row_read_younger_than_since():
+    """The producer clamps, but this page must not depend on that -- a state
+    file that arrived some other way cannot shrink an age here."""
+    doc = {"updated_at": "2026-09-16 11:17:02", "down": ["failed-unit:x.service"],
+           "since": {"failed-unit:x.service": "2026-09-08 09:01:53"},
+           "fault_since": {"failed-unit:x.service": "2026-09-15 09:00:55"}}
+    v = view(doc, NOW)
+    assert v["rows"][0]["age"] == "8d 2h"
+    assert v["rows"][0]["since"] == "2026-09-08 09:01:53"
+    assert v["rows"][0]["first_seen"] is None
