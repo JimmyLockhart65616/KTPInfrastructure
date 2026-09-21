@@ -52,6 +52,11 @@ from typing import Optional
 
 import paramiko
 
+# Fleet-writing entry point: refuse to run from a checkout behind origin/main
+# (ktp_script_freshness.py). An older copy never SEES the flags it lacks.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ktp_script_freshness import require_current  # noqa: E402
+
 
 # ──────────────────────────────────────────────────────────────────────────
 # Fleet topology — mirrors ktp-soak-verify and precache_audit.py
@@ -565,6 +570,8 @@ def main() -> int:
     ap.add_argument("--out", default="-",
                     help="Output JSON path (default: - = stdout)")
     args = ap.parse_args()
+    require_current(__file__,
+                    purpose="issue the verdict a wave is judged by")
 
     report = verify_fleet(args.reference, args.scope, args.include_engine,
                           check_runtime=args.check_runtime)

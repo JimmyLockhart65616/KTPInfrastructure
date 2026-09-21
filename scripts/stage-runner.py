@@ -76,6 +76,10 @@ except ImportError:
     sys.exit(1)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Fleet-writing entry point: refuse to run from a checkout behind origin/main
+# (ktp_script_freshness.py). An older copy never SEES the flags it lacks.
+from ktp_script_freshness import require_current  # noqa: E402
 import amxx_version  # noqa: E402  -- sibling module, path fixed up just above
 
 HOST = os.environ.get("KTP_TIER2_SSH_HOST", "")
@@ -219,6 +223,8 @@ def main():
     ap.add_argument("--allow-untracked", action="store_true",
                     help="Stage a plugin that is not a known test-mode plugin.")
     args = ap.parse_args()
+    require_current(__file__,
+                    purpose="stage artifacts onto the Tier-2 runner")
 
     if args.show:
         ssh = connect()

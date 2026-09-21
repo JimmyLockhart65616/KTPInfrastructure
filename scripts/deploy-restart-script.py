@@ -65,6 +65,11 @@ except ImportError:
     print("ERROR: paramiko not installed. Run: pip install paramiko")
     sys.exit(1)
 
+# Fleet-writing entry point: refuse to run from a checkout behind origin/main
+# (ktp_script_freshness.py). An older copy never SEES the flags it lacks.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ktp_script_freshness import require_current  # noqa: E402
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CANONICAL = os.path.join(SCRIPT_DIR, "ktp-scheduled-restart.sh")
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
@@ -336,6 +341,8 @@ def main():
                          'why the tracked .example is deliberately out of step with the '
                          'canonical; deliberately not a bare --force')
     args = ap.parse_args()
+    require_current(__file__,
+                    purpose="replace the nightly restart script on every game host")
     override_reason = validated_override(args.override_example_guard)
 
     targets = list(SERVERS) if not args.hosts else [h.strip() for h in args.hosts.split(',')]
