@@ -283,7 +283,7 @@ jobs:
           fi
 
           {
-            echo "_Fleet audit ${{ github.run_id }} — $REASON_"
+            echo "_Fleet audit ${{ github.run_id }} — ${REASON}_"
             echo
             cat triage.md
             echo
