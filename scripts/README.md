@@ -236,6 +236,29 @@ python3 stage-wave.py --preflight-only        # is the fleet clean to stage into
 python3 stage-wave.py -f path/to/KTPMatchHandler.amxx --expect KTPMatchHandler.amxx=<md5>
 ```
 
+### ktp_script_freshness.py
+**Not a script to run — a gate the fleet-writing scripts call on themselves.** A checkout that has fallen
+behind `origin/main` stages a wave perfectly happily: the older copy never sees the flags it lacks, so
+nothing is rejected, the md5s verify, and it prints a clean 24/24 while every gate added since simply did
+not run. The loss that costs something is `--pull-live` — the fleet keeps no rollback copies, the swap is
+`mv -f`, and none of these artifacts is byte-reproducible, so the live build is the only copy of itself
+that exists.
+
+`require_current()` compares the file that is executing, and the siblings it loads, against `origin/main`
+via `git diff`, and refuses with a report naming which flags and functions this copy is missing and which
+commits added them. It fails closed: drift, no checkout, the path absent from the ref, a failed git call
+and an unfetchable ref all refuse. It is inert under pytest and GitHub Actions, and says so.
+
+```bash
+python3 ktp_script_freshness.py stage-wave.py   # report without running anything
+```
+
+`KTP_FRESHNESS_OFFLINE=<reason>` accepts an unfetchable ref that the local comparison found clean;
+`KTP_FRESHNESS_BYPASS=<reason>` proceeds after a refusal, printing the whole report anyway.
+⚠️ The cron scripts (`audit-fleet-drift.py`, `precache_audit.py`) are deliberately **not** gated: they run
+out of `/opt/ktp-infra`, which is never auto-pulled, and failing closed there would replace stale data with
+no data.
+
 ### deploy-to-fleet.py
 Raw push, no gates — `stage-wave.py` (above) is the normal entry point. Local-to-fleet artifact push as `.new` files; nightly `ktp-scheduled-restart.sh` (above) auto-swaps them in. Closes the local-build → fleet-SCP gap discovered 2026-05-20. No `.example` template needed — the SSH password is resolved from `$KTP_FLEET_SSH_PASSWORD` or `~/.ktp_fleet_ssh_password` (never hardcoded; the pre-2026-05-31 `ktp` value was leaked in this public repo and rotated — do not document credential values here).
 

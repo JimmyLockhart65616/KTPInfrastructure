@@ -92,6 +92,11 @@ try:
 except ImportError:
     sys.exit("ERROR: paramiko not installed. Run: pip install paramiko")
 
+# Fleet-writing entry point: refuse to run from a checkout behind origin/main
+# (ktp_script_freshness.py). An older copy never SEES the flags it lacks.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ktp_script_freshness import require_current  # noqa: E402
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 RUNNER_HOST = os.environ.get("KTP_TIER2_SSH_HOST", "")
@@ -298,6 +303,8 @@ def main():
     ap.add_argument("--ignore-running", action="store_true",
                     help="Proceed although a test server is live in the runner tree.")
     args = ap.parse_args()
+    require_current(__file__,
+                    purpose="overwrite the Tier-2 runner stack")
 
     paths, excluded = sync_set()
 
