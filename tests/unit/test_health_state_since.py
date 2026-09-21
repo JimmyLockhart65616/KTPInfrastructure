@@ -150,17 +150,21 @@ def test_a_state_file_written_before_this_change_still_builds(tmp_path):
 # fault -- so the raw string is shape-checked before date ever sees it.
 
 def probe(tmp_path, item, stamp="Tue 2026-09-15 09:00:55 EDT",
-          load="loaded", active="failed"):
+          load="loaded", active="failed", tz="America/New_York"):
     """Run fault_since_probe with systemctl stubbed. A shell function shadows
     the real binary, so this never asks the host anything. Properties come back
-    in systemd's own order, not the requested one -- hence the shuffle."""
+    in systemd's own order, not the requested one -- hence the shuffle.
+
+    TZ is pinned because `date -d` renders into the caller's zone: unpinned,
+    this reads 09:00:55 on the data server and 13:00:55 on a UTC CI runner."""
     out = "ActiveState=%s\nInactiveEnterTimestamp=%s\nLoadState=%s\n" % (
         active, stamp, load)
     body = "%s\nsystemctl() { printf '%%s' %s; }\nfault_since_probe %s\n" % (
         source(), shlex.quote(out), shlex.quote(item))
     p = tmp_path / "probe.sh"
     p.write_text(body, encoding="utf-8", newline="\n")
-    r = subprocess.run([BASH, p.as_posix()], capture_output=True, text=True)
+    r = subprocess.run([BASH, p.as_posix()], capture_output=True, text=True,
+                       env=dict(os.environ, TZ=tz))
     assert r.returncode == 0, r.stderr
     return r.stdout.strip()
 
@@ -168,6 +172,18 @@ def probe(tmp_path, item, stamp="Tue 2026-09-15 09:00:55 EDT",
 def test_a_real_systemd_stamp_becomes_an_onset(tmp_path):
     assert probe(tmp_path, "failed-unit:ktp-identity-reconcile.service") == \
         "2026-09-15 09:00:55"
+
+
+def test_the_onset_is_rendered_in_the_same_zone_as_since(tmp_path):
+    """`since` comes from `ts()`, a bare local `date`, and the gate SUBTRACTS
+    the two -- so an onset in a different zone would be wrong by the offset,
+    silently. Both render local, so they share a zone by construction however
+    the host is set; this pins that rather than leaving it to coincidence.
+    It is also what made the first CI run fail: 09:00:55 EDT on the box,
+    13:00:55 on a UTC runner, from the same input."""
+    item = "failed-unit:x.service"
+    assert probe(tmp_path, item, tz="UTC") == "2026-09-15 13:00:55"
+    assert probe(tmp_path, item, tz="America/New_York") == "2026-09-15 09:00:55"
 
 
 def test_an_unset_property_answers_nothing_rather_than_today(tmp_path):
