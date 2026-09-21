@@ -43,7 +43,46 @@ def test_a_pre_since_state_file_says_unknown_rather_than_inventing_a_start():
     """The shape the health check wrote before it kept `since`."""
     doc = {"updated_at": "2026-09-16 11:17:02", "down": ["disk-growth:/"]}
     v = view(doc, NOW)
-    assert v["rows"] == [{"key": "disk-growth:/", "detail": "", "since": None, "age": "unknown"}]
+    assert v["rows"] == [{"key": "disk-growth:/", "detail": "", "since": None,
+                          "age": "unknown", "first_seen": None}]
+
+
+# --- the age shown is the FAULT's, not this check's first sighting of it ------
+# `since` is stamped by the run that first saw an item. When the fault predates
+# the check watching for it, that date is younger than the outage -- and this
+# page both prints the age and SORTS on it, so a late-detected fault sinks below
+# a newer one that has been broken for less time.
+
+def test_a_fault_older_than_its_watcher_is_aged_and_sorted_from_the_fault():
+    """Measured: the unit failed 2026-09-08 and was stamped 2026-09-17, the hour
+    `systemctl --failed` became a producer for this check."""
+    doc = {"updated_at": "2026-09-16 11:17:02",
+           "down": ["disk-growth:/", "failed-unit:ktp-identity-reconcile.service"],
+           "since": {"disk-growth:/": "2026-09-14 09:17:02",
+                     "failed-unit:ktp-identity-reconcile.service": "2026-09-15 01:17:03"},
+           "fault_since": {"failed-unit:ktp-identity-reconcile.service": "2026-09-08 09:01:53"},
+           "detail": {}}
+    v = view(doc, NOW)
+    # On `since` alone the disk item sorts first, on an age half as old.
+    assert [i["key"] for i in v["rows"]] == [
+        "failed-unit:ktp-identity-reconcile.service", "disk-growth:/"]
+    assert v["rows"][0]["age"] == "8d 2h"
+    assert v["rows"][0]["since"] == "2026-09-08 09:01:53"
+    assert v["rows"][0]["first_seen"] == "2026-09-15 01:17:03"
+
+
+def test_no_first_seen_when_there_is_nothing_extra_to_say():
+    """Shown only where the two dates disagree, so no row claims more than it
+    can back. A missing or junk onset falls back to `since`, never to unknown
+    and never to the epoch."""
+    doc = {"updated_at": "2026-09-16 11:17:02", "down": ["disk-growth:/"],
+           "since": {"disk-growth:/": "2026-09-14 09:17:02"}}
+    for extra in ({}, {"fault_since": {"disk-growth:/": "2026-09-14 09:17:02"}},
+                  {"fault_since": {"disk-growth:/": "not a timestamp"}},
+                  {"fault_since": "not even a map"}):
+        v = view(dict(doc, **extra), NOW)
+        assert v["rows"][0]["first_seen"] is None, extra
+        assert v["rows"][0]["age"] == "2d 2h", extra
 
 
 def test_age_units():

@@ -167,6 +167,27 @@ Ranked by what they would cost during Season 10.
    presence-reporting alone never surfaced.
 5. **`ktp-restart-drift.py` runs on no schedule.** The drift it was written to
    find is real and, as of 2026-08-30, still open.
+6. **Narrowed 2026-09-21, not closed: an age is only as old as the watcher that
+   stamped it.** `since` in `/var/lib/ktp-data-server-health.json` is the first
+   run of the health check that *saw* an item — a detection date. `systemctl
+   --failed` only became a producer on 2026-09-16, so the identity-reconcile
+   outage that began **2026-09-08 09:01:53** was stamped **2026-09-17 01:17:03**
+   and the weekly gate aged it at **4 days against a 3-day threshold for a
+   13-day fault**. The under-count is silent and runs the wrong way: a fault
+   older than its watcher can sit under any threshold keyed on `since`
+   indefinitely, and the two dates agreeing proves nothing because nothing ever
+   compared them. The check now also writes **`fault_since`**, an onset taken
+   from systemd's `InactiveEnterTimestamp` for `failed-unit:` items, clamped to
+   `since` and carried forward so it only ever moves *earlier* — which makes the
+   state file the only home for an onset that outlives journald (~2 days here)
+   and syslog rotation (~1 week). `fleet-audit-gate.sh` and support-web's
+   incidents list both age off it when present and fall back to `since`.
+   **Sparse by design:** no other item class has a durable onset signal, and an
+   absent entry means "nothing knows", never "no fault". Still uncovered — a
+   periodic unit that fails, stays failed and fails *again* resets systemd's
+   stamp, so the onset is a lower bound until this file has carried it once.
+   The 09-08 date above was recovered from `syslog.4.gz` and exists nowhere the
+   check can read.
 
 ### Open right now
 
