@@ -38,11 +38,19 @@ grants: they also cover `hlstatsx_lan` and `ktp_lan`, which the pipeline never
 reads, and `SHOW GRANTS` prints lines with no trailing `;`, so piping them back
 into `mysql` fails at line 2.
 
-The list was derived on 2026-09-13 from `f498463`. It is every table named in
-the import closure of `scripts/report_service.py` and `scripts/report_sync.py`,
-plus the `sql/analytics/*.sql` files `match_analytics` loads from disk. A grep of
-the Python alone misses most of the `hlstats_Events_*` tables. The pipeline only
-appends — a new report or aggregate is a new revision row — so there is no
+The list was re-derived on 2026-09-21 from `ba6a75e`, against the live grants on
+`neindataatl` (`SHOW GRANTS FOR 'ktpreports'@'localhost'`), which already carry
+all 29 — this runbook was the only place still short five. The 2026-09-13
+derivation from `f498463` walked the import closure of `scripts/report_service.py`
+and `scripts/report_sync.py` plus the `sql/analytics/*.sql` files `match_analytics`
+loads from disk, but missed every table that `match_analytics.py`'s
+`source_capabilities()` probes only through an `information_schema.tables` EXISTS
+check rather than a `FROM`/`JOIN` — `ktp_ac_weapon_fires`, `ktp_duel_stats`,
+`ktp_grenade_throw_events`, `ktp_score_events` and `ktp_shot_events`, all added to
+`source_capabilities()` after `f498463` (aim-shadow/AC-precision and score/duel/
+grenade-throw optional sources). A name grep of the Python alone misses these the
+same way it already missed most of the `hlstats_Events_*` tables. The pipeline
+only appends — a new report or aggregate is a new revision row — so there is no
 UPDATE or DELETE.
 
 ```bash
@@ -55,27 +63,36 @@ GRANT SELECT ON hlstatsx.hlstats_Events_Statsme             TO 'ktpreports'@'loc
 GRANT SELECT ON hlstatsx.hlstats_Events_Statsme2            TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.hlstats_Events_Suicides            TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.hlstats_Events_Teamkills           TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_ac_weapon_fires                TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_assist_events                  TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_capture_health                 TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_capture_manifests              TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_damage_events                  TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_duel_stats                     TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_flag_captures                  TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_flag_positions                 TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_flag_state_events              TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_grenade_entity_events          TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_grenade_throw_events           TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_life_events                    TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_match_players                  TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_match_stats                    TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_matches                        TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_objective_attempt_events       TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_position_samples               TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_score_events                   TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_shot_events                    TO 'ktpreports'@'localhost';
 GRANT SELECT, INSERT ON hlstatsx.ktp_match_reports          TO 'ktpreports'@'localhost';
 GRANT SELECT, INSERT ON hlstatsx.ktp_web_season_aggregates  TO 'ktpreports'@'localhost';
 SQL
 ```
 
-When the code starts reading a new table, add it here and grant it. Nothing
-else will tell you, which is the point of the next check.
+When the code starts reading a new table — including a new `information_schema`
+probe added to `source_capabilities()`, not just a new `FROM`/`JOIN` — add it here
+and grant it. Nothing else will tell you, which is the point of the next check;
+that check only catches a wrong total, not which table, so it is worth reading
+`source_capabilities()` in `scripts/match_analytics.py` directly rather than
+grepping for table names when you're not sure the list is current.
 
 ### Check what the account can see
 
@@ -92,8 +109,8 @@ sudo -u ktpreports mysql --user=ktpreports hlstatsx -N -e \
   "SELECT CURRENT_USER(), COUNT(*) FROM information_schema.tables WHERE table_schema='hlstatsx'"
 ```
 
-Expect `ktpreports@localhost` and one table per line of the grant block (24 at
-`f498463`). Pass `--user` every time: without it `sudo -u` sends `root` and gets
+Expect `ktpreports@localhost` and one table per line of the grant block (29 at
+`ba6a75e`). Pass `--user` every time: without it `sudo -u` sends `root` and gets
 `ERROR 1698`, and the account has no home, so there is no `.my.cnf` to fall back
 on. If `CURRENT_USER()` names anyone else, you measured the wrong account.
 
