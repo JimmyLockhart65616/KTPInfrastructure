@@ -61,20 +61,38 @@ SQL = """-- scoreboard_reconcile.py --stats input, for {match_id}
 -- The window opens at the ROUND RESTART, not at context_live. DoD restarts the
 -- round a few seconds after the live command and the scoreboard zeroes there,
 -- so anything killed in between is on our side of the line and not on the
--- screenshot. The restart is observable: every player respawns at one
--- game_time, so the first >=8-player spawn burst of the half IS the zero.
--- Measured across production: 422 frag rows in 203 matches sit before it.
--- (A mid-half burst is a cap-out restart, which does NOT reset the player
--- rows -- hence MIN per half, never the latest.)
-WITH live AS (
-  SELECT match_id, half, MIN(game_time) burst_gt, MIN(event_time) burst_time
-  FROM (SELECT match_id, half, game_time, MIN(event_time) event_time
+-- screenshot.
+--
+-- Two sources for that instant, preferred in order: the producer's own
+-- round_live stamp, and failing that the restart's spawn burst. A mid-half
+-- burst is a cap-out restart, which does NOT reset the player rows -- hence
+-- MIN per half, never the latest.
+WITH stamped AS (
+  -- The producer's own answer (plugin 1.24.5+): round_live is 1 once the round
+  -- is actually running. Authoritative, so it wins where it exists.
+  SELECT half, MIN(game_time) gt, MIN(event_time) et
+  FROM ktp_life_events
+  WHERE match_id = '{match_id}' AND round_live = 1
+  GROUP BY half
+), burst AS (
+  -- Fallback for every half recorded before that: the restart is observable
+  -- anyway, because every player respawns at one game_time. Measured across
+  -- production, 422 frag rows in 203 matches sit before their half's restart.
+  SELECT half, MIN(game_time) gt, MIN(event_time) et
+  FROM (SELECT half, game_time, MIN(event_time) event_time
         FROM ktp_life_events
         WHERE match_id = '{match_id}'
           AND boundary_kind = 'start' AND reason = 'spawn'
-        GROUP BY match_id, half, game_time
+        GROUP BY half, game_time
         HAVING COUNT(*) >= 8) b
-  GROUP BY match_id, half
+  GROUP BY half
+), live AS (
+  SELECT h.half,
+         COALESCE(s.gt, b.gt) burst_gt,
+         COALESCE(s.et, b.et) burst_time
+  FROM (SELECT half FROM stamped UNION SELECT half FROM burst) h
+  LEFT JOIN stamped s ON s.half = h.half
+  LEFT JOIN burst b ON b.half = h.half
 )
 SELECT s.half, p.player_name,
        COALESCE(f.kills, 0)                        AS kills,

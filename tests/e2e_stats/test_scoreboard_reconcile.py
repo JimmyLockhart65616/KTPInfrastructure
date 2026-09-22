@@ -220,7 +220,7 @@ def test_the_window_opens_at_the_restart_not_at_context_live():
     assert "HAVING COUNT(*) >= 8" in sql
     # MIN per half: a mid-half burst is a cap-out restart, which does NOT
     # reset the player rows, so taking the latest would erase a real half.
-    assert "MIN(game_time) burst_gt" in sql
+    assert "GROUP BY half, game_time" in sql
     # Captures ride the same window — two of them landed before the restart on
     # the worked match.
     assert sql.count("LEFT JOIN live w") == 5
@@ -231,3 +231,16 @@ def test_rows_without_a_game_time_are_not_silently_dropped():
     # mid-round kills went missing that way before this fallback existed.
     sql = recon.SQL.format(match_id="m")
     assert "e.game_time IS NULL AND e.eventTime >= w.burst_time" in sql
+
+
+def test_the_producers_own_round_live_wins_over_the_derived_burst():
+    # The spawn burst is a derivation; round_live is the producer answering the
+    # question directly (plugin 1.24.5+). Where both exist they agree, and the
+    # authoritative one is the one to trust -- but the fallback has to stay,
+    # because every half recorded before that stamp has no round_live at all.
+    sql = recon.SQL.format(match_id="m")
+    assert "round_live = 1" in sql
+    assert "COALESCE(s.gt, b.gt) burst_gt" in sql
+    assert "COALESCE(s.et, b.et) burst_time" in sql
+    # Neither source may drop a half the other saw.
+    assert "SELECT half FROM stamped UNION SELECT half FROM burst" in sql

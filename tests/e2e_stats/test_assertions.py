@@ -182,17 +182,24 @@ class TelemetryDb(FakeDb):
 
 
 class LifeEventDb(FakeDb):
-    def __init__(self, *, rows, starts, deaths, invalid=0, duplicates=0):
+    def __init__(self, *, rows, starts, deaths, invalid=0, duplicates=0,
+                 stamped=0, live=0):
         super().__init__()
         self.rows = rows
         self.starts = starts
         self.deaths = deaths
         self.invalid = invalid
         self.duplicates = duplicates
+        self.stamped = stamped
+        self.live = live
 
     def count(self, query):
         if "ktp_life_events" not in query:
             return super().count(query)
+        if "round_live IS NOT NULL" in query:
+            return self.stamped
+        if "round_live = 1" in query:
+            return self.live
         if "duplicates" in query:
             return self.duplicates
         if "boundary_kind = 'start'" in query and "NOT IN" not in query:
@@ -1298,3 +1305,25 @@ def test_hit_registration_needs_enough_hits_to_judge_a_rate():
     v = _hitreg(HitRegDb(clean=30, registered=28))
     assert v["status"] == "not_exercised" and "under the 50" in v["detail"]
     assert _hitreg(HitRegDb(clean=30, registered=28), min_clean=20)["status"] == "pipeline"
+
+
+def test_life_events_tolerate_an_unstamped_producer_but_not_a_dead_round():
+    # Merge order is harness -> daemon -> plugin, so the harness meets a plugin
+    # that stamps round_live and one that does not. All-NULL is the column's
+    # documented "unobservable", not a failure.
+    unstamped = assertions.check_life_events(
+        LifeEventDb(rows=20, starts=12, deaths=8), emitted=20)
+    assert unstamped["status"] == "ok"
+    assert "unstamped" in unstamped["detail"]
+
+    stamped = assertions.check_life_events(
+        LifeEventDb(rows=20, starts=12, deaths=8, stamped=20, live=18), emitted=20)
+    assert stamped["status"] == "ok"
+    assert stamped["round_live_live"] == 18
+
+    # Stamped but never reaching 1 means the producer decided the round never
+    # went live, which did not happen -- a wrong reading, not a missing one.
+    dead = assertions.check_life_events(
+        LifeEventDb(rows=20, starts=12, deaths=8, stamped=20, live=0), emitted=20)
+    assert dead["status"] == "pipeline"
+    assert "round_live_live=0" in dead["detail"]
