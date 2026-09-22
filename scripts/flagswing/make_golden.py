@@ -202,7 +202,14 @@ def main() -> None:
         source_display = args.source.resolve().relative_to(REPO_ROOT.resolve()).as_posix()
     except ValueError:
         source_display = args.source.name  # outside the repo (--source override)
-    source_sha256 = hashlib.sha256(args.source.read_bytes()).hexdigest()
+    # Hash the file as git stores it, not as the working tree holds it. A
+    # Windows checkout with autocrlf has CRLF on disk and would produce a
+    # hash the Linux CI can never reproduce, so the guard fails for a line
+    # ending rather than real drift -- twice on 2026-09-22, both times with
+    # every p value identical. Normalising is a no-op on an LF checkout, so
+    # both sides agree.
+    source_sha256 = hashlib.sha256(
+        args.source.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
     payload = {
         "definition": "flag_swing_v1",
