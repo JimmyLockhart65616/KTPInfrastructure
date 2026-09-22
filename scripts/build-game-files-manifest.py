@@ -48,6 +48,14 @@ Defaults:
 Re-run after a known map deploy or weekly via cron. Manifest then SCP'd to
 data server at /opt/ktp-ac-api/game_files_manifest.json; the API serves it
 via /api/game-files-manifest with ETag-based caching.
+
+A regeneration that changes WHICH paths are enforced now refuses to write until
+someone acknowledges the count (--accept-added / --accept-removed). Source 1 is
+produced by an act with a different purpose and a different owner: running RESGen
+over a batch of maps is a FastDL deploy, and on 2026-09-15 one such run's output
+was read here as a manifest source and pulled 128 paths into enforcement, at
+severity "violation", as a side effect. The gate is not a policy on how wide the
+manifest should be; it is the missing reader on the join between the two halves.
 """
 
 import argparse
@@ -307,6 +315,118 @@ def dead_entry_candidates(entries, stock):
 
 
 # --------------------------------------------------------------------------
+# Scope gate: nothing may widen what the AC enforces without someone saying so.
+#
+# The two halves of this pipeline have different owners. Running RESGen over a batch of
+# maps is a FastDL act — it produces download lists — and on 2026-09-15 one such run put
+# 33 maps' worth of references on the source tree. The next regeneration read them as a
+# manifest source and pulled the lot into enforcement, at severity "violation" by default,
+# with nobody deciding that. Neither half was wrong; the join between them had no reader.
+#
+# The .res-producing side already prints its entry-list delta and refuses on a failed
+# self-check (build_map_bundle.py). This is that same discipline on the side where the
+# consequence lands on a player.
+
+
+def load_baseline_paths(path):
+    """{path: entry} from a previously generated manifest.
+
+    Raises rather than returning empty on a malformed file. An unreadable baseline read as
+    "no baseline" makes every path an addition, and the one thing worse than a gate that
+    refuses too often is one that decides it has nothing to compare against.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        prior = json.load(f)
+    files = prior.get("files")
+    if not isinstance(files, list):
+        raise ValueError(f"{path}: no 'files' array — not a manifest")
+    return {e["path"]: e for e in files if isinstance(e, dict) and "path" in e}
+
+
+def scope_delta(baseline, entries):
+    """What this regeneration changes about WHICH paths are enforced.
+
+    Enforced means severity != "review": a review entry is reported and captured but never
+    counts toward a verdict, so it is a disclosure change rather than an enforcement one and
+    the two are not interchangeable. Both are reported; only the enforced counts gate.
+    """
+    new = {e["path"]: e for e in entries}
+
+    def enforced(e):
+        return e.get("severity", "violation") != "review"
+
+    added = sorted(p for p in new if p not in baseline)
+    removed = sorted(p for p in baseline if p not in new)
+    return {
+        "added": added,
+        "removed": removed,
+        "added_enforced": [p for p in added if enforced(new[p])],
+        "removed_enforced": [p for p in removed if enforced(baseline[p])],
+        "new_by_path": new,
+        "baseline_by_path": baseline,
+    }
+
+
+def print_scope_delta(delta, out=sys.stderr):
+    """The report a human reads before accepting a scope change.
+
+    Grouped by origin, and .res additions name the maps that pulled them in — that is the
+    whole question a reviewer has ("why is this suddenly enforced?"), and the answer is
+    already in the entry.
+    """
+    print("\n=== Enforcement scope delta ===", file=out)
+    if not delta["added"] and not delta["removed"]:
+        print("  no paths added or removed", file=out)
+        return
+
+    for label, paths, table in (
+        ("ADDED", delta["added"], delta["new_by_path"]),
+        ("REMOVED", delta["removed"], delta["baseline_by_path"]),
+    ):
+        if not paths:
+            continue
+        by_origin = defaultdict(list)
+        for p in paths:
+            by_origin[table[p].get("origin", "?")].append(p)
+        print(f"  {label} ({len(paths)}):", file=out)
+        for origin in sorted(by_origin):
+            group = by_origin[origin]
+            print(f"    origin={origin}  ({len(group)})", file=out)
+            for p in group:
+                e = table[p]
+                sev = e.get("severity", "violation")
+                refs = e.get("referenced_by") or []
+                why = f"  ← {', '.join(refs)}" if refs else ""
+                print(f"      [{sev}] {p}{why}", file=out)
+
+
+def gate_scope_change(delta, accept_added, accept_removed, out=sys.stderr):
+    """True to proceed with the write, False to refuse.
+
+    The acknowledgement is a COUNT, not a boolean, so it cannot be pasted into a runbook
+    once and keep passing. A flag that says "yes, 128" stops agreeing the moment the
+    regeneration would add 129, which is exactly when someone needs to look again.
+    """
+    ok = True
+    for what, observed, accepted in (
+        ("added", len(delta["added_enforced"]), accept_added),
+        ("removed", len(delta["removed_enforced"]), accept_removed),
+    ):
+        if observed == 0:
+            continue
+        flag = f"--accept-{what}"
+        if accepted is None:
+            print(f"  REFUSED: {observed} enforced path(s) {what}. Read the delta above, then"
+                  f" re-run with {flag} {observed}.", file=out)
+            ok = False
+        elif accepted != observed:
+            print(f"  REFUSED: {flag} {accepted} does not match the {observed} enforced path(s)"
+                  f" {what}. The manifest changed since you looked.", file=out)
+            ok = False
+        else:
+            print(f"  accepted: {observed} enforced path(s) {what} ({flag} {accepted})", file=out)
+    return ok
+
 
 def parse_res_files(ssh, dod_path):
     """Aggregate references from all maps/*.res files on the source server."""
@@ -682,6 +802,15 @@ def main():
     ap.add_argument("--ssh-password", default=None,
                     help="SSH password for source-user (default: $KTP_FLEET_SSH_PASSWORD "
                          "or ~/.ktp_fleet_ssh_password)")
+    ap.add_argument("--baseline", default=None,
+                    help="Manifest to diff enforcement scope against (default: --out, if it exists)")
+    ap.add_argument("--accept-added", type=int, default=None, metavar="N",
+                    help="Acknowledge exactly N enforced paths entering scope. A wrong N refuses.")
+    ap.add_argument("--accept-removed", type=int, default=None, metavar="N",
+                    help="Acknowledge exactly N enforced paths leaving scope. A wrong N refuses.")
+    ap.add_argument("--allow-first-run", action="store_true",
+                    help="Permit writing with no baseline to compare against. Without it, a "
+                         "missing baseline refuses rather than silently skipping the gate.")
     args = ap.parse_args()
 
     if not args.ssh_password:
@@ -704,6 +833,28 @@ def main():
                                       args.source_port_dir)
 
         out_path = Path(args.out).resolve()
+
+        # The gate decides BEFORE anything reaches --out. Writing first and refusing after
+        # would leave the widened manifest on disk and make it the next run's baseline, so
+        # the second run would find nothing added and pass — a refusal that launders itself
+        # into an approval.
+        baseline_path = Path(args.baseline).resolve() if args.baseline else out_path
+        if baseline_path.exists():
+            delta = scope_delta(load_baseline_paths(baseline_path), entries)
+            print(f"\n(scope baseline: {baseline_path})", file=sys.stderr)
+            print_scope_delta(delta)
+            if not gate_scope_change(delta, args.accept_added, args.accept_removed):
+                candidate = out_path.with_suffix(out_path.suffix + ".candidate")
+                with open(candidate, "w", encoding="utf-8") as f:
+                    json.dump(manifest, f, indent=2)
+                print(f"  {out_path} left UNCHANGED. Candidate written to {candidate}.",
+                      file=sys.stderr)
+                sys.exit(2)
+        elif not args.allow_first_run:
+            sys.exit(f"No baseline at {baseline_path}: nothing to compare enforcement scope "
+                     f"against. Pass --baseline <prior manifest>, or --allow-first-run if this "
+                     f"really is the first generation.")
+
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
