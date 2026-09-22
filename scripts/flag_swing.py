@@ -205,12 +205,13 @@ def build_flag_swing_shadow(
         "caveats": [
             "Coefficients are uncalibrated priors until fitted on engine "
             "team_score labels; magnitudes are comparative, not absolute.",
-            "A round win is LABELLED, not priced: the `round` row carries "
-            "delta 0.0 and the cap that ended the round prices as an "
-            "ordinary flag flip. Winning a round is worth more than that, "
-            "but how much is for the momentum ledger's fit to say, not for "
-            "a number chosen here. Until then a cap-out can rank below an "
-            "ordinary cap.",
+            "A cap that ends a round carries `terminal_value` = 1 - P(the "
+            "capping side wins the round) just before it: the closing play "
+            "realises the outcome rather than shifting it. `delta` stays "
+            "the ordinary flag-control move, so a consumer reading only "
+            "`delta` is unchanged. How that value splits between the capper "
+            "and the team that set the round up is the momentum ledger's "
+            "fitted job, not a number chosen here.",
         ],
         "timeline": [],
         "players": [],
@@ -337,6 +338,7 @@ def build_flag_swing_shadow(
                 loser is not None and not is_initial_row
                 and state.owners.get(flag) == loser
                 and state.flags_held(loser) == state.flag_count - 1)
+            capout_completed = False
             if not (is_initial_row and reconstructed):
                 # Collection's own is_initial=1 row is near-always a wrong
                 # "neutral" for a flag we have a trusted reconstructed
@@ -345,6 +347,9 @@ def build_flag_swing_shadow(
                 # (is_initial=0) arrives.
                 state.owners[flag] = owner if owner in (1, 2) else 0
             delta = state.p_allies() - before
+            capout_completed = bool(
+                owner in (1, 2) and not is_initial_row
+                and state.flags_held(owner) == state.flag_count)
             credited = _credited(half, row.get("flag_name"), row.get("event_time"))
             share = delta / len(credited) if credited else 0.0
             for pid in credited:
@@ -359,9 +364,17 @@ def build_flag_swing_shadow(
                     "allies_flags": state.flags_held(1),
                     "axis_flags": state.flags_held(2),
                     "capout_denied": capout_denied,
-                    "capout_completed": bool(
-                        owner in (1, 2)
-                        and state.flags_held(owner) == state.flag_count),
+                    "capout_completed": capout_completed,
+                    # A cap that ends the round does not move P(win) -- it
+                    # REALISES it. The closing play is therefore worth the
+                    # probability still outstanding, 1 - P(the capping side
+                    # wins), which is derived from the model rather than
+                    # chosen: closing a round already 95%% won is worth 0.05,
+                    # closing a coin-flip is worth 0.50. Consumers that only
+                    # read `delta` still see an ordinary flag flip.
+                    "terminal_value": (
+                        round((1.0 - before) if owner == 1 else before, 4)
+                        if capout_completed else None),
                     "p_allies_after": round(state.p_allies(), 4),
                     "delta": round(delta, 4),
                 })

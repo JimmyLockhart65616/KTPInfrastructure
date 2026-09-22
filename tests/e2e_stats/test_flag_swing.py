@@ -291,3 +291,34 @@ def test_two_flags_going_neutral_is_play_not_a_boundary():
     result = build_flag_swing_shadow(states, [], [], [], ROSTER)
     assert not [e for e in result["timeline"] if e["kind"] == "round"]
     assert len([e for e in result["timeline"] if e["kind"] == "flag"]) == 4
+
+
+def test_the_closing_cap_carries_the_probability_still_outstanding():
+    states, reset = _five_flag_round()
+    result = build_flag_swing_shadow(states + reset, [], [], [], ROSTER)
+    flags = [e for e in result["timeline"] if e["kind"] == "flag"]
+    closing = flags[-1]
+    assert closing["capout_completed"] is True
+    # Axis were already well ahead on flags, so closing it is worth the
+    # remainder, not a full round: derived from p, never a constant.
+    assert 0 < closing["terminal_value"] < 0.5
+    assert all(e["terminal_value"] is None for e in flags[:-1])
+    # p just before the touch, from the model's own numbers.
+    p_allies_before = closing["p_allies_after"] - closing["delta"]
+    assert abs(closing["terminal_value"] - p_allies_before) < 1e-4
+
+
+def test_a_closer_round_pays_the_closing_cap_more():
+    # One allied flag standing against four axis: the round was less certain,
+    # so realising it is worth more than closing a 5-0.
+    states = [flag_state(1, 0, 1, 5.0, name="F0")]
+    states += [flag_state(1, i, 2, 10.0 + i, name=f"F{i}") for i in (1, 2, 3, 4)]
+    states += [flag_state(1, 0, 2, 20.0, name="F0")]
+    reset = [flag_state(1, i, 0, 30.0, name=f"F{i}") for i in range(5)]
+    contested = build_flag_swing_shadow(states + reset, [], [], [], ROSTER)
+    sure, _ = _five_flag_round()
+    clean = build_flag_swing_shadow(sure + [flag_state(1, i, 0, 30.0, name=f"F{i}") for i in range(5)],
+                                    [], [], [], ROSTER)
+    a = next(e for e in contested["timeline"] if e.get("capout_completed"))
+    b = next(e for e in clean["timeline"] if e.get("capout_completed"))
+    assert a["terminal_value"] > b["terminal_value"]

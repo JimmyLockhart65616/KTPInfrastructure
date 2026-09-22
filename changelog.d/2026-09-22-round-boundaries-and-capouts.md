@@ -31,8 +31,21 @@ reset noise.
 - `capture_credit_timeline_fact.sql` now derives `game_time` from the matching
   flag transition; `ktp_flag_captures` has no game clock of its own.
 
-**Not fixed here, on purpose:** a round win is labelled, not priced. The
-closing cap still prices as an ordinary flag flip, so a cap-out can rank below
-a mid cap — the reported one values at +0.112 against mid caps at +0.19. What a
-round win is worth belongs to the momentum ledger's fit, not to a number chosen
-by hand. Both envelopes say so.
+- A round-ending cap now carries `terminal_value`: the probability still
+  outstanding when it was taken, `1 - P(the capping side wins the round)`.
+  A closing play realises the outcome rather than shifting it, so it is worth
+  what was left — derived from the model, not a chosen constant. Closing a
+  round already 95% won is worth 0.05; closing a coin-flip is worth 0.50.
+  Across S10 officials that moves cap-outs from a median 0.112 (an ordinary
+  flag flip) to 0.231. `delta` is unchanged, so a consumer reading only
+  `delta` sees exactly what it saw before. `plays` values a `cap-out` on it,
+  split across the credited cappers — three players on the flag share what one
+  player closing it alone keeps. The reported cap-out goes from sixth in its
+  player's list to first.
+
+**Not done here:** the round win is not yet redistributed to the teammates who
+set it up — a player who cleared the way and died seconds before the touch
+gets nothing from it. That split is the momentum ledger's fitted job
+(`scripts/mmr/momentum.py`, measured cap-out lift 4.7x at 0-15 s, so roughly
+four fifths of a cap-out's value should flow back to whoever produced it);
+`terminal_value` is the per-event value that ledger has been missing.

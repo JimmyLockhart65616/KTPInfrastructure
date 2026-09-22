@@ -87,10 +87,18 @@ def _contributions(timeline: Sequence[dict[str, Any]], side_of, roster_ids: set[
             credited = [pid for pid in (e.get("credited") or []) if pid in roster_ids]
             if not credited:
                 continue
-            share = delta / len(credited)
+            # A round-ending cap realises the round instead of shifting it,
+            # so it is worth what was still outstanding (flag_swing's
+            # terminal_value), not the flag-control move. Split across the
+            # cappers: three players on the flag share what one player
+            # closing it alone keeps.
+            terminal = _f(e.get("terminal_value")) if e.get("capout_completed") else None
+            share = (terminal if terminal is not None else delta) / len(credited)
             for pid in credited:
                 sign = 1.0 if side_of(half, pid) == 1 else -1.0
-                add(half, pid, t, "cap", share * sign, flag_index=_i(e.get("flag_index")),
+                add(half, pid, t, "cap",
+                    share if terminal is not None else share * sign,
+                    flag_index=_i(e.get("flag_index")),
                     capout_denied=bool(e.get("capout_denied")),
                     capout_completed=bool(e.get("capout_completed")))
     for seq in out.values():
@@ -179,9 +187,12 @@ def build_plays(
             "Values are flag_swing_v1 deltas plus a flat exposure cost for time alone behind "
             "the lines: uncalibrated, comparative. The momentum ledger and counterfactual "
             "denial pricing replace the numbers, not the shape.",
-            "A `cap-out` play is tagged but not paid for ending the round -- flag_swing "
-            "prices the closing cap as an ordinary flag flip -- so it can rank below a "
-            "mid cap. Rank by value, read the tags for what the play was.",
+            "A `cap-out` play is worth flag_swing's `terminal_value` (the probability "
+            "still outstanding when it was taken), split across the credited cappers, "
+            "not the flag-control delta. It is NOT yet redistributed to the teammates "
+            "who set the round up -- a player who cleared the way and died just before "
+            "the touch currently gets nothing from it. That split is the momentum "
+            "ledger's fitted job (scripts/mmr/momentum.py); this block feeds it.",
         ],
         "match_top": [],
         "per_player": [],

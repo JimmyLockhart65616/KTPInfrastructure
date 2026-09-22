@@ -176,3 +176,28 @@ def test_an_excursion_still_wins_over_the_fast_push_tag():
     out = build_plays(tl, ROSTER, LIVES, exc, touches=touches)
     assert "sneak cap" in out["match_top"][0]["tags"]
     assert "fast push" not in out["match_top"][0]["tags"]
+
+
+def test_a_round_ending_cap_is_worth_what_was_still_outstanding():
+    # The round was 77% won before the touch, so closing it is worth 0.23 --
+    # not the 0.10 flag-control move.
+    tl = [dict(flag(300, 0.10, [1]), capout_completed=True, terminal_value=0.23)]
+    play = build_plays(tl, ROSTER, LIVES)["match_top"][0]
+    assert abs(play["value"] - 0.23) < 1e-9 and "cap-out" in play["tags"]
+
+
+def test_a_tap_in_on_a_round_already_won_is_worth_little():
+    tl = [dict(flag(300, 0.10, [1]), capout_completed=True, terminal_value=0.04)]
+    play = build_plays(tl, ROSTER, LIVES)["match_top"][0]
+    assert abs(play["value"] - 0.04) < 1e-9
+
+
+def test_three_players_on_the_flag_split_the_round_win():
+    tl = [dict(flag(300, 0.10, [1, 2], denied=False), capout_completed=True, terminal_value=0.30)]
+    out = build_plays(tl, ROSTER, LIVES)
+    assert all(abs(p["value"] - 0.15) < 1e-9 for p in out["match_top"])
+
+
+def test_an_ordinary_cap_still_prices_on_the_flag_delta():
+    play = build_plays([flag(300, 0.2, [1])], ROSTER, LIVES)["match_top"][0]
+    assert abs(play["value"] - 0.2) < 1e-9
