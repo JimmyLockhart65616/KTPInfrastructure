@@ -53,6 +53,11 @@ except ImportError:
     print("ERROR: paramiko not installed. Run: pip install paramiko")
     sys.exit(1)
 
+# Fleet-writing entry point: refuse to run from a checkout behind origin/main
+# (ktp_script_freshness.py). An older copy never SEES the flags it lacks.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ktp_script_freshness import require_current  # noqa: E402
+
 
 def _fleet_ssh_password():
     """dodserver SSH password — from $KTP_FLEET_SSH_PASSWORD or ~/.ktp_fleet_ssh_password.
@@ -302,6 +307,7 @@ def main():
     parser.add_argument('--parallel', type=int, default=5,
                         help='Max parallel host connections (default: 5 = one per host)')
     args = parser.parse_args()
+    require_current(__file__, purpose="push artifacts to every fleet instance")
 
     # Validate + build target list
     if args.hosts == 'all':

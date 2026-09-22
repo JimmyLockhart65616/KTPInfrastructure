@@ -28,6 +28,11 @@ except ImportError:
     print("ERROR: paramiko not installed. Run: pip install paramiko")
     sys.exit(1)
 
+# Fleet-writing entry point: refuse to run from a checkout behind origin/main
+# (ktp_script_freshness.py). An older copy never SEES the flags it lacks.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ktp_script_freshness import require_current  # noqa: E402
+
 SERVERS = {
     'atlanta': '74.91.121.9',
     'dallas':  '74.91.126.55',
@@ -98,6 +103,8 @@ def main():
     ap.add_argument('--hosts')
     ap.add_argument('--dry-run', action='store_true')
     args = ap.parse_args()
+    require_current(__file__,
+                    purpose="edit dodserver.cfg on every instance")
     targets = list(SERVERS) if not args.hosts else [h.strip() for h in args.hosts.split(',')]
     for t in targets:
         if t not in SERVERS:

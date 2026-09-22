@@ -38,12 +38,24 @@ grants: they also cover `hlstatsx_lan` and `ktp_lan`, which the pipeline never
 reads, and `SHOW GRANTS` prints lines with no trailing `;`, so piping them back
 into `mysql` fails at line 2.
 
-The list was derived on 2026-09-13 from `f498463`. It is every table named in
-the import closure of `scripts/report_service.py` and `scripts/report_sync.py`,
-plus the `sql/analytics/*.sql` files `match_analytics` loads from disk. A grep of
-the Python alone misses most of the `hlstats_Events_*` tables. The pipeline only
-appends — a new report or aggregate is a new revision row — so there is no
-UPDATE or DELETE.
+This block is written by hand but checked by machine: `check_report_grants.py`
+derives the same set from the code and fails if the two disagree, so treat the
+script's output as the source of truth and this block as a copy of it.
+
+Two derivations of it have already gone stale. The 2026-09-13 one walked the
+import closure of `scripts/report_service.py` and `scripts/report_sync.py` plus
+`sql/analytics/*.sql` at `f498463`, and was never re-derived as the aim-shadow,
+AC-precision and score/duel/grenade-throw sources landed; the 2026-09-21 one
+found the five it had missed but fixed them by hand. Both failures are the same
+shape — a list of table names that no test held to the code that reads them.
+
+The probe leg matters even though `sql/analytics/*.sql` happens to name every
+probed table today: a capability probe can be added before the SQL that consumes
+it, and in that window the probe is the only place the table appears. A grep over
+the pipeline's Python alone never sees the probed tables at all.
+
+The pipeline only appends — a new report or aggregate is a new revision row — so
+there is no UPDATE or DELETE.
 
 ```bash
 sudo mysql <<'SQL'
@@ -55,29 +67,36 @@ GRANT SELECT ON hlstatsx.hlstats_Events_Statsme             TO 'ktpreports'@'loc
 GRANT SELECT ON hlstatsx.hlstats_Events_Statsme2            TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.hlstats_Events_Suicides            TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.hlstats_Events_Teamkills           TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_ac_weapon_fires                TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_assist_events                  TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_capture_health                 TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_capture_manifests              TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_damage_events                  TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_duel_stats                     TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_flag_captures                  TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_flag_positions                 TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_flag_state_events              TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_grenade_entity_events          TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_grenade_throw_events           TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_life_events                    TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_match_players                  TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_match_stats                    TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_matches                        TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_objective_attempt_events       TO 'ktpreports'@'localhost';
 GRANT SELECT ON hlstatsx.ktp_position_samples               TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_score_events                   TO 'ktpreports'@'localhost';
+GRANT SELECT ON hlstatsx.ktp_shot_events                    TO 'ktpreports'@'localhost';
 GRANT SELECT, INSERT ON hlstatsx.ktp_match_reports          TO 'ktpreports'@'localhost';
 GRANT SELECT, INSERT ON hlstatsx.ktp_web_season_aggregates  TO 'ktpreports'@'localhost';
 SQL
 ```
 
-When the code starts reading a new table, add it here and grant it. Nothing
-else will tell you, which is the point of the next check.
+When the code starts reading a new table — including a new `information_schema`
+probe added to `source_capabilities()`, not just a new `FROM`/`JOIN` — add it here
+and grant it. Don't maintain this block by hand and don't re-derive it by grepping:
+both went stale once each, which is why the check below derives it instead.
 
-### Check what the account can see
+### Check the grants against the code
 
 `source_capabilities()` decides which optional sources to use by asking
 `information_schema` whether each table exists, and MySQL hides tables the
@@ -85,17 +104,33 @@ account holds no privilege on. A missing grant therefore looks like a missing
 table: that source is skipped, the report comes out WARN, and it still
 publishes. No error anywhere.
 
-Check as the account, not as root:
+`scripts/check_report_grants.py` derives the table set from the code — the
+`source_capabilities()` probes unioned with the `FROM`/`JOIN` closure over the
+pipeline's Python and `sql/analytics/*.sql` — and names any table that set holds
+and the grants don't. It exits 1 on a discrepancy and 2 when it could not run at
+all, so a clean 0 is the only result that means anything:
 
 ```bash
-sudo -u ktpreports mysql --user=ktpreports hlstatsx -N -e \
-  "SELECT CURRENT_USER(), COUNT(*) FROM information_schema.tables WHERE table_schema='hlstatsx'"
+# on the data server, as the account
+cd /opt/ktp-reports/KTPInfrastructure
+sudo -u ktpreports python3 -m scripts.check_report_grants --source both
 ```
 
-Expect `ktpreports@localhost` and one table per line of the grant block (24 at
-`f498463`). Pass `--user` every time: without it `sudo -u` sends `root` and gets
-`ERROR 1698`, and the account has no home, so there is no `.my.cnf` to fall back
-on. If `CURRENT_USER()` names anyone else, you measured the wrong account.
+`--source runbook` needs no database and is what `tests/unit/test_report_grants.py`
+gates in CI; `--source live` reads `SHOW GRANTS` and needs the box. Both legs are
+worth running: the live grants were already complete on 2026-09-21 while this
+block was short five tables, so the live leg alone cannot see a defect in the
+rebuild path, and the runbook leg alone cannot see drift on the box.
+
+To confirm you measured the right account:
+
+```bash
+sudo -u ktpreports mysql --user=ktpreports hlstatsx -N -e "SELECT CURRENT_USER()"
+```
+
+Pass `--user` every time: without it `sudo -u` sends `root` and gets `ERROR 1698`,
+and the account has no home, so there is no `.my.cnf` to fall back on. If
+`CURRENT_USER()` names anyone else, you measured the wrong account.
 
 ### Smoke-test the writes without leaving a row
 

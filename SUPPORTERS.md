@@ -23,14 +23,17 @@ Even a few bucks a month covers a real slice of the hosting bill.
 ## Half a Server ($25/mo)
 
 - **seanality** — also the single most frequent one-off donor on the list. Thank you.
+- **khoi**
 
 ## MVP ($10/mo)
 
 - **krod**
+- **cprice**
 
-## Supporter ($5/mo)
+## Supporter
 
 - **stevenwlol**
+- **twist**
 
 ## One-time
 
@@ -41,6 +44,6 @@ real months of hosting just the same.
 
 ---
 
-Monthly sponsors at the $5 tier and up are listed here, along with one-time contributors. Ping **@Nein** in the KTP Discord
+Monthly sponsors are listed here, along with one-time contributors. Ping **@Nein** in the KTP Discord
 to claim your Supporter role and your spot on this list. Prefer to stay off the
 list? Just say so and your support stays anonymous.
