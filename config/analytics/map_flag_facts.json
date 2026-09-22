@@ -1,0 +1,493 @@
+{
+  "_comment": [
+    "Per-flag facts the server configs do NOT carry: which flags spawn neutral and what a",
+    "capture of each is worth. Seeded 2026-09-22 from ktp_flag_positions (CP_default_owner and",
+    "CP_points_for_cap, migration 032) observed across 24 servers, then curated by hand. Verify with",
+    "scripts/map_scoring_facts.py --verify-flags <export>; a mismatch means the map changed and this",
+    "file needs a review, not a silent overwrite.",
+    "initial_owner: 0 neutral (first capture is new ground), 1 allies, 2 axis (a flip of known ground).",
+    "cap_points: player ObjScore per capture of that flag; also the team's points for the capture."
+  ],
+  "maps": {
+    "dod_anjou_a5": {
+      "config": "anjou",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "The Ruined House",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "The Factory",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "The Underpass",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "The Church",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_anzio": {
+      "config": "anzio",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "POINT_ANZIO_LAUNDRY",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "POINT_BRIDGE",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "POINT_ANZIO_STREET",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "POINT_ANZIO_PLAZA",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "POINT_ANZIO_HILL",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_anzio3_b1": {
+      "config": "anzio",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "POINT_ANZIO_LAUNDRY",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "POINT_BRIDGE",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "POINT_ANZIO_STREET",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "POINT_ANZIO_PLAZA",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "POINT_ANZIO_HILL",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_armory_b6": {
+      "config": "armory",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "Allied First",
+          "initial_owner": 1,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "The Bridge",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "Warehouse",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "Axis First",
+          "initial_owner": 2,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_armory_b7": {
+      "config": "armory",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "Allied First",
+          "initial_owner": 1,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "The Bridge",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "Warehouse",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "Axis First",
+          "initial_owner": 2,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_harrington": {
+      "config": "harrington",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "bridge",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "plateau",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "Town Centre",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "arch",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "mountain house",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_lennon5_b1": {
+      "config": "lennon",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "the cliffs",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "the alley",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "the courtyard",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "Well",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "the street",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_orange": {
+      "config": null,
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "Spawn Allies",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "Podium Allies",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "Tour",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "Podium Axis",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "Spawn Axis",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_railroad2_s10a": {
+      "config": "railroad2",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "backalley",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "railroad",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "Town Square",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "ruined house",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "platform",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_saints2_b2": {
+      "config": "saints",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "Allied 1st",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "Allied 2nd",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "The Bridge",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "Axis 2nd",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "Axis 1st",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_saints2_b3e": {
+      "config": "saints_b1",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "Allied 1st",
+          "initial_owner": 1,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "Allied 2nd",
+          "initial_owner": 1,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "The Bridge",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "Axis 2nd",
+          "initial_owner": 2,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "Axis 1st",
+          "initial_owner": 2,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_saints2_b4e": {
+      "config": "saints_b1",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "Allied 1st",
+          "initial_owner": 1,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "Allied 2nd",
+          "initial_owner": 1,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "The Bridge",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "Axis 2nd",
+          "initial_owner": 2,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "Axis 1st",
+          "initial_owner": 2,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_solitude2": {
+      "config": "solitude2",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "Allied First",
+          "initial_owner": 1,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "Grassy Knoll",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "Church",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "Axis First",
+          "initial_owner": 2,
+          "cap_points": 1
+        }
+      ]
+    },
+    "dod_thunder2": {
+      "config": "thunder2",
+      "source": "observed 2026-09-22",
+      "flags": [
+        {
+          "flag_index": 0,
+          "flag_name": "POINT_DONNER_ALLIEDHQ",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 1,
+          "flag_name": "POINT_ALLIEDSTREET",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 2,
+          "flag_name": "POINT_DONNER_MAINSTREET",
+          "initial_owner": 0,
+          "cap_points": 2
+        },
+        {
+          "flag_index": 3,
+          "flag_name": "POINT_AXISSTREET",
+          "initial_owner": 0,
+          "cap_points": 1
+        },
+        {
+          "flag_index": 4,
+          "flag_name": "POINT_DONNER_AXISHQ",
+          "initial_owner": 0,
+          "cap_points": 1
+        }
+      ]
+    }
+  }
+}
