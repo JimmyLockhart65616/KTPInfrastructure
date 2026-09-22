@@ -25,14 +25,27 @@ proven against both halves of 1789348403-ATL2):
   Scope     Player rows are PER HALF — they reset at halftime. The team score
             line is CUMULATIVE, so half 2's team line is the match total.
 
-Screenshots are read into JSON by a human or a vision pass; there is no OCR
-here on purpose — the box has no OCR engine, and a wrong digit read silently
-is worse than typing twelve rows. See --template for the shape.
+Two inputs, because there are two different jobs:
+
+  --template-csv   a CSV prefilled with the roster for that match, one row per
+                   player per half, three blank numbers to fill. For a human
+                   doing a manual review (hello chi): you cannot typo a name,
+                   and the file is the record of what the screenshot said.
+  --template       the JSON shape, for a tool (an OCR pass) to emit.
+
+TRANSCRIPTION IS NOT RECONCILIATION. A wrong digit read off an image and a
+genuine stats defect look identical in the output, so the board carries a
+`transcription` block saying how the numbers were obtained and whether a
+human has checked them. An unverified machine transcription is reported as
+provisional and --strict refuses it: an admin eyeballs the image against the
+read first, and only then is a difference evidence about the stats.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import json
 import re
 import sys
@@ -76,9 +89,12 @@ WHERE s.match_id = '{match_id}' AND s.half IN (1, 2)
 ORDER BY s.half, p.player_name;
 """
 
+CSV_HEADER = "half,side,player,objscore,kills,deaths"
+
 TEMPLATE = {
     "match_id": "1789348403-ATL2",
     "source": "captain end-of-round screenshots, half 1 and half 2",
+    "transcription": {"method": "manual", "by": "chi", "verified": True},
     "halves": {
         "1": {
             "team_score": {"allies": 25, "axis": 69},
@@ -94,6 +110,70 @@ TEMPLATE = {
 def normalise(name: str) -> str:
     """Match names across the two sources without being fooled by tag noise."""
     return re.sub(r"[^a-z0-9]+", "", name.lower())
+
+
+def read_text_tolerant(path: Path) -> str:
+    """Player names carry odd glyphs and a reviewer's editor may not save UTF-8."""
+    data = path.read_bytes()
+    for encoding in ("utf-8-sig", "utf-8", "cp1252"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return data.decode("utf-8", errors="replace")
+
+
+def read_board(path: Path) -> dict:
+    """A board is JSON from a tool, or CSV from a person. Same shape after this."""
+    if path.suffix.lower() != ".csv":
+        return json.loads(read_text_tolerant(path))
+
+    halves: dict[str, dict] = {}
+    transcription = {"method": "manual", "verified": True}
+    match_id = path.stem
+    for raw in read_text_tolerant(path).splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            # `# match_id: X` and `# by: name` are carried, everything else is a note.
+            key, _, value = line.lstrip("# ").partition(":")
+            if key.strip() == "match_id" and value.strip():
+                match_id = value.strip()
+            elif key.strip() == "by" and value.strip():
+                transcription["by"] = value.strip()
+            continue
+        if line.replace(" ", "").startswith("half,"):
+            continue
+        # csv, not split(","): a spreadsheet quotes a name that contains one.
+        parts = [c.strip() for c in next(csv.reader([line]))]
+        if len(parts) < 6:
+            raise SystemExit(f"{path}: need 6 columns ({CSV_HEADER}), got: {raw!r}")
+        # An unquoted comma in a name splits it; the extra fields are still the name.
+        half, side, name = parts[0], parts[1], ", ".join(parts[2:-3])
+        objscore, kills, deaths = parts[-3:]
+        if not (objscore and kills and deaths):
+            continue  # a row left blank is a row not yet transcribed, not a zero
+        halves.setdefault(half, {"players": []})["players"].append({
+            "name": name, "side": side,
+            "objscore": int(objscore), "kills": int(kills), "deaths": int(deaths)})
+    if not halves:
+        raise SystemExit(f"{path}: no filled rows")
+    return {"match_id": match_id, "source": f"transcribed from {path.name}",
+            "transcription": transcription, "halves": halves}
+
+
+def template_csv(stats: dict, match_id: str) -> str:
+    """Prefill the roster so the reviewer types numbers, never names."""
+    lines = [f"# match_id: {match_id}", "# by: <your name>",
+             "# Fill objscore, kills and deaths from the end-of-round screenshot.",
+             "# Player rows are THAT HALF only - the scoreboard resets at halftime.",
+             "# Leave a row blank if the screenshot does not show it.",
+             CSV_HEADER]
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\n")
+    for (half, _), row in sorted(stats.items(), key=lambda kv: (kv[0][0], kv[1]["player_name"])):
+        writer.writerow([half, "", row["player_name"], "", "", ""])
+    lines.append(buffer.getvalue().rstrip("\n"))
+    return "\n".join(lines) + "\n"
 
 
 def read_stats(path: Path) -> dict:
@@ -133,6 +213,18 @@ def reconcile(board: dict, stats: dict) -> tuple[list[str], int]:
     lines.append(f"# Scoreboard reconciliation — {board['match_id']}")
     lines.append("")
     lines.append(f"Screenshot source: {board.get('source', 'unstated')}")
+    transcription = board.get("transcription") or {}
+    method = transcription.get("method", "unstated")
+    verified = bool(transcription.get("verified"))
+    who = transcription.get("by")
+    lines.append(f"Transcription: {method}"
+                 + (f", by {who}" if who else "")
+                 + (", verified against the image" if verified else ", **NOT yet verified**"))
+    if not verified:
+        lines.append("")
+        lines.append("> ⚠️ The numbers on the left were not confirmed against the image by a "
+                     "person. A difference below may be a misread digit rather than a stats "
+                     "defect — check the cell on the screenshot before treating it as either.")
     lines.append("")
     for half in sorted(board["halves"]):
         h = board["halves"][half]
@@ -193,10 +285,13 @@ def reconcile(board: dict, stats: dict) -> tuple[list[str], int]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--board", type=Path, help="scoreboard JSON (see --template)")
+    ap.add_argument("--board", type=Path,
+                    help="scoreboard JSON (--template) or CSV (--template-csv)")
     ap.add_argument("--stats", type=Path, help="TSV from the query --sql prints")
     ap.add_argument("--sql", metavar="MATCH_ID", help="print the stats query and exit")
     ap.add_argument("--template", action="store_true", help="print a board skeleton and exit")
+    ap.add_argument("--template-csv", metavar="MATCH_ID",
+                    help="print a roster-prefilled CSV for a human reviewer (needs --stats)")
     ap.add_argument("--out", type=Path, help="write the report here (default: stdout)")
     ap.add_argument("--strict", action="store_true", help="exit 1 when anything differs")
     args = ap.parse_args(argv)
@@ -207,10 +302,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.template:
         print(json.dumps(TEMPLATE, indent=2))
         return 0
+    if args.template_csv:
+        if not args.stats:
+            ap.error("--template-csv needs --stats (the roster comes from it)")
+        sys.stdout.write(template_csv(read_stats(args.stats), args.template_csv))
+        return 0
     if not args.board or not args.stats:
         ap.error("--board and --stats are both required (or use --sql / --template)")
 
-    board = json.loads(args.board.read_text(encoding="utf-8"))
+    board = read_board(args.board)
     stats = read_stats(args.stats)
     lines, differences = reconcile(board, stats)
     text = "\n".join(lines) + "\n"
@@ -219,6 +319,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote {args.out} ({differences} difference(s))")
     else:
         sys.stdout.write(text)
+    unverified = not (board.get("transcription") or {}).get("verified", False)
+    if args.strict and unverified:
+        print("refusing to pass an unverified transcription: have an admin check the "
+              "read against the image, then set transcription.verified", file=sys.stderr)
+        return 1
     return 1 if (differences and args.strict) else 0
 
 

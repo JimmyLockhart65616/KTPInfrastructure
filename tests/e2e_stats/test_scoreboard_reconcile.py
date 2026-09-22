@@ -136,3 +136,64 @@ def test_verify_flags_detects_a_changed_map(tmp_path, capsys):
                       "dod_x\t0\tA\t1\t1\n", encoding="utf-8")
     assert facts.verify_flags(flags, export) == 1
     assert "dod_x flag 0" in capsys.readouterr().err
+
+
+def test_csv_from_a_human_reviewer_is_read_like_json(tmp_path):
+    csv = tmp_path / "board.csv"
+    csv.write_text("# match_id: m-1\n# by: chi\n" + recon.CSV_HEADER + "\n"
+                   "1,allies,cope ~ ddorito,4,25,19\n"
+                   "2,axis,cope ~ ddorito,6,23,22\n", encoding="utf-8")
+    board = recon.read_board(csv)
+    assert board["match_id"] == "m-1"
+    assert board["transcription"] == {"method": "manual", "verified": True, "by": "chi"}
+    assert [p["objscore"] for p in board["halves"]["1"]["players"]] == [4]
+    assert board["halves"]["2"]["players"][0]["kills"] == 23
+
+
+def test_a_blank_row_is_not_transcribed_rather_than_zero(tmp_path):
+    # The reviewer could not read that cell. Scoring it 0 would invent a
+    # difference and send someone hunting a defect that is not there.
+    csv = tmp_path / "board.csv"
+    csv.write_text(recon.CSV_HEADER + "\n1,allies,a,4,25,19\n1,allies,b,,,\n", encoding="utf-8")
+    board = recon.read_board(csv)
+    assert [p["name"] for p in board["halves"]["1"]["players"]] == ["a"]
+
+
+def test_player_names_with_commas_survive_the_csv(tmp_path):
+    csv = tmp_path / "board.csv"
+    # A spreadsheet quotes the name; a plain text editor does not. Both are the
+    # same player, so both must read back as the same name.
+    csv.write_text(recon.CSV_HEADER + "\n1,axis,\"hey, you\",1,2,3\n"
+                                      "2,allies,hey, you,1,2,3\n", encoding="utf-8")
+    board = recon.read_board(csv)
+    assert board["halves"]["1"]["players"][0]["name"] == "hey, you"
+    assert board["halves"]["2"]["players"][0]["name"] == "hey, you"
+
+
+def test_cp1252_csv_is_read_rather_than_crashing(tmp_path):
+    csv = tmp_path / "board.csv"
+    csv.write_bytes(("# note: em dash \u2014 here\n" + recon.CSV_HEADER
+                     + "\n1,allies,a,4,25,19\n").encode("cp1252"))
+    assert recon.read_board(csv)["halves"]["1"]["players"][0]["kills"] == 25
+
+
+def test_unverified_transcription_is_called_out_and_blocks_strict(tmp_path):
+    board = {"match_id": "m", "transcription": {"method": "ocr", "verified": False},
+             "halves": {"1": {"players": [
+                 {"name": "p", "kills": 1, "deaths": 1, "objscore": 1}]}}}
+    stats = recon.read_stats(_stats(tmp_path, [
+        {"half": 1, "player_name": "p", "kills": 1, "deaths": 1, "objscore": 1}]))
+    lines, differences = recon.reconcile(board, stats)
+    assert differences == 0
+    text = "\n".join(lines)
+    assert "NOT yet verified" in text and "misread digit" in text
+
+
+def test_template_csv_prefills_every_roster_row(tmp_path):
+    stats = recon.read_stats(_stats(tmp_path, [
+        {"half": 1, "player_name": "cope ~ ian", "kills": 1, "deaths": 1, "objscore": 1},
+        {"half": 2, "player_name": "cope ~ ian", "kills": 1, "deaths": 1, "objscore": 1}]))
+    csv = recon.template_csv(stats, "m-1")
+    assert "# match_id: m-1" in csv
+    rows = [l for l in csv.splitlines() if l and not l.startswith("#") and not l.startswith("half,")]
+    assert rows == ["1,,cope ~ ian,,,", "2,,cope ~ ian,,,"]
