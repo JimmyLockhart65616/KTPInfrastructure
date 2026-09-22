@@ -75,7 +75,17 @@ done
 
 echo ""
 echo "=== /etc/sysctl.conf (non-comment, sorted) ==="
-grep -v '^#\|^$' /etc/sysctl.conf 2>/dev/null | tr -s ' ' | sed 's/ *= */ = /' | sort
+# systemd-sysctl also reads /etc/sysctl.d/, /run/sysctl.d/ and
+# /usr/lib/sysctl.d/ -- a key persisted only in one of those looked identical
+# here to "not persisted anywhere", which is the exact ambiguity in
+# KTPInfrastructure#488 finding 2 (Dallas missing 5 UDP-buffer keys from this
+# file alone: real risk on the next reboot, or set via a drop-in and fine?).
+# Union systemd's whole search path so the two cases stop looking the same;
+# the heading stays put so the orchestrator's LIST_SECTIONS match is untouched.
+find /etc/sysctl.conf /etc/sysctl.d /run/sysctl.d /usr/lib/sysctl.d \
+     -name '*.conf' 2>/dev/null | sort \
+  | xargs -r cat 2>/dev/null \
+  | grep -v '^#\|^$' | tr -s ' ' | sed 's/ *= */ = /' | sort -u
 
 echo ""
 echo "=== /etc/rc.local (non-comment, sorted) ==="

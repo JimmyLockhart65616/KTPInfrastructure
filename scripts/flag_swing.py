@@ -349,21 +349,23 @@ def build_flag_swing_shadow(
                 # seed corrects) -- keep the seed until a REAL transition
                 # (is_initial=0) arrives.
                 state.owners[flag] = owner if owner in (1, 2) else 0
-            # A cap-out: one side now owns every flag. Tracked per half so a
-            # later reset (a flag changes hands, e.g. a fresh round) rearms
-            # it -- multiple rounds in one half each get their own event.
-            if (not is_initial_row and owner in (1, 2)
-                    and state.flags_held(owner) == state.flag_count
-                    and state.capped_out_team != owner):
+            # One side now owns every flag. Both consumers below key off this
+            # single test: the top-level `capouts` event (deduped per hold, so
+            # a fresh round in the same half gets its own event) and the
+            # per-cap `capout_completed` flag. They were written out
+            # separately eight lines apart and would have drifted the first
+            # time either was touched.
+            owns_every_flag = bool(
+                not is_initial_row and owner in (1, 2)
+                and state.flags_held(owner) == state.flag_count)
+            if owns_every_flag and state.capped_out_team != owner:
                 state.capped_out_team = owner
                 capouts.append({"half": half, "game_time": at, "team": owner})
             elif (not is_initial_row and state.capped_out_team is not None
                     and state.flags_held(state.capped_out_team) < state.flag_count):
                 state.capped_out_team = None
             delta = state.p_allies() - before
-            capout_completed = bool(
-                owner in (1, 2) and not is_initial_row
-                and state.flags_held(owner) == state.flag_count)
+            capout_completed = owns_every_flag
             credited = _credited(half, row.get("flag_name"), row.get("event_time"))
             share = delta / len(credited) if credited else 0.0
             for pid in credited:
