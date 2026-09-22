@@ -96,3 +96,107 @@ def test_state_file_is_json_object_keyed_by_match(mod, tmp_path, monkeypatch):
     mod.save_sent({"1.3-6776-NY1": "deadbeef"})
     assert json.loads(path.read_text(encoding="utf-8")) == {
         "1.3-6776-NY1": "deadbeef"}
+
+
+class _ScriptedDb:
+    """Answers each query by what it asks for, so build_match can run offline."""
+
+    def __init__(self, *, roster, box, events, points):
+        self.roster, self.box, self.events, self.points = roster, box, events, points
+        self.sql = []
+
+    def json_rows(self, sql):
+        self.sql.append(sql)
+        if "ktp_match_players" in sql:
+            return self.roster
+        if "ktp_match_stats" in sql:
+            return self.box
+        if "hlstats_Events_Teamkills" in sql:
+            return self.events
+        if "ktp_flag_captures" in sql:
+            return self.points
+        return []
+
+
+def _build(mod, **kw):
+    db = _ScriptedDb(**kw)
+    match = {"gameMatchId": "m-1", "serverId": 1, "mapName": "dod_donner",
+             "startedAt": 0, "endedAt": 1, "halfCount": 2}
+    return db, mod.build_match(db, match, True)
+
+
+def test_kills_and_deaths_come_from_the_events_not_dodx_counter(mod):
+    """dodx's ktp_match_stats row disagrees with the scoreboard three ways.
+
+    Measured against both captains' screenshots of 1789348403-ATL2, 36 cells:
+    kills wrong on the player who took two kills before the restart, deaths
+    wrong on six of twelve (it misses teamkill deaths and suicides), and score
+    short on eight (the savedScore undercount). The event tables reproduce all
+    24 player rows exactly.
+    """
+    db, match = _build(
+        mod,
+        roster=[{"steamId": "0:1", "playerName": "p", "team": 1, "playerId": 7}],
+        box=[{"playerId": 7, "kills": 59, "deaths": 42, "headshots": 3,
+              "teamKills": 0, "suicides": 0, "damage": 100, "score": 8}],
+        events=[{"playerId": 7, "kills": 57, "deaths": 42}],
+        points=[{"playerId": 7, "flags": 9}],
+    )
+    line = match["players"][0]
+    assert (line["kills"], line["deaths"]) == (57, 42)
+    # The rest of dodx's row still rides along; only the two rendered columns
+    # were wrong, and `score` keeps its documented undercount.
+    assert line["headshots"] == 3 and line["score"] == 8
+
+
+def test_flags_ships_objective_POINTS_not_a_count_of_capture_rows(mod):
+    """A 2-point flag taken by three players is three rows and six points.
+
+    This is the defect the stats review opened with: 6 on the match page
+    against 24 on the screenshot.
+    """
+    db, match = _build(
+        mod,
+        roster=[{"steamId": "0:1", "playerName": "p", "team": 1, "playerId": 7}],
+        box=[{"playerId": 7, "kills": 1, "deaths": 1}],
+        events=[{"playerId": 7, "kills": 1, "deaths": 1}],
+        points=[{"playerId": 7, "flags": 9}],
+    )
+    assert match["players"][0]["flags"] == 9
+    sql = " ".join(db.sql)
+    assert "points_for_cap" in sql
+    # An unobserved flag value is still a capture, and 1 is the answer this
+    # shipped before -- never a dropped row.
+    assert "coalesce(fp.points_for_cap, 1)" in sql
+    assert "hlstats_Events_PlayerActions" not in sql
+
+
+def test_a_player_with_no_captures_reads_zero_not_missing(mod):
+    _, match = _build(
+        mod,
+        roster=[{"steamId": "0:1", "playerName": "p", "team": 1, "playerId": 7}],
+        box=[{"playerId": 7, "kills": 1, "deaths": 1}],
+        events=[{"playerId": 7, "kills": 1, "deaths": 1}],
+        points=[],
+    )
+    assert match["players"][0]["flags"] == 0
+
+
+def test_every_counted_event_is_scoped_to_the_restart(mod):
+    db = _ScriptedDb(roster=[], box=[], events=[], points=[])
+    mod.fetch_scoreboard_totals(db, "m-1")
+    mod.fetch_objective_points(db, "m-1")
+    for sql in db.sql:
+        # The producer's own answer wins; the spawn burst carries every half
+        # recorded before the plugin stamped it.
+        assert "round_live = 1" in sql
+        assert "having count(*) >= 8" in sql
+        assert "coalesce(s.gt, b.gt) gt" in sql
+    kills_deaths = db.sql[0]
+    # Deaths are frags + teamkills + suicides: disjoint sources, so they add.
+    for table in ("hlstats_Events_Frags", "hlstats_Events_Teamkills",
+                  "hlstats_Events_Suicides"):
+        assert table in kills_deaths
+    # NULL-safe: `NULL >= x` is NULL, and a naive predicate drops those rows
+    # without a word -- it cost two real mid-round kills the first time.
+    assert "f.game_time is null and f.eventTime >= w.et" in kills_deaths
