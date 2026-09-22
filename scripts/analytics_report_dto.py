@@ -30,7 +30,7 @@ from scripts.in_game_result import unavailable as in_game_unavailable
 from scripts.kill_streaks import DEFINITION as KILL_STREAK_DEFINITION
 from scripts.kill_streaks import DEFINITION_VERSION as KILL_STREAK_DEFINITION_VERSION
 
-CONTRACT_VERSION = "analytics-report-dto-v1.6.0"  # docs/ANALYTICS_REPORT_DTO_CONTRACT.md
+CONTRACT_VERSION = "analytics-report-dto-v1.7.0"  # docs/ANALYTICS_REPORT_DTO_CONTRACT.md
 
 # hlstatsx DATETIMEs are naive league-local time: the data server runs
 # America/New_York. The website column is timestamptz, which reads a naive
@@ -372,6 +372,7 @@ def sanitize_report(report: dict) -> dict:
         "key_moments": _key_moments_block(se, names_by_id),
         "progression": _progression_block(se, names_by_id),
         "plays": _plays_block(se, names_by_id),
+        "capouts": _capouts_block(se),
         "player_halves": _player_halves_block(report),
         "kill_streaks": _kill_streaks_block(report),
         "weapon_sides": _weapon_sides_block(report),
@@ -542,6 +543,23 @@ def _play(p: dict, names_by_id: dict) -> dict:
         },
         "tags": list(p.get("tags") or []),
         "summary": p.get("summary"),
+    }
+
+
+def _capouts_block(se: dict) -> dict:
+    """Public form of shadow_explorations.capouts: each completed cap-out
+    (one side owning every flag at once), report-team convention. Status
+    follows flag_swing's own -- capouts is a byproduct of its event stream,
+    with the same availability. A report built before schema 19 has none
+    and reads unavailable."""
+    fs = se.get("flag_swing") or {}
+    return {
+        "status": fs.get("status") or "unavailable",
+        "events": [
+            {"half": _num(c.get("half")), "game_time": _num(c.get("game_time")),
+             "team": _num(c.get("team"))}
+            for c in se.get("capouts") or []
+        ],
     }
 
 

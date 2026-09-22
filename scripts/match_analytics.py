@@ -60,6 +60,12 @@ from scripts.roster_teams import apply_canonical_teams  # noqa: E402
 from scripts.flag_swing import (  # noqa: E402
     build_flag_swing_shadow,
 )
+from scripts.report_team_convention import (  # noqa: E402
+    report_team1_engine_side,
+    translate_capouts,
+    translate_map_control,
+    translate_team_series,
+)
 from scripts.ktpr_v2 import (  # noqa: E402
     build_ktpr_v2_shadow,
 )
@@ -96,7 +102,7 @@ from scripts.side_splits import (  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 SQL_DIR = REPO / "sql" / "analytics"
-SCHEMA_VERSION = 18  # 9: spatial_layers; 10: in_game_result + player_halves; 11: kill_streaks + side/class splits; 12: objective score + grenade damage/kills, per-team and per-minute rates; 13: wave 1/2 player facts (damage_applied, life shots, score attribution) + duel_stats; 14: grenade throws + flight time; 15: aim shadow (computed placement + AC on-hit precision); 16: shadow_explorations.highlight_windows (key moments ranked on flag_swing); 17: shadow_explorations.progression (cumulative per-player series per half); 18: shadow_explorations.excursions + plays (per-player top plays, match top three, dunce)
+SCHEMA_VERSION = 19  # 9: spatial_layers; 10: in_game_result + player_halves; 11: kill_streaks + side/class splits; 12: objective score + grenade damage/kills, per-team and per-minute rates; 13: wave 1/2 player facts (damage_applied, life shots, score attribution) + duel_stats; 14: grenade throws + flight time; 15: aim shadow (computed placement + AC on-hit precision); 16: shadow_explorations.highlight_windows (key moments ranked on flag_swing); 17: shadow_explorations.progression (cumulative per-player series per half); 18: shadow_explorations.excursions + plays (per-player top plays, match top three, dunce); 19: map_control + progression.flag_differential translated engine-side -> report-team convention (were silently backwards in half 1 of every two-half match); shadow_explorations.capouts
 # The health streams EVERY producer contract emits, schema 21 onward. All of
 # these must appear exactly once per half; a missing one means that stream went
 # dark, which is the defect this list exists to catch.
@@ -2012,6 +2018,12 @@ def build_report(
     credit_timeline = (
         query_rows(db, "capture_credit_timeline_fact.sql", match_id)
         if sources.get("capture_credits", True) else [])
+    # DoD swaps Allies/Axis at halftime; report team 1 is the roster's
+    # terminal-half slot, guaranteed opposite this in half 1 of every
+    # two-half match. flag_swing/positional_shadow/progression compute in
+    # raw engine side -- this is the one resolver everything below
+    # translates through (scripts/report_team_convention.py).
+    team1_engine_side = report_team1_engine_side(life_boundaries, players_public)
     flag_swing = build_flag_swing_shadow(
         flag_states if sources.get("flag_ownership", False) else None,
         frag_context,
@@ -2026,6 +2038,7 @@ def build_report(
         temporal_valid=source_mode != "replay",
         spawn_ownership=spawn_ownership,
     )
+    capouts = translate_capouts(flag_swing.get("capouts") or [], team1_engine_side)
     ktpr_v2 = build_ktpr_v2_shadow(
         players_public,
         flag_fights.get("players"),
@@ -2065,6 +2078,15 @@ def build_report(
         flags_available=flag_swing.get("status") == "available",
         temporal_valid=source_mode != "replay",
     )
+    if progression.get("teams"):
+        translated_teams, undecided_halves = translate_team_series(
+            progression["teams"], team1_engine_side)
+        progression["teams"] = translated_teams
+        if undecided_halves:
+            progression["caveats"].append(
+                "Half(s) " + ", ".join(str(h) for h in undecided_halves)
+                + " could not be resolved to a report team and are omitted "
+                  "from flag_differential rather than mislabeled.")
     if source_mode == "replay":
         objective_pressure["status"] = "timed_metrics_suppressed"
         objective_pressure["players"] = []
@@ -2084,6 +2106,7 @@ def build_report(
             sources.get("positions", False) and sources.get("flag_positions", False)),
         temporal_valid=source_mode != "replay",
     )
+    translate_map_control(positional_shadow["map_control"], team1_engine_side)
     spatial_layers = build_spatial_layers(
         position_timeline if sources.get("positions", False) else None,
         flag_positions if sources.get("flag_positions", False) else None,
@@ -2205,6 +2228,7 @@ def build_report(
             "fight_entries": fight_entries,
             "recap_speed": recap_speed,
             "flag_swing": flag_swing,
+            "capouts": capouts,
             "ktpr_v2": ktpr_v2,
             "highlight_windows": highlight_windows,
             "excursions": excursions,
