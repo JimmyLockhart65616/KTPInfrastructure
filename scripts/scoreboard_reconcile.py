@@ -9,21 +9,26 @@ THE FOUR RULES IT ENCODES (handover/SCOREBOARD_ALIGNMENT_MODEL_20260922.md,
 proven against both halves of 1789348403-ATL2):
 
   Kills     hlstats_Events_Frags, as-is.
-  Deaths    UNSETTLED, and the tool refuses to guess. Frag rows alone are
-            short for some players and exact for others; adding every
-            hlstats_Events_Teamkills or hlstats_Events_Suicides row then
-            OVERSHOOTS others, so those tables overlap the frag table by an
-            amount that cannot be resolved from counts. The report prints the
-            components side by side and judges against frags; read the
-            `+tk`/`+su` columns before calling a row wrong. Worked evidence:
-            1789348403-ATL2 half 1, where frags+suicides fits 4 players and
-            frags+teamkills fits a different 3.
+  Deaths    hlstats_Events_Frags + hlstats_Events_Teamkills +
+            hlstats_Events_Suicides, as victim. The three tables are DISJOINT:
+            on the worked match no teamkill or suicide shares a victim and a
+            second with a frag row, so they add rather than overlap. The
+            report shows the tk/su share of a player's deaths, because a
+            death by a friend's bullet is worth seeing.
   ObjScore  SUM(captures x that flag's cap_points). NOT ktp_match_stats.score,
             which carries the dodx savedScore undercount (warmup points
             subtracted once, so half 1 reads low). Both are printed: `stored`
             is shown only to make the defect visible.
   Scope     Player rows are PER HALF — they reset at halftime. The team score
             line is CUMULATIVE, so half 2's team line is the match total.
+  Window    The half opens at the ROUND RESTART, not at context_live. DoD
+            restarts a few seconds after the live command and the scoreboard
+            zeroes there, so kills, deaths and captures in between are ours
+            and not the screenshot's. The restart is observable — every player
+            respawns at one game_time — so the first >=8-player spawn burst of
+            the half IS the zero. This was the whole of the residual
+            disagreement: four deaths, two kills and two captures on
+            1789348403-ATL2, and 422 frag rows across 203 production matches.
 
 Two inputs, because there are two different jobs:
 
@@ -52,6 +57,25 @@ import sys
 from pathlib import Path
 
 SQL = """-- scoreboard_reconcile.py --stats input, for {match_id}
+--
+-- The window opens at the ROUND RESTART, not at context_live. DoD restarts the
+-- round a few seconds after the live command and the scoreboard zeroes there,
+-- so anything killed in between is on our side of the line and not on the
+-- screenshot. The restart is observable: every player respawns at one
+-- game_time, so the first >=8-player spawn burst of the half IS the zero.
+-- Measured across production: 422 frag rows in 203 matches sit before it.
+-- (A mid-half burst is a cap-out restart, which does NOT reset the player
+-- rows -- hence MIN per half, never the latest.)
+WITH live AS (
+  SELECT match_id, half, MIN(game_time) burst_gt, MIN(event_time) burst_time
+  FROM (SELECT match_id, half, game_time, MIN(event_time) event_time
+        FROM ktp_life_events
+        WHERE match_id = '{match_id}'
+          AND boundary_kind = 'start' AND reason = 'spawn'
+        GROUP BY match_id, half, game_time
+        HAVING COUNT(*) >= 8) b
+  GROUP BY match_id, half
+)
 SELECT s.half, p.player_name,
        COALESCE(f.kills, 0)                        AS kills,
        COALESCE(d.deaths, 0)                       AS deaths,
@@ -62,17 +86,35 @@ SELECT s.half, p.player_name,
        s.score                                     AS objscore_stored
 FROM ktp_match_stats s
 JOIN ktp_match_players p ON p.match_id = s.match_id AND p.player_id = s.player_id
-LEFT JOIN (SELECT half, killerId pid, COUNT(*) kills FROM hlstats_Events_Frags
-           WHERE match_id = '{match_id}' GROUP BY 1, 2) f
+LEFT JOIN (SELECT e.half, e.killerId pid, COUNT(*) kills FROM hlstats_Events_Frags e
+           LEFT JOIN live w ON w.half = e.half
+           WHERE e.match_id = '{match_id}'
+             AND (w.burst_gt IS NULL
+                  OR (e.game_time IS NOT NULL AND e.game_time >= w.burst_gt)
+                  OR (e.game_time IS NULL AND e.eventTime >= w.burst_time)) GROUP BY 1, 2) f
        ON f.half = s.half AND f.pid = s.player_id
-LEFT JOIN (SELECT half, victimId pid, COUNT(*) deaths FROM hlstats_Events_Frags
-           WHERE match_id = '{match_id}' GROUP BY 1, 2) d
+LEFT JOIN (SELECT e.half, e.victimId pid, COUNT(*) deaths FROM hlstats_Events_Frags e
+           LEFT JOIN live w ON w.half = e.half
+           WHERE e.match_id = '{match_id}'
+             AND (w.burst_gt IS NULL
+                  OR (e.game_time IS NOT NULL AND e.game_time >= w.burst_gt)
+                  OR (e.game_time IS NULL AND e.eventTime >= w.burst_time)) GROUP BY 1, 2) d
        ON d.half = s.half AND d.pid = s.player_id
-LEFT JOIN (SELECT half, victimId pid, COUNT(*) tk_deaths FROM hlstats_Events_Teamkills
-           WHERE match_id = '{match_id}' GROUP BY 1, 2) t
+-- NULL-SAFE ON PURPOSE. Some frag rows carry no game_time at all (2 of 535
+-- in the worked match), and `NULL >= x` is NULL, so a naive predicate drops
+-- them silently -- it cost two real mid-round kills the first time. Those
+-- rows fall back to the wall clock.
+-- Teamkills and suicides carry no game_time, so they are cut on the wall clock.
+-- One-second granularity: a teamkill inside the restart second counts.
+LEFT JOIN (SELECT e.half, e.victimId pid, COUNT(*) tk_deaths FROM hlstats_Events_Teamkills e
+           LEFT JOIN live w ON w.half = e.half
+           WHERE e.match_id = '{match_id}'
+             AND (w.burst_time IS NULL OR e.eventTime >= w.burst_time) GROUP BY 1, 2) t
        ON t.half = s.half AND t.pid = s.player_id
-LEFT JOIN (SELECT half, playerId pid, COUNT(*) suicides FROM hlstats_Events_Suicides
-           WHERE match_id = '{match_id}' GROUP BY 1, 2) u
+LEFT JOIN (SELECT e.half, e.playerId pid, COUNT(*) suicides FROM hlstats_Events_Suicides e
+           LEFT JOIN live w ON w.half = e.half
+           WHERE e.match_id = '{match_id}'
+             AND (w.burst_time IS NULL OR e.eventTime >= w.burst_time) GROUP BY 1, 2) u
        ON u.half = s.half AND u.pid = s.player_id
 LEFT JOIN (SELECT fc.half, fc.player_id pid, COUNT(*) caps,
                   SUM(COALESCE(fp.points_for_cap, 1)) cap_points
@@ -83,7 +125,13 @@ LEFT JOIN (SELECT fc.half, fc.player_id pid, COUNT(*) caps,
                   ON fp.flag_name = fc.flag_name
                  AND fp.map_name = (SELECT MAX(map_name) FROM ktp_matches
                                     WHERE match_id = '{match_id}')
-           WHERE fc.match_id = '{match_id}' GROUP BY 1, 2) c
+           LEFT JOIN live w ON w.half = fc.half
+           -- Captures need the same window: the worked match credits two
+           -- players a 2-point flag TWO SECONDS before the restart, and the
+           -- scoreboard zeroes it with everything else.
+           WHERE fc.match_id = '{match_id}'
+             AND (w.burst_time IS NULL OR fc.event_time >= w.burst_time)
+           GROUP BY 1, 2) c
        ON c.half = s.half AND c.pid = s.player_id
 WHERE s.match_id = '{match_id}' AND s.half IN (1, 2)
 ORDER BY s.half, p.player_name;
@@ -199,6 +247,16 @@ def read_stats(path: Path) -> dict:
     return out
 
 
+def breakdown(row: dict) -> str:
+    """Say which of the three tables a player's deaths came from, when it is not all frags."""
+    parts = []
+    if row["tk_deaths"]:
+        parts.append(f"{row['tk_deaths']} tk")
+    if row["suicides"]:
+        parts.append(f"{row['suicides']} su")
+    return " + ".join(parts)
+
+
 def verdict(shot: int | None, have: int | None) -> str:
     if shot is None or have is None:
         return "—"
@@ -230,19 +288,23 @@ def reconcile(board: dict, stats: dict) -> tuple[list[str], int]:
         h = board["halves"][half]
         lines.append(f"## Half {half}")
         lines.append("")
-        lines.append("| player | side | K shot | K db | | D shot | D frags | | +tk | +su | Obj shot | Obj db | | Obj stored |")
-        lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+        lines.append("| player | side | K shot | K db | | D shot | D db | | of which tk/su | Obj shot | Obj db | | Obj stored |")
+        lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
         for player in h["players"]:
             key = (str(half), normalise(player["name"]))
             row = stats.get(key)
             if row is None:
                 lines.append(f"| {player['name']} | {player.get('side','')} | "
-                             f"{player['kills']} | — | ⚠ | {player['deaths']} | — | ⚠ | — | — | "
+                             f"{player['kills']} | — | ⚠ | {player['deaths']} | — | ⚠ | — | "
                              f"{player['objscore']} | — | ⚠ | — |")
                 differences += 1
                 continue
             vk = verdict(player["kills"], row["kills"])
-            vd = verdict(player["deaths"], row["deaths"])
+            # A death is a frag row, a teamkill row or a suicide row. The three
+            # tables are DISJOINT — verified on the worked match: no teamkill or
+            # suicide shares a victim and a second with a frag — so they add.
+            deaths_db = row["deaths"] + row["tk_deaths"] + row["suicides"]
+            vd = verdict(player["deaths"], deaths_db)
             vo = verdict(player["objscore"], row["objscore"])
             differences += sum(1 for v in (vk, vd, vo) if v != "ok")
             stored = (f"{row['objscore_stored']}"
@@ -250,8 +312,8 @@ def reconcile(board: dict, stats: dict) -> tuple[list[str], int]:
             lines.append(
                 f"| {player['name']} | {player.get('side','')} | "
                 f"{player['kills']} | {row['kills']} | {vk} | "
-                f"{player['deaths']} | {row['deaths']} | {vd} | "
-                f"{row['tk_deaths'] or ''} | {row['suicides'] or ''} | "
+                f"{player['deaths']} | {deaths_db} | {vd} | "
+                f"{breakdown(row) or ''} | "
                 f"{player['objscore']} | {row['objscore']} | {vo} | {stored} |")
         lines.append("")
         team = h.get("team_score")
@@ -272,10 +334,12 @@ def reconcile(board: dict, stats: dict) -> tuple[list[str], int]:
         lines.append("- `Obj stored ⚠` — dodx's own score disagrees with captures x cap points. "
                      "Expected in half 1 (savedScore undercount); the computed column is the "
                      "correct one, and it is what the box score should show.")
-        lines.append("- Deaths are judged against FRAG rows only. `+tk` and `+su` are the "
-                     "teamkill-death and suicide rows for that player; they overlap the frag "
-                     "table by an unresolved amount, so a -1 that a `+su` would close is a "
-                     "known gap, not a capture defect. Kills and ObjScore carry no such caveat.")
+        lines.append("- Deaths are frag rows + teamkill rows + suicide rows, which are "
+                     "disjoint sources rather than overlapping ones; the tk/su column says "
+                     "how a player's deaths break down when it is not all frags.")
+        lines.append("- Everything is counted from the ROUND RESTART (the half's first "
+                     "mass respawn), not from context_live. A difference of one or two on a "
+                     "single player is most often a kill or capture in that gap.")
     else:
         lines.append("**No differences.** Every kill, death and objective point on the "
                      "screenshot is reproduced by the captured stats.")

@@ -197,3 +197,37 @@ def test_template_csv_prefills_every_roster_row(tmp_path):
     assert "# match_id: m-1" in csv
     rows = [l for l in csv.splitlines() if l and not l.startswith("#") and not l.startswith("half,")]
     assert rows == ["1,,cope ~ ian,,,", "2,,cope ~ ian,,,"]
+
+
+def test_deaths_count_teamkills_and_suicides_not_just_frags(tmp_path):
+    # The three tables are disjoint sources, so they add. Judging against frag
+    # rows alone reported a phantom -1 on every player a friend had killed.
+    board = {"match_id": "m", "halves": {"1": {"players": [
+        {"name": "p", "kills": 1, "deaths": 27, "objscore": 1}]}}}
+    stats = recon.read_stats(_stats(tmp_path, [
+        {"half": 1, "player_name": "p", "kills": 1, "deaths": 25,
+         "tk_deaths": 1, "suicides": 1, "objscore": 1}]))
+    lines, differences = recon.reconcile(board, stats)
+    assert differences == 0
+    assert any("1 tk + 1 su" in line for line in lines)
+
+
+def test_the_window_opens_at_the_restart_not_at_context_live():
+    # The residual disagreement with every screenshot was events between the
+    # live command and DoD's round restart, which the scoreboard zeroes past.
+    sql = recon.SQL.format(match_id="m")
+    assert "boundary_kind = 'start' AND reason = 'spawn'" in sql
+    assert "HAVING COUNT(*) >= 8" in sql
+    # MIN per half: a mid-half burst is a cap-out restart, which does NOT
+    # reset the player rows, so taking the latest would erase a real half.
+    assert "MIN(game_time) burst_gt" in sql
+    # Captures ride the same window — two of them landed before the restart on
+    # the worked match.
+    assert sql.count("LEFT JOIN live w") == 5
+
+
+def test_rows_without_a_game_time_are_not_silently_dropped():
+    # `NULL >= x` is NULL, so a naive window predicate discards them. Two real
+    # mid-round kills went missing that way before this fallback existed.
+    sql = recon.SQL.format(match_id="m")
+    assert "e.game_time IS NULL AND e.eventTime >= w.burst_time" in sql
