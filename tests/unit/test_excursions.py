@@ -101,3 +101,35 @@ def test_isolation_is_configurable():
     tr[2] = tr[2][:3] + [(t, 900, 200 + (t - 300) * 40) for t in range(300, 362, 2)]  # 900 u beside
     assert run(tr)["rows"] == []
     assert len(run(tr, cfg=ExcursionConfig(isolation_units=800))["rows"]) == 2
+
+
+def credit(pid, flag, t, half=1):
+    return {"half": half, "player_id": pid, "flag_name": flag, "game_time": t}
+
+
+def test_a_rear_touch_is_measured_even_when_no_window_forms():
+    # Player 1 pushes in WITH player 2, then finishes alone: no 10 s window,
+    # but the touch itself is out ahead of the team (the reported case).
+    tr = base_tracks()
+    tr[1] = tr[1][:3] + [(t, 0, 200 + (t - 300) * 40) for t in range(300, 362, 2)]
+    tr[2] = (tr[2][:3] + [(t, 150, 200 + (t - 300) * 40) for t in range(300, 354, 2)]
+             + [(t, 150, 800) for t in range(354, 362, 2)])
+    out = build_excursions(samples(tr), FLAGS, spawns(), [], None,
+                           capture_credits=[credit(1, "axis_hq", 360.0)])
+    assert out["rows"] == []  # a teammate stayed inside 1200 for the run
+    touch = out["touches"][0]
+    assert touch["player_id"] == 1 and touch["flag"] == "axis_hq"
+    assert touch["teammate_gap"] > 1200
+    assert touch["depth"] > 0.9 and touch["depth_gain"] > 0
+
+
+def test_touches_ignore_flags_that_are_not_the_enemy_rear():
+    tr = base_tracks()
+    tr[1] = tr[1][:3] + [(t, 0, 200 + (t - 300) * 40) for t in range(300, 362, 2)]
+    out = build_excursions(samples(tr), FLAGS, spawns(), [], None,
+                           capture_credits=[credit(1, "mid", 360.0), credit(1, "axis_hq", 360.0)])
+    assert [t["flag"] for t in out["touches"]] == ["axis_hq"]
+
+
+def test_touches_are_empty_without_capture_credits():
+    assert run(base_tracks())["touches"] == []

@@ -19,6 +19,16 @@ is "alone" on lennon and "standing near someone" on harrington. The default
 is the flat 1200 the sweep used; callers with a per-map percentile pass it
 in. Private input: raw coordinates never leave this module -- only distances,
 depths and times do.
+
+The window rule alone misses the FAST deep push: a player who goes in with
+the team, breaks off for the last few seconds and takes the flag ahead of
+everyone. Reported 2026-09-22 against 1789931256-NY1 h1 992 -- kroD pushed
+with a teammate 95-358 units away, then finished alone (824 -> 1362 units,
+enemies closer than his own side) and capped out. Ten seconds of isolation
+is not what made it; depth and speed were. So `touches` measures every
+rear-flag capture on its own terms -- the gap to the capper's nearest living
+teammate at the moment of the touch, and how deep he was -- independent of
+whether a window formed.
 """
 from __future__ import annotations
 
@@ -84,13 +94,22 @@ def build_excursions(
     life_boundaries: Sequence[dict[str, Any]] | None,
     flag_states: Sequence[dict[str, Any]] | None,
     config: ExcursionConfig | None = None,
+    capture_credits: Sequence[dict[str, Any]] | None = None,
     *,
     source_available: bool = True,
 ) -> dict[str, Any]:
-    """Per-half solo deep runs. Rows: half, player_id, team (engine side),
-    start, end, duration, min_teammate_distance, max_depth, closest_flag
-    (name), closest_flag_distance (to an enemy-owned or neutral rear flag),
-    rear_flags (names, from the runner's side)."""
+    """Per-half solo deep runs, plus every rear-flag touch measured.
+
+    `rows`: half, player_id, team (engine side), start, end, duration,
+    min_teammate_distance, max_depth, closest_flag (name),
+    closest_flag_distance (to an enemy-owned or neutral rear flag),
+    rear_flags (names, from the runner's side).
+
+    `touches` (needs `capture_credits`, rows of half/player_id/flag_name/
+    game_time): half, player_id, team, flag, game_time,
+    teammate_gap (nearest living teammate at the touch), depth, and
+    depth_gain (how much deeper the capper got over the ten seconds before
+    it) -- the fast-push signature the window rule cannot see."""
     cfg = config or ExcursionConfig()
     cfg.validate()
     envelope: dict[str, Any] = {
@@ -106,6 +125,7 @@ def build_excursions(
             "calibration is pending (coordination: infra-hidden-value-plays).",
         ],
         "rows": [],
+        "touches": [],
         "halves": {},
     }
     if not source_available or not position_timeline or not flag_positions:
@@ -156,7 +176,16 @@ def build_excursions(
                 current = owner
         return current
 
+    credits_by_half: dict[int, list[dict[str, Any]]] = {}
+    for row in capture_credits or []:
+        half, pid = _i(row.get("half")), _i(row.get("player_id"))
+        at = _f(row.get("game_time"))
+        if half is not None and pid is not None and at is not None and row.get("flag_name"):
+            credits_by_half.setdefault(half, []).append(
+                {"player_id": pid, "flag_name": str(row["flag_name"]), "game_time": at})
+
     rows: list[dict[str, Any]] = []
+    touches: list[dict[str, Any]] = []
     for half in sorted(by_half):
         samples = by_half[half]
         for pid in samples:
@@ -199,6 +228,28 @@ def build_excursions(
                 d = math.hypot(x - s[1], y - s[2])
                 best = d if best is None or d < best else best
             return best
+
+        for credit in credits_by_half.get(half, []):
+            pid, at = credit["player_id"], credit["game_time"]
+            team = side.get(pid)
+            if team not in (1, 2) or credit["flag_name"] not in rear[team]:
+                continue
+            here = [s for s in samples.get(pid, []) if abs(s[0] - at) <= 3 and s[3]]
+            if not here:
+                continue
+            s_now = min(here, key=lambda s: abs(s[0] - at))
+            before = [s for s in samples.get(pid, [])
+                      if at - 10 <= s[0] <= at and s[3]]
+            depth_now = depth(s_now[1], s_now[2], team)
+            touches.append({
+                "half": half, "player_id": pid, "team": team,
+                "flag": credit["flag_name"], "game_time": round(at, 2),
+                "teammate_gap": (lambda d: round(d) if d is not None else None)(
+                    nearest_mate(pid, s_now[0], s_now[1], s_now[2])),
+                "depth": round(depth_now, 3),
+                "depth_gain": round(depth_now - min(
+                    depth(s[1], s[2], team) for s in before), 3) if before else None,
+            })
 
         for pid, seq in samples.items():
             team = side.get(pid)
@@ -253,6 +304,8 @@ def build_excursions(
                     })
                 i = max(j, i + 1)
     rows.sort(key=lambda r: (r["half"], r["start"], r["player_id"]))
+    touches.sort(key=lambda r: (r["half"], r["game_time"], r["player_id"]))
     envelope["rows"] = rows
     envelope["rows_total"] = len(rows)
+    envelope["touches"] = touches
     return envelope
