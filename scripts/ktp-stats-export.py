@@ -55,7 +55,18 @@ STATE_PATH = os.environ.get(
 # The two DoD objective actions. ⚠️ DoD writes `dod_control_point` /
 # `dod_capture_area` -- grepping for CS's `Captured` returns 0 against millions
 # of live rows and reads exactly like "the engine emits nothing".
+#
+# ⚠️ These are no longer what the site's Flags column ships. A capture ROW is
+# not a scoreboard point: a 2-point flag captured by three players is three
+# rows and six points. The review that found this was looking at 6 and 4 on the
+# match page against 24 and 28 on the captains' screenshots. See
+# fetch_objective_points().
 FLAG_ACTIONS = ("dod_control_point", "dod_capture_area")
+
+# A DoD round restart respawns everybody at one game_time, which is how the
+# restart is found on halves recorded before the producer stamped round_live.
+# Official matches are 6v6, so 8 is a quorum no ordinary respawn reaches.
+RESTART_BURST_MIN_SPAWNS = 8
 
 # hlstats_Events_* are utf8mb4_unicode_ci while the KTP ktp_* tables are
 # utf8mb4_0900_ai_ci. Joining match_id across the families without this raises
@@ -182,6 +193,108 @@ def fetch_matches(db: Db, hours: int, match_id: str | None) -> list[dict]:
     )
 
 
+def window_cte(mid: str) -> str:
+    """The half's zero: the round RESTART, not the live command.
+
+    DoD restarts a few seconds after the live command and the scoreboard zeroes
+    at the restart, so a kill in that gap is on nobody's scoreboard. Measured
+    across every match in the database: 422 such events, touching ~830 player
+    rows, nearly all by one -- which is why this reads as a box score quietly
+    off rather than as something broken.
+
+    Two sources, preferred in order. `round_live` is the producer answering
+    directly (plugin 1.24.5+). The spawn burst is the derivation for every half
+    recorded before it, which is all of season 10 so far.
+
+    ⚠️ MIN per half. A mid-half burst is a cap-out round restart, which does
+    NOT reset the player rows.
+
+    ⚠️ Everything here filters `ktp_life_events` by a literal match id and then
+    joins on `half` alone. Joining the two table families on match_id would
+    cross the utf8mb4_0900_ai_ci / utf8mb4_unicode_ci boundary COLL exists for;
+    not joining on it at all is cheaper and cannot be got wrong.
+    """
+    return (
+        "with stamped as ("
+        "  select half, min(game_time) gt, min(event_time) et"
+        "  from ktp_life_events"
+        f" where match_id = {sql_str(mid)} and round_live = 1"
+        "  group by half), "
+        "burst as ("
+        "  select half, min(game_time) gt, min(event_time) et from ("
+        "    select half, game_time, min(event_time) event_time"
+        "    from ktp_life_events"
+        f"   where match_id = {sql_str(mid)}"
+        "      and boundary_kind = 'start' and reason = 'spawn'"
+        "    group by half, game_time"
+        f"   having count(*) >= {RESTART_BURST_MIN_SPAWNS}) b"
+        "  group by half), "
+        "live as ("
+        "  select h.half, coalesce(s.gt, b.gt) gt, coalesce(s.et, b.et) et"
+        "  from (select half from stamped union select half from burst) h"
+        "  left join stamped s on s.half = h.half"
+        "  left join burst b on b.half = h.half) "
+    )
+
+
+def fetch_scoreboard_totals(db: Db, mid: str) -> dict[int, dict]:
+    """Kills and deaths as the end-of-round scoreboard counts them.
+
+    NOT `ktp_match_stats` -- that row is dodx's own counter and disagrees with
+    the scoreboard three ways. Checked against both captains' screenshots of
+    1789348403-ATL2, 36 cells: kills wrong on the player who got two kills
+    before the restart, deaths wrong on six of twelve, and `score` short on
+    eight. The event tables reproduce all 24 player rows exactly.
+
+    A death is a frag row, a teamkill row or a suicide row. The three are
+    DISJOINT -- no teamkill or suicide shares a victim and a second with a frag
+    row, the nearest is 16 seconds away -- so they add, with no de-duplication.
+
+    ⚠️ NULL-safe on the window. Some frag rows carry no game_time (2 of 535 on
+    the worked match) and `NULL >= x` is NULL, so a naive predicate discards
+    them silently; those fall back to the wall clock.
+    """
+    return {
+        r.pop("playerId"): r
+        for r in db.json_rows(
+            window_cte(mid)
+            + "select json_arrayagg(json_object("
+            "  'playerId', pid, 'kills', k, 'deaths', d)) from ("
+            "  select pid,"
+            "         sum(case when role = 'killer' then 1 else 0 end) k,"
+            "         sum(case when role = 'victim' then 1 else 0 end) d"
+            "  from ("
+            "    select f.killerId pid, 'killer' role from hlstats_Events_Frags f"
+            "    left join live w on w.half = f.half"
+            f"   where f.match_id {COLL} = {sql_str(mid)}"
+            "      and (w.gt is null"
+            "           or (f.game_time is not null and f.game_time >= w.gt)"
+            "           or (f.game_time is null and f.eventTime >= w.et))"
+            "    union all"
+            "    select f.victimId, 'victim' from hlstats_Events_Frags f"
+            "    left join live w on w.half = f.half"
+            f"   where f.match_id {COLL} = {sql_str(mid)}"
+            "      and (w.gt is null"
+            "           or (f.game_time is not null and f.game_time >= w.gt)"
+            "           or (f.game_time is null and f.eventTime >= w.et))"
+            "    union all"
+            # Teamkills and suicides carry no game_time, so they cut on the
+            # wall clock. One-second granularity: a death inside the restart
+            # second counts.
+            "    select t.victimId, 'victim' from hlstats_Events_Teamkills t"
+            "    left join live w on w.half = t.half"
+            f"   where t.match_id {COLL} = {sql_str(mid)}"
+            "      and (w.et is null or t.eventTime >= w.et)"
+            "    union all"
+            "    select u.playerId, 'victim' from hlstats_Events_Suicides u"
+            "    left join live w on w.half = u.half"
+            f"   where u.match_id {COLL} = {sql_str(mid)}"
+            "      and (w.et is null or u.eventTime >= w.et)"
+            "  ) events group by pid) t"
+        )
+    }
+
+
 def fetch_box_score(db: Db, mid: str) -> dict[int, dict]:
     """Per-player totals for one match, keyed by hlstats playerId.
 
@@ -204,15 +317,35 @@ def fetch_box_score(db: Db, mid: str) -> dict[int, dict]:
     return {r.pop("playerId"): r for r in rows}
 
 
-def fetch_flags(db: Db, mid: str) -> dict[int, int]:
-    """Objective captures per player. Not in ktp_match_stats -- only in events."""
-    codes = ",".join(sql_str(c) for c in FLAG_ACTIONS)
+def fetch_objective_points(db: Db, mid: str) -> dict[int, int]:
+    """The scoreboard's objective column: captures x what that flag is worth.
+
+    NOT a count of capture rows, which is what this shipped until now and what
+    the stats review caught: `-#over. chi` read 6 on the match page against 24
+    on the screenshot. A flag is worth `ktp_flag_positions.points_for_cap` (2
+    on most maps, 1 on the HQs), and every player who helped take it is
+    credited the full value -- so three players on a 2-point flag is three rows
+    and six points, and counting rows understates by about three times.
+
+    Falls back to 1 point per capture where the map's flag value has not been
+    observed yet: an unknown-value flag is still a capture, and the count is
+    the same answer this function used to give.
+    """
     rows = db.json_rows(
-        "select json_arrayagg(json_object('playerId', pid, 'flags', n)) from ("
-        "  select e.playerId pid, count(*) n from hlstats_Events_PlayerActions e"
-        "  join hlstats_Actions a on a.id = e.actionId "
-        f" where a.code in ({codes}) and e.match_id {COLL} = {sql_str(mid)} "
-        "  group by e.playerId) t"
+        window_cte(mid)
+        + "select json_arrayagg(json_object('playerId', pid, 'flags', n)) from ("
+        "  select fc.player_id pid, sum(coalesce(fp.points_for_cap, 1)) n"
+        "  from ktp_flag_captures fc"
+        "  left join (select map_name, flag_name, min(points_for_cap) points_for_cap"
+        "             from ktp_flag_positions where points_for_cap is not null"
+        "             group by map_name, flag_name) fp"
+        "         on fp.flag_name = fc.flag_name"
+        f"        and fp.map_name = (select max(map_name) from ktp_matches"
+        f"                           where match_id = {sql_str(mid)})"
+        "  left join live w on w.half = fc.half"
+        f" where fc.match_id = {sql_str(mid)}"
+        "    and (w.et is null or fc.event_time >= w.et)"
+        "  group by fc.player_id) t"
     )
     return {r["playerId"]: int(r["flags"]) for r in rows}
 
@@ -228,8 +361,8 @@ def fetch_players(db: Db, mid: str) -> list[dict]:
         "  'steamId', p.steam_id, 'playerName', p.player_name,"
         "  'team', p.team, 'playerId', u.playerId)) "
         "from ktp_match_players p "
-        # Second crossing of the same collation boundary as fetch_flags, and it
-        # bites here too: hlstats_PlayerUniqueIds is utf8mb4_unicode_ci, the
+        # Second crossing of the same collation boundary as the event queries,
+        # and it bites here too: hlstats_PlayerUniqueIds is utf8mb4_unicode_ci, the
         # ktp_* tables are utf8mb4_0900_ai_ci.
         f"left join hlstats_PlayerUniqueIds u on u.uniqueId = p.steam_id {COLL} "
         f"where p.match_id = {sql_str(mid)}"
@@ -243,7 +376,12 @@ def build_match(db: Db, m: dict, quiet: bool) -> dict | None:
         return None
 
     box = fetch_box_score(db, mid)
-    flags = fetch_flags(db, mid)
+    # Kills and deaths come from the events, not from dodx's counter in
+    # ktp_match_stats; the rest of that row (headshots, damage, score...) still
+    # does, and `score` keeps its known savedScore undercount -- the site does
+    # not render it, and correcting it is a separate decision.
+    scoreboard = fetch_scoreboard_totals(db, mid)
+    flags = fetch_objective_points(db, mid)
 
     players, skipped = [], 0
     for row in roster:
@@ -252,11 +390,12 @@ def build_match(db: Db, m: dict, quiet: bool) -> dict | None:
             skipped += 1  # HLTV and other non-player unique ids land here
             continue
         stats = box.get(row["playerId"], {})
+        truth = scoreboard.get(row["playerId"], {})
         team = row["team"] if row["team"] in (1, 2) else None
         entry = {
             "steamId64": sid64,
-            "kills": stats.get("kills", 0),
-            "deaths": stats.get("deaths", 0),
+            "kills": truth.get("kills", 0),
+            "deaths": truth.get("deaths", 0),
             "flags": flags.get(row["playerId"], 0),
         }
         if row["playerName"]:
