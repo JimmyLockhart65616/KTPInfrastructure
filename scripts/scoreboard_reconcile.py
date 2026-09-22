@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+"""Reconcile a captain's end-of-round scoreboard against the captured stats.
+
+Built for the manual stats check: give it what the screenshot says and what
+the database says, and it prints one table per half with a verdict per cell,
+so the reviewer reads differences instead of hunting for them.
+
+THE FOUR RULES IT ENCODES (handover/SCOREBOARD_ALIGNMENT_MODEL_20260922.md,
+proven against both halves of 1789348403-ATL2):
+
+  Kills     hlstats_Events_Frags, as-is.
+  Deaths    UNSETTLED, and the tool refuses to guess. Frag rows alone are
+            short for some players and exact for others; adding every
+            hlstats_Events_Teamkills or hlstats_Events_Suicides row then
+            OVERSHOOTS others, so those tables overlap the frag table by an
+            amount that cannot be resolved from counts. The report prints the
+            components side by side and judges against frags; read the
+            `+tk`/`+su` columns before calling a row wrong. Worked evidence:
+            1789348403-ATL2 half 1, where frags+suicides fits 4 players and
+            frags+teamkills fits a different 3.
+  ObjScore  SUM(captures x that flag's cap_points). NOT ktp_match_stats.score,
+            which carries the dodx savedScore undercount (warmup points
+            subtracted once, so half 1 reads low). Both are printed: `stored`
+            is shown only to make the defect visible.
+  Scope     Player rows are PER HALF — they reset at halftime. The team score
+            line is CUMULATIVE, so half 2's team line is the match total.
+
+Screenshots are read into JSON by a human or a vision pass; there is no OCR
+here on purpose — the box has no OCR engine, and a wrong digit read silently
+is worse than typing twelve rows. See --template for the shape.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+SQL = """-- scoreboard_reconcile.py --stats input, for {match_id}
+SELECT s.half, p.player_name,
+       COALESCE(f.kills, 0)                        AS kills,
+       COALESCE(d.deaths, 0)                       AS deaths,
+       COALESCE(t.tk_deaths, 0)                    AS tk_deaths,
+       COALESCE(u.suicides, 0)                     AS suicides,
+       COALESCE(c.caps, 0)                         AS caps,
+       COALESCE(c.cap_points, 0)                   AS objscore,
+       s.score                                     AS objscore_stored
+FROM ktp_match_stats s
+JOIN ktp_match_players p ON p.match_id = s.match_id AND p.player_id = s.player_id
+LEFT JOIN (SELECT half, killerId pid, COUNT(*) kills FROM hlstats_Events_Frags
+           WHERE match_id = '{match_id}' GROUP BY 1, 2) f
+       ON f.half = s.half AND f.pid = s.player_id
+LEFT JOIN (SELECT half, victimId pid, COUNT(*) deaths FROM hlstats_Events_Frags
+           WHERE match_id = '{match_id}' GROUP BY 1, 2) d
+       ON d.half = s.half AND d.pid = s.player_id
+LEFT JOIN (SELECT half, victimId pid, COUNT(*) tk_deaths FROM hlstats_Events_Teamkills
+           WHERE match_id = '{match_id}' GROUP BY 1, 2) t
+       ON t.half = s.half AND t.pid = s.player_id
+LEFT JOIN (SELECT half, playerId pid, COUNT(*) suicides FROM hlstats_Events_Suicides
+           WHERE match_id = '{match_id}' GROUP BY 1, 2) u
+       ON u.half = s.half AND u.pid = s.player_id
+LEFT JOIN (SELECT fc.half, fc.player_id pid, COUNT(*) caps,
+                  SUM(COALESCE(fp.points_for_cap, 1)) cap_points
+           FROM ktp_flag_captures fc
+           LEFT JOIN (SELECT map_name, flag_name, MIN(points_for_cap) points_for_cap
+                      FROM ktp_flag_positions WHERE points_for_cap IS NOT NULL
+                      GROUP BY map_name, flag_name) fp
+                  ON fp.flag_name = fc.flag_name
+                 AND fp.map_name = (SELECT MAX(map_name) FROM ktp_matches
+                                    WHERE match_id = '{match_id}')
+           WHERE fc.match_id = '{match_id}' GROUP BY 1, 2) c
+       ON c.half = s.half AND c.pid = s.player_id
+WHERE s.match_id = '{match_id}' AND s.half IN (1, 2)
+ORDER BY s.half, p.player_name;
+"""
+
+TEMPLATE = {
+    "match_id": "1789348403-ATL2",
+    "source": "captain end-of-round screenshots, half 1 and half 2",
+    "halves": {
+        "1": {
+            "team_score": {"allies": 25, "axis": 69},
+            "players": [
+                {"name": "o8-[_TillJim_]", "side": "allies",
+                 "objscore": 5, "kills": 24, "deaths": 27},
+            ],
+        }
+    },
+}
+
+
+def normalise(name: str) -> str:
+    """Match names across the two sources without being fooled by tag noise."""
+    return re.sub(r"[^a-z0-9]+", "", name.lower())
+
+
+def read_stats(path: Path) -> dict:
+    rows = [line.rstrip("\n").split("\t")
+            for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if not rows:
+        raise SystemExit(f"{path} is empty")
+    header, body = rows[0], rows[1:]
+    out: dict[tuple[str, str], dict] = {}
+    for row in body:
+        r = dict(zip(header, row))
+        if r.get("half") in (None, "half"):
+            continue
+        out[(str(r["half"]), normalise(r["player_name"]))] = {
+            "player_name": r["player_name"],
+            "kills": int(r["kills"]), "deaths": int(r["deaths"]),
+            "tk_deaths": int(r.get("tk_deaths", 0) or 0),
+            "suicides": int(r.get("suicides", 0) or 0),
+            "caps": int(r.get("caps", 0) or 0),
+            "objscore": int(r["objscore"]),
+            "objscore_stored": int(r.get("objscore_stored", 0) or 0),
+        }
+    return out
+
+
+def verdict(shot: int | None, have: int | None) -> str:
+    if shot is None or have is None:
+        return "—"
+    if shot == have:
+        return "ok"
+    return f"**{have - shot:+d}**"
+
+
+def reconcile(board: dict, stats: dict) -> tuple[list[str], int]:
+    lines: list[str] = []
+    differences = 0
+    lines.append(f"# Scoreboard reconciliation — {board['match_id']}")
+    lines.append("")
+    lines.append(f"Screenshot source: {board.get('source', 'unstated')}")
+    lines.append("")
+    for half in sorted(board["halves"]):
+        h = board["halves"][half]
+        lines.append(f"## Half {half}")
+        lines.append("")
+        lines.append("| player | side | K shot | K db | | D shot | D frags | | +tk | +su | Obj shot | Obj db | | Obj stored |")
+        lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+        for player in h["players"]:
+            key = (str(half), normalise(player["name"]))
+            row = stats.get(key)
+            if row is None:
+                lines.append(f"| {player['name']} | {player.get('side','')} | "
+                             f"{player['kills']} | — | ⚠ | {player['deaths']} | — | ⚠ | — | — | "
+                             f"{player['objscore']} | — | ⚠ | — |")
+                differences += 1
+                continue
+            vk = verdict(player["kills"], row["kills"])
+            vd = verdict(player["deaths"], row["deaths"])
+            vo = verdict(player["objscore"], row["objscore"])
+            differences += sum(1 for v in (vk, vd, vo) if v != "ok")
+            stored = (f"{row['objscore_stored']}"
+                      + (" ⚠" if row["objscore_stored"] != row["objscore"] else ""))
+            lines.append(
+                f"| {player['name']} | {player.get('side','')} | "
+                f"{player['kills']} | {row['kills']} | {vk} | "
+                f"{player['deaths']} | {row['deaths']} | {vd} | "
+                f"{row['tk_deaths'] or ''} | {row['suicides'] or ''} | "
+                f"{player['objscore']} | {row['objscore']} | {vo} | {stored} |")
+        lines.append("")
+        team = h.get("team_score")
+        if team:
+            lines.append(f"Team line on the screenshot: Allies {team['allies']} / "
+                         f"Axis {team['axis']}"
+                         + (" — cumulative, so this is the MATCH total"
+                            if str(half) != "1" else "")
+                         + ". Compare against `ktp_team_score_observations`; the "
+                           "player rows above are this half only.")
+            lines.append("")
+    lines.append("---")
+    lines.append("")
+    if differences:
+        lines.append(f"**{differences} difference(s).** A `+n` means the database is higher than "
+                     "the screenshot.")
+        lines.append("")
+        lines.append("- `Obj stored ⚠` — dodx's own score disagrees with captures x cap points. "
+                     "Expected in half 1 (savedScore undercount); the computed column is the "
+                     "correct one, and it is what the box score should show.")
+        lines.append("- Deaths are judged against FRAG rows only. `+tk` and `+su` are the "
+                     "teamkill-death and suicide rows for that player; they overlap the frag "
+                     "table by an unresolved amount, so a -1 that a `+su` would close is a "
+                     "known gap, not a capture defect. Kills and ObjScore carry no such caveat.")
+    else:
+        lines.append("**No differences.** Every kill, death and objective point on the "
+                     "screenshot is reproduced by the captured stats.")
+    return lines, differences
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--board", type=Path, help="scoreboard JSON (see --template)")
+    ap.add_argument("--stats", type=Path, help="TSV from the query --sql prints")
+    ap.add_argument("--sql", metavar="MATCH_ID", help="print the stats query and exit")
+    ap.add_argument("--template", action="store_true", help="print a board skeleton and exit")
+    ap.add_argument("--out", type=Path, help="write the report here (default: stdout)")
+    ap.add_argument("--strict", action="store_true", help="exit 1 when anything differs")
+    args = ap.parse_args(argv)
+
+    if args.sql:
+        print(SQL.format(match_id=args.sql))
+        return 0
+    if args.template:
+        print(json.dumps(TEMPLATE, indent=2))
+        return 0
+    if not args.board or not args.stats:
+        ap.error("--board and --stats are both required (or use --sql / --template)")
+
+    board = json.loads(args.board.read_text(encoding="utf-8"))
+    stats = read_stats(args.stats)
+    lines, differences = reconcile(board, stats)
+    text = "\n".join(lines) + "\n"
+    if args.out:
+        args.out.write_text(text, encoding="utf-8")
+        print(f"wrote {args.out} ({differences} difference(s))")
+    else:
+        sys.stdout.write(text)
+    return 1 if (differences and args.strict) else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
