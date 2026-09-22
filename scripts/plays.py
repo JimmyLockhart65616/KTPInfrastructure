@@ -43,6 +43,7 @@ class PlaysConfig:
     dunce_floor: float = -0.05       # a non-excursion play must cost at least this to be the dunce
     sneak_seconds: float = 20.0      # excursion length that makes a cap a "sneak" rather than a run-through
     attempt_distance: float = 600.0  # closest approach that makes a capless excursion an attempt
+    ahead_units: float = 1200.0      # teammate gap at a rear touch that means the capper was out in front
 
     def validate(self) -> None:
         if self.merge_gap <= 0 or self.per_player < 1 or self.match_top < 1:
@@ -90,7 +91,8 @@ def _contributions(timeline: Sequence[dict[str, Any]], side_of, roster_ids: set[
             for pid in credited:
                 sign = 1.0 if side_of(half, pid) == 1 else -1.0
                 add(half, pid, t, "cap", share * sign, flag_index=_i(e.get("flag_index")),
-                    capout_denied=bool(e.get("capout_denied")))
+                    capout_denied=bool(e.get("capout_denied")),
+                    capout_completed=bool(e.get("capout_completed")))
     for seq in out.values():
         seq.sort(key=lambda c: c["t"])
     return out
@@ -106,12 +108,19 @@ def _cluster(events: Sequence[dict], gap: float) -> list[list[dict]]:
     return groups
 
 
-def _tags(kills: int, deaths: int, caps: int, denials: int, exc: dict | None, cfg: PlaysConfig) -> list[str]:
+def _tags(kills: int, deaths: int, caps: int, denials: int, exc: dict | None,
+          cfg: PlaysConfig, completions: int = 0, touch: dict | None = None) -> list[str]:
     tags: list[str] = []
+    if completions:
+        tags.append("cap-out")
     if denials:
         tags.append("cap-out denial")
     if exc and caps:
         tags.append("sneak cap" if exc["duration"] >= cfg.sneak_seconds else "solo cap")
+    elif caps and touch and (touch.get("teammate_gap") or 0) > cfg.ahead_units:
+        # No window formed -- he went in with the team and finished ahead of
+        # it. Same result as a ninja, different shape (see excursions.py).
+        tags.append("fast push")
     elif caps:
         tags.append("cap")
     if kills >= 3:
@@ -132,8 +141,12 @@ def _summary(name: str, kills: int, deaths: int, caps: int, denials: int, exc: d
     parts: list[str] = []
     if exc:
         parts.append(f"{exc['duration']:.0f} s alone behind the lines")
+    elif "fast push" in tags:
+        parts.append("pushed past the team to the flag")
     if caps:
-        parts.append(f"{caps} cap{'s' if caps > 1 else ''}" + (" (cap-out denied)" if denials else ""))
+        note = (" (capped out)" if "cap-out" in tags else
+                " (cap-out denied)" if denials else "")
+        parts.append(f"{caps} cap{'s' if caps > 1 else ''}" + note)
     if kills:
         parts.append(f"{kills} kill{'s' if kills > 1 else ''}")
     if deaths:
@@ -148,6 +161,7 @@ def build_plays(
     life_boundaries: Sequence[dict[str, Any]] | None,
     excursions: Sequence[dict[str, Any]] | None = None,
     config: PlaysConfig | None = None,
+    touches: Sequence[dict[str, Any]] | None = None,
     *,
     source_status: str | None = "available",
 ) -> dict[str, Any]:
@@ -165,6 +179,9 @@ def build_plays(
             "Values are flag_swing_v1 deltas plus a flat exposure cost for time alone behind "
             "the lines: uncalibrated, comparative. The momentum ledger and counterfactual "
             "denial pricing replace the numbers, not the shape.",
+            "A `cap-out` play is tagged but not paid for ending the round -- flag_swing "
+            "prices the closing cap as an ordinary flag flip -- so it can rank below a "
+            "mid cap. Rank by value, read the tags for what the play was.",
         ],
         "match_top": [],
         "per_player": [],
@@ -185,6 +202,12 @@ def build_plays(
         return sides.get(half, {}).get(pid, teams.get(pid))
 
     contributions = _contributions(timeline, side_of, set(names))
+    touch_by_key: dict[tuple[int, int], list[dict]] = {}
+    for row in touches or []:
+        half, pid = _i(row.get("half")), _i(row.get("player_id"))
+        if half is not None and pid in names:
+            touch_by_key.setdefault((half, pid), []).append(row)
+
     exc_by_key: dict[tuple[int, int], list[dict]] = {}
     for row in excursions or []:
         half, pid = _i(row.get("half")), _i(row.get("player_id"))
@@ -212,6 +235,7 @@ def build_plays(
                 deaths = sum(1 for e in events if e["kind"] == "death")
                 caps = sum(1 for e in events if e["kind"] == "cap")
                 denials = sum(1 for e in events if e["kind"] == "cap" and e.get("capout_denied"))
+                completions = sum(1 for e in events if e["kind"] == "cap" and e.get("capout_completed"))
                 event_value = sum(e["value"] for e in events)
                 exposure = 0.0
                 exc_info = None
@@ -227,7 +251,10 @@ def build_plays(
                 times = [e["t"] for e in events] + ([_f(exc["start"]), _f(exc["end"])] if exc else [])
                 start, end = min(times), max(times)
                 peak = max(events, key=lambda e: abs(e["value"]))["t"] if events else start
-                tags = _tags(kills, deaths, caps, denials, exc_info, cfg)
+                cap_times = [e["t"] for e in events if e["kind"] == "cap"]
+                touch = next((t for t in touch_by_key.get((half, pid), [])
+                              if any(abs((_f(t.get("game_time")) or 0) - ct) <= 3 for ct in cap_times)), None)
+                tags = _tags(kills, deaths, caps, denials, exc_info, cfg, completions, touch)
                 plays.append({
                     "half": half, "player_id": pid, "player_name_at_match": names[pid],
                     "team": teams.get(pid), "side": side_of(half, pid),
@@ -237,6 +264,8 @@ def build_plays(
                     "event_value": round(event_value, 4),
                     "exposure": round(exposure, 4),
                     "kills": kills, "deaths": deaths, "caps": caps, "capout_denials": denials,
+                    "capout_completions": completions,
+                    "teammate_gap_at_touch": (touch or {}).get("teammate_gap"),
                     "excursion": exc_info,
                     "tags": tags,
                     "summary": _summary(names[pid], kills, deaths, caps, denials, exc_info, tags),

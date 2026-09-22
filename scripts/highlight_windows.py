@@ -23,6 +23,8 @@ Design, carried over from the ktp_highlights prototype (2026-09-08..17):
 - Flag events in the timeline carry no player ids (capper attribution lives in
   capture_credits), so a window made only of flag events has an empty
   ``involved``. Consumers fall back to a director view for those.
+- ``round`` rows (the engine clearing the map between rounds) are skipped:
+  they are boundaries, not moments.
 """
 from __future__ import annotations
 
@@ -158,7 +160,11 @@ def build_highlight_windows(
 
     entries: list[dict[str, Any]] = []
     for half in sorted({int(e["half"]) for e in timeline if e.get("half") is not None}):
-        rows = [e for e in timeline if e.get("half") == half and e.get("game_time") is not None]
+        # `round` rows mark the boundary between rounds; they price nothing
+        # and are not moments. Clustering them would hand the reset an
+        # objective bonus and rank the map clearing as a highlight.
+        rows = [e for e in timeline if e.get("half") == half
+                and e.get("game_time") is not None and e.get("kind") != "round"]
         for window in _cluster(rows, cfg.merge_gap):
             first = float(window[0]["game_time"])
             last = float(window[-1]["game_time"])

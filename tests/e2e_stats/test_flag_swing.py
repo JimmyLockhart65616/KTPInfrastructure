@@ -232,3 +232,62 @@ def test_credits_join_the_transition_within_a_few_seconds_of_wall_clock():
     assert result["timeline"][0]["credited"] == [1]
     players = {p["player_id"]: p for p in result["players"]}
     assert players[1]["attributed_swing"] > 0 and players[2]["attributed_swing"] == 0.0
+
+
+def _five_flag_round(half=1):
+    """Axis (side 2) takes all five, the engine clears the map."""
+    states = [flag_state(half, i, 2, 10.0 + i, name=f"F{i}") for i in range(5)]
+    reset = [flag_state(half, i, 0, 30.0, name=f"F{i}") for i in range(5)]
+    return states, reset
+
+
+def test_a_round_reset_is_a_boundary_not_five_swings():
+    states, reset = _five_flag_round()
+    result = build_flag_swing_shadow(states + reset, [], [], [], ROSTER)
+    kinds = [e["kind"] for e in result["timeline"]]
+    assert kinds.count("round") == 1 and "flag" in kinds
+    rounds = [e for e in result["timeline"] if e["kind"] == "round"]
+    assert rounds[0]["winner"] == 2 and rounds[0]["reason"] == "capout"
+    assert rounds[0]["delta"] == 0.0 and rounds[0]["game_time"] == 30.0
+    # None of the reset rows priced anything.
+    assert not [e for e in result["timeline"]
+                if e["kind"] == "flag" and e["game_time"] == 30.0]
+    assert result["rounds"] == 1
+
+
+def test_the_cap_that_ends_the_round_is_labelled():
+    states, reset = _five_flag_round()
+    caps = [{"half": 1, "flag_name": "F4", "event_time": "t14.0", "player_id": 4}]
+    result = build_flag_swing_shadow(states + reset, [], [], caps, ROSTER)
+    flags = [e for e in result["timeline"] if e["kind"] == "flag"]
+    assert [e["capout_completed"] for e in flags] == [False, False, False, False, True]
+    assert flags[-1]["credited"] == [4]
+
+
+def test_the_next_round_starts_from_the_cleared_map():
+    states, reset = _five_flag_round()
+    after = [flag_state(1, 0, 1, 40.0, name="F0")]
+    result = build_flag_swing_shadow(states + reset + after, [], [], [], ROSTER)
+    last = result["timeline"][-1]
+    assert last["kind"] == "flag" and last["game_time"] == 40.0
+    # One allied flag against four neutral, not against four axis flags.
+    assert last["allies_flags"] == 1 and last["axis_flags"] == 0
+    assert last["delta"] > 0
+
+
+def test_a_timed_round_end_names_the_flag_leader_not_a_capout():
+    states = [flag_state(1, i, 2, 10.0 + i, name=f"F{i}") for i in range(3)]
+    states += [flag_state(1, 3, 1, 14.0, name="F3")]
+    reset = [flag_state(1, i, 0, 30.0, name=f"F{i}") for i in range(5)]
+    result = build_flag_swing_shadow(states + reset, [], [], [], ROSTER)
+    rnd = next(e for e in result["timeline"] if e["kind"] == "round")
+    assert rnd["reason"] == "expired" and rnd["winner"] == 2
+    assert rnd["axis_flags"] == 3 and rnd["allies_flags"] == 1
+
+
+def test_two_flags_going_neutral_is_play_not_a_boundary():
+    states = [flag_state(1, 0, 1, 10.0, name="F0"), flag_state(1, 1, 1, 11.0, name="F1"),
+              flag_state(1, 0, 0, 20.0, name="F0"), flag_state(1, 1, 0, 20.0, name="F1")]
+    result = build_flag_swing_shadow(states, [], [], [], ROSTER)
+    assert not [e for e in result["timeline"] if e["kind"] == "round"]
+    assert len([e for e in result["timeline"] if e["kind"] == "flag"]) == 4

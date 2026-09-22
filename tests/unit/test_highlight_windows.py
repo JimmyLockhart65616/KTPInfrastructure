@@ -177,3 +177,12 @@ def test_real_corpus_every_report_ranks_and_sanitizes():
                     assert w["involved"] == [], "flag-only windows carry no player ids in the timeline"
         n += 1
     assert n > 0
+
+
+def test_round_boundaries_are_not_moments():
+    rnd = {"half": 1, "game_time": 30.0, "kind": "round", "winner": 2,
+           "reason": "capout", "delta": 0.0}
+    out = build_highlight_windows([frag(10, 1, 3, 0.1), rnd, frag(50, 1, 4, 0.1)], ROSTER)
+    assert out["windows_total"] == 2  # the reset did not join or split a window
+    assert all("round" not in w["kinds"] for w in out["windows"])
+    assert all(w["events"] == 1 for w in out["windows"])
