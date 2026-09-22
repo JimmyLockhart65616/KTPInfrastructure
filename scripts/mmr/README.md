@@ -104,3 +104,20 @@ multikill) against the same team's own rate in that half, `fit_lift` fits
 `1 + A·exp(−λd)`, `conditional_lift` gives `rho`. Not yet a KTPR component;
 rerun weekly and compare the officials-only tables with the 12man fit as
 the season fills in (thunder rarely capouts; lennon/harrington do).
+
+Each map plays differently, so every value is per map: `curves_by_map` fits
+the lift curves for any map with ≥150 multikills (pooled fallback below
+that) and the scoring fit is per map. `momentum_report.py` writes
+`momentum_params.json` — the current values, sample sizes and fit quality
+per map — which is versioned and refit weekly as matches land.
+
+## Transparency: the `rating_methodology` document
+
+`methodology.py` builds the `rating_methodology` season aggregate: how KTPR
+v2, MMR and momentum are computed — equations, every variable, and the
+current per-map values from `momentum_params.json` — read from the code
+that uses them, never retyped. `run_weekly.py` writes
+`rating_methodology_payload.json` beside the ratings payload; the workflow
+publishes both to `mmr-ratings`; the operator imports either with the same
+`report_service.py import-mmr <file>`; `report_sync` publishes it; the
+website shows it under Stats. No player rows.

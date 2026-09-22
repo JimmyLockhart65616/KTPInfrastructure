@@ -22,7 +22,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import math
+from datetime import datetime, timezone
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -56,6 +58,54 @@ def fit_scoring_by_map(labels, objs, mmap, min_halves=12):
         if len(rows) >= min_halves:
             out[mp] = M.fit_scoring(rows) + (len(rows),)
     return out
+
+
+def write_params(by_map, fits, rho, rho_evidence, mk, ob, side, mmap, mtype):
+    """momentum_params.json -- what the ledger runs on this week, per map.
+
+    Committed with the weekly refit so the transparency payload (and anyone
+    reading the repo) sees the current values, sample sizes and fit quality.
+    Carries no player data.
+    """
+    def curve(A, lam, n):
+        return {"A": round(A, 4), "lam": round(lam, 5), "n_multikills": n,
+                "half_life_s": round(math.log(2) / lam, 1) if lam > 0 else None}
+    p_with, p_without, n_with, n_without = rho_evidence
+    maps = {}
+    for mp in sorted({mmap[m] for m, _ in side}):
+        halves = [k for k in side if mmap[k[0]] == mp]
+        maps[mp] = {
+            "halves": len(halves),
+            "official_halves": sum(1 for k in halves if mtype[k[0]] == "0"),
+            "multikills": sum(1 for m in mk if mmap[m["match"]] == mp),
+            "caps": sum(1 for o in ob if o["kind"] == "cap" and mmap[o["match"]] == mp),
+            "capouts": sum(1 for o in ob if o["kind"] == "capout" and mmap[o["match"]] == mp),
+            "curves": ({k: curve(*v) for k, v in by_map[mp].items()} if mp in by_map else None),
+            "scoring": ({"coef": {k: round(v, 4) for k, v in fits[mp][0].items()},
+                         "r2": round(fits[mp][1], 3), "n_team_halves": fits[mp][2]} if mp in fits else None),
+        }
+    params = {
+        "method_version": "momentum_ledger_v1",
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "definitions": {
+            "multikill": f">= {M.MULTIKILL_MIN} kills by one player, each within {M.MULTIKILL_GAP:.0f}s of the last",
+            "lift": "P(objective within d s of a multikill) / the same team's own rate in that half",
+            "curve": "lift(d) = 1 + A·exp(−lam·d); momentum share of an objective at lag d = 1 − 1/lift(d)",
+            "rho": "fraction of a payout a deposit forwards to its own upstream deposits (secondary assist)",
+            "scoring": "points = cap·caps + hold3·s + hold4·s + capout·capouts, per map, on demo-labelled halves",
+            "fallback": {"curves": "pooled", "scoring": {"cap": M.CAP_VALUE, "capout": M.CAPOUT_VALUE}},
+            "min_multikills_for_map_curve": M.MIN_MULTIKILLS_FOR_MAP_CURVE,
+        },
+        "corpus": {"halves": len(side), "official_halves": sum(1 for k in side if mtype[k[0]] == "0"),
+                   "multikills": len(mk), "caps": sum(1 for o in ob if o["kind"] == "cap"),
+                   "capouts": sum(1 for o in ob if o["kind"] == "capout")},
+        "rho": {"value": round(rho, 3), "p_capout_after_cap_with_multikill": round(p_with, 4),
+                "p_capout_after_cap_without": round(p_without, 4), "n_with": n_with, "n_without": n_without},
+        "pooled": {k: curve(*v) for k, v in by_map["*"].items()},
+        "maps": maps,
+    }
+    (HERE / "momentum_params.json").write_text(json.dumps(params, ensure_ascii=False, indent=1) + "\n",
+                                                encoding="utf-8")
 
 
 def main():
@@ -99,8 +149,14 @@ def main():
     for e in ob:
         e["map"] = mmap.get(e["match"])
 
+    # --- per-map curves (pooled fallback for thin maps)
+    by_map = M.curves_by_map(mk, ob, spans, mmap)
+
     # --- ledger
-    got = M.credit(mk + ob, curves, rho, scoring=scoring)
+    got = M.credit(mk + ob, curves, rho, scoring=scoring, curves_by_map=by_map)
+
+    # --- the versioned "current values": per-map parameters only, no player data
+    write_params(by_map, fits, rho, (p_with, p_without, n_with, n_without), mk, ob, side, mmap, mtype)
 
     lines = ["# Momentum credit report", ""]
     lines += ["Deposit/payout ledger over multikills, caps and capouts. Curves fitted on",
@@ -147,6 +203,16 @@ def main():
                   f"{M.attributable(30, A, lam):.2f}, at 60s: {M.attributable(60, A, lam):.2f}.", "",
                   "All matches:", "", lift_table(tables[kind]), "",
                   f"Officials only ({len(mko)} multikills):", "", lift_table(off_rows[kind]), ""]
+
+    # 2b per-map curves
+    lines += ["## Per-map curves", "",
+              f"A map with >= {M.MIN_MULTIKILLS_FOR_MAP_CURVE} multikills gets its own fit; others use pooled.", "",
+              "| map | multikills | cap A | cap λ | cap t½ | capout A | capout λ | capout t½ |", "|---|---|---|---|---|---|---|---|"]
+    for mp, cv in sorted(by_map.items()):
+        c, o = cv["cap"], cv["capout"]
+        hl = lambda lam: f"{math.log(2) / lam:.0f}s" if lam > 0 else "—"  # noqa: E731
+        lines.append(f"| {mp} | {c[2]} | {c[0]:.2f} | {c[1]:.4f} | {hl(c[1])} | {o[0]:.2f} | {o[1]:.4f} | {hl(o[1])} |")
+    lines.append("")
 
     # 3 rho
     lines += ["## Chain (rho)", "",

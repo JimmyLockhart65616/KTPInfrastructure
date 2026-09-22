@@ -122,6 +122,25 @@ class Scoring(unittest.TestCase):
         self.assertAlmostEqual(M.credit(events, CURVES, 0.3, scoring=scoring)[("M", 1)][2]["total"], 1.0)
 
 
+class PerMap(unittest.TestCase):
+    def test_a_thin_map_gets_no_curve_of_its_own(self):
+        mk = [{"match": "A", "half": 1, "t": 10.0 * i, "kind": "multikill", "team": 1, "player": 1, "n": 3}
+              for i in range(5)]
+        objs = [{"match": "A", "half": 1, "t": 10.0 * i + 3, "kind": "cap", "team": 1} for i in range(5)]
+        got = M.curves_by_map(mk, objs, {("A", 1): (0.0, 100.0)}, {"A": "dod_thin"}, min_multikills=50)
+        self.assertEqual(set(got), {"*"})
+
+    def test_credit_uses_the_map_curve_over_the_pooled_one(self):
+        events = [
+            {"match": "M", "half": 1, "t": 0.0, "kind": "multikill", "team": 1, "player": 1, "n": 4, "map": "dod_x"},
+            {"match": "M", "half": 1, "t": 20.0, "kind": "cap", "team": 1, "players": [2], "map": "dod_x"},
+        ]
+        pooled = M.credit(events, CURVES, 0.3)[("M", 1)][1]["momentum"]
+        flat = {"dod_x": {"cap": (0.0, 0.1, 999), "capout": (0.0, 0.1, 999)}}   # no lift on this map
+        self.assertGreater(pooled, 0.0)
+        self.assertEqual(M.credit(events, CURVES, 0.3, curves_by_map=flat)[("M", 1)][1]["momentum"], 0.0)
+
+
 class LedgerMechanics(unittest.TestCase):
     def test_total_credit_equals_total_objective_value(self):
         """Payout redistributes; it never creates or destroys value."""
