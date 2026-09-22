@@ -16,6 +16,7 @@ meaning is not obvious from their names.
 | `analytics-report-dto-v1.4.0` | 16 | Adds top-level `key_moments`: the match's highlight windows ranked on flag swing, names only |
 | `analytics-report-dto-v1.5.0` | 17 | Adds top-level `progression` (cumulative per-player series per half: kills, deaths, damage; per-team flag differential) and `box_score_scale` (fill-bar denominators and match-best names per `players[]` field) |
 | `analytics-report-dto-v1.6.0` | 18 | Adds top-level `plays` (each player's best plays and the match's top three; the worst play — the dunce — is computed but stays private), valued on `flag_swing_v1` with excursions from positions. `flag_swing` cap credit now joins per-credit rows within ±3 s of wall clock; caps had been uncredited in every production report before this |
+| `analytics-report-dto-v1.7.0` | 19 | `map_control` and `progression`'s `teams[]` (flag differential) are now translated to report-team convention — both were silently backwards in half 1 of every two-half match, since DoD swaps Allies/Axis at halftime and these blocks carried raw engine side. Adds top-level `capouts` (completed cap-outs: one side owning every flag, `{half, game_time, team}`) |
 
 Minor versions only add keys. A consumer that matches the
 `analytics-report-dto-v1.` prefix keeps working; one that needs the new blocks
@@ -226,7 +227,7 @@ invented.
 | `kills` | Frags with a producer clock where the killer is on the other team — team kills and suicides excluded, matching the box score's `kills` |
 | `deaths` | Every frag with a clock where the player is the victim |
 | `damage` | `damage_capped` dealt to the other team, from per-hit rows; only when per-hit damage with a clock was captured (`available.damage`) |
-| `flag_differential` (team) | Flags held by team 1 minus team 2, seeded with the same spawn ownership `flag_swing_v1` uses; team 2's series is the negation |
+| `flag_differential` (team) | Flags held by team 1 minus team 2, seeded with the same spawn ownership `flag_swing_v1` uses; team 2's series is the negation. Translated to report-team convention (v1.7.0) — computed in raw engine side, then re-keyed per half through `scripts/report_team_convention.py` before this block is stored; a half the resolver can't decide is dropped, not mislabeled |
 
 | Key | Meaning |
 |---|---|
@@ -242,6 +243,37 @@ would read as no data.
 **Not in v1, deliberately:** cap participation (its per-event rows are keyed
 on wall clock, not game time) and cap breaks (no fact query loads per-event
 break rows). Both are additive follow-ups.
+
+## `capouts` (v1.7.0)
+
+Completed cap-outs — a flag transition that leaves one side owning every
+flag on the map. Distinct from `plays`' `cap-out denial` tag (a cap that
+broke an *imminent* one): this is the completed event. Report-team
+convention.
+
+| Key | Meaning |
+|---|---|
+| `status` | Follows `flag_swing`'s own status — capouts is a byproduct of its event stream, same availability |
+| `events[]` | `{half, game_time, team}`, one per completed cap-out. A half with more than one round can have more than one |
+
+## Half 1's `map_control` and `progression.flag_differential` before v1.7.0
+
+DoD swaps Allies/Axis at halftime; `map_control` and `flag_differential`
+computed in raw engine side (1 = Allies, fixed all match) rather than
+report-team convention, so both were silently backwards in half 1 of
+every two-half match — report team 1's terminal-half slot is guaranteed
+the *other* engine side in half 1. Fixed at v1.7.0 / schema 19 by
+translating both at the producer, before `shadow_explorations` is
+stored; no website change needed. `flag_swing`'s own math (`p_allies()`
+alive term, per-kill `team_sign` attribution) had the equivalent defect
+and was fixed separately at schema 17 (2026-09-18, KTPInfrastructure#455)
+— this is the remaining presentation translation, not a re-fix of that.
+
+## Reports built before schema 19
+
+`capouts` reads `unavailable`. `map_control` and
+`progression.flag_differential` carry the old, backwards half-1 values
+(see above) until regenerated.
 
 ## `box_score_scale` (v1.5.0)
 

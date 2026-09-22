@@ -222,6 +222,47 @@ def test_a_steal_when_the_enemy_is_not_one_flag_out_is_not_a_denial():
     assert result["timeline"][1]["capout_denied"] is False
 
 
+def test_capout_detected_when_one_side_owns_every_flag():
+    # Three flags, all seen in this half -> flag_count is 3. Axis takes the
+    # first two, then the third: that last transition is the cap-out.
+    states = [flag_state(1, 0, 2, 10.0, name="F0"),
+              flag_state(1, 1, 2, 20.0, name="F1"),
+              flag_state(1, 2, 2, 30.0, name="F2")]
+    result = build_flag_swing_shadow(states, [], [], [], ROSTER)
+    assert result["capouts"] == [{"half": 1, "game_time": 30.0, "team": 2}]
+
+
+def test_capout_not_reemitted_while_still_fully_held():
+    # A later state row for the same flag, still Axis, must not re-fire.
+    states = [flag_state(1, 0, 2, 10.0, name="F0"),
+              flag_state(1, 1, 2, 20.0, name="F1"),
+              flag_state(1, 2, 2, 30.0, name="F2"),
+              flag_state(1, 2, 2, 40.0, name="F2")]
+    result = build_flag_swing_shadow(states, [], [], [], ROSTER)
+    assert len(result["capouts"]) == 1
+
+
+def test_capout_rearms_after_a_flag_changes_hands():
+    # Axis caps out at t=30, allies break flag F2 back at t=40 (round
+    # resets), axis caps out again at t=60 -- two distinct events.
+    states = [flag_state(1, 0, 2, 10.0, name="F0"),
+              flag_state(1, 1, 2, 20.0, name="F1"),
+              flag_state(1, 2, 2, 30.0, name="F2"),
+              flag_state(1, 2, 1, 40.0, name="F2"),
+              flag_state(1, 2, 2, 60.0, name="F2")]
+    result = build_flag_swing_shadow(states, [], [], [], ROSTER)
+    assert [c["game_time"] for c in result["capouts"]] == [30.0, 60.0]
+
+
+def test_is_initial_rows_never_count_as_a_capout():
+    # All three flags start pre-owned by the same side via is_initial rows --
+    # that is the half's starting state, not a completed cap-out.
+    states = [flag_state(1, i, 1, float(i), name=f"F{i}", initial=1)
+              for i in (0, 1, 2)]
+    result = build_flag_swing_shadow(states, [], [], [], ROSTER)
+    assert result["capouts"] == []
+
+
 def test_credits_join_the_transition_within_a_few_seconds_of_wall_clock():
     # The state row is stamped one second after the credit row, as on real
     # matches (different writers). The exact-string join used to miss it.

@@ -109,6 +109,7 @@ class _HalfState:
         self.flag_count = max(flag_count, 1)
         self.roster_size = max(roster_size, 1)
         self.config = config
+        self.capped_out_team: int | None = None
 
     def p_allies(self) -> float:
         allied = sum(1 for owner in self.owners.values() if owner == 1)
@@ -182,6 +183,7 @@ def build_flag_swing_shadow(
         "timeline": [],
         "players": [],
         "break_reel": [],
+        "capouts": [],
     }
     if not temporal_valid:
         envelope["status"] = "timed_metrics_suppressed"
@@ -257,6 +259,7 @@ def build_flag_swing_shadow(
     swing_by_player: dict[int, float] = {pid: 0.0 for pid in teams}
     frag_count: dict[int, int] = {pid: 0 for pid in teams}
     timeline: list[dict[str, Any]] = []
+    capouts: list[dict[str, Any]] = []
     state: _HalfState | None = None
     current_half: int | None = None
     for at, _order, half, kind, row in events:
@@ -288,6 +291,17 @@ def build_flag_swing_shadow(
                 # seed corrects) -- keep the seed until a REAL transition
                 # (is_initial=0) arrives.
                 state.owners[flag] = owner if owner in (1, 2) else 0
+            # A cap-out: one side now owns every flag. Tracked per half so a
+            # later reset (a flag changes hands, e.g. a fresh round) rearms
+            # it -- multiple rounds in one half each get their own event.
+            if (not is_initial_row and owner in (1, 2)
+                    and state.flags_held(owner) == state.flag_count
+                    and state.capped_out_team != owner):
+                state.capped_out_team = owner
+                capouts.append({"half": half, "game_time": at, "team": owner})
+            elif (not is_initial_row and state.capped_out_team is not None
+                    and state.flags_held(state.capped_out_team) < state.flag_count):
+                state.capped_out_team = None
             delta = state.p_allies() - before
             credited = _credited(half, row.get("flag_name"), row.get("event_time"))
             share = delta / len(credited) if credited else 0.0
@@ -354,6 +368,7 @@ def build_flag_swing_shadow(
         break_reel.sort(key=lambda b: -b["denied_swing"])
 
     envelope["timeline"] = timeline
+    envelope["capouts"] = capouts
     envelope["players"] = [
         {"player_id": pid, "team": teams[pid],
          "attributed_swing": round(swing_by_player[pid], 4),
