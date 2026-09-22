@@ -1,0 +1,196 @@
+{
+  "match_id": "1789348403-ATL2",
+  "source": "captain end-of-round screenshots, half 1 and half 2 (dod_thunder2, ATL2, 2026-09-13)",
+  "note": "Sides swap at halftime: o8- are Allies in half 1 and Axis in half 2. Player rows are that half only; the team line is cumulative, so half 2's 138/62 is the match total.",
+  "transcription": {
+    "method": "manual",
+    "by": "assistant, from the captain screenshots",
+    "verified": false
+  },
+  "halves": {
+    "1": {
+      "team_score": {
+        "allies": 25,
+        "axis": 69
+      },
+      "players": [
+        {
+          "name": "o8-[_TillJim_]",
+          "side": "allies",
+          "objscore": 5,
+          "kills": 24,
+          "deaths": 27
+        },
+        {
+          "name": "o8-[_Leoo! <3 Messi_]",
+          "side": "allies",
+          "objscore": 3,
+          "kills": 20,
+          "deaths": 21
+        },
+        {
+          "name": "o8-[_BARONN_]",
+          "side": "allies",
+          "objscore": 2,
+          "kills": 19,
+          "deaths": 25
+        },
+        {
+          "name": "o8-[_chicholson_]",
+          "side": "allies",
+          "objscore": 2,
+          "kills": 13,
+          "deaths": 30
+        },
+        {
+          "name": "o8-[_kroD-_]",
+          "side": "allies",
+          "objscore": 1,
+          "kills": 17,
+          "deaths": 32
+        },
+        {
+          "name": "o8-[_ProstaR!_]",
+          "side": "allies",
+          "objscore": 0,
+          "kills": 17,
+          "deaths": 22
+        },
+        {
+          "name": "cope ~ ddorito",
+          "side": "axis",
+          "objscore": 4,
+          "kills": 25,
+          "deaths": 19
+        },
+        {
+          "name": "cope ~ [//_-] ilovealiceglass",
+          "side": "axis",
+          "objscore": 4,
+          "kills": 18,
+          "deaths": 18
+        },
+        {
+          "name": "cope ~ toxinatoR!",
+          "side": "axis",
+          "objscore": 3,
+          "kills": 35,
+          "deaths": 19
+        },
+        {
+          "name": "cope ~ jules",
+          "side": "axis",
+          "objscore": 2,
+          "kills": 28,
+          "deaths": 18
+        },
+        {
+          "name": "cope ~ ian",
+          "side": "axis",
+          "objscore": 2,
+          "kills": 24,
+          "deaths": 15
+        },
+        {
+          "name": "cope ~ ryan",
+          "side": "axis",
+          "objscore": 2,
+          "kills": 21,
+          "deaths": 21
+        }
+      ]
+    },
+    "2": {
+      "team_score": {
+        "allies": 138,
+        "axis": 62
+      },
+      "players": [
+        {
+          "name": "cope ~ ddorito",
+          "side": "allies",
+          "objscore": 6,
+          "kills": 23,
+          "deaths": 22
+        },
+        {
+          "name": "cope ~ [//_-] ilovealiceglass",
+          "side": "allies",
+          "objscore": 6,
+          "kills": 23,
+          "deaths": 24
+        },
+        {
+          "name": "cope ~ toxinatoR!",
+          "side": "allies",
+          "objscore": 6,
+          "kills": 22,
+          "deaths": 23
+        },
+        {
+          "name": "cope ~ jules",
+          "side": "allies",
+          "objscore": 4,
+          "kills": 21,
+          "deaths": 21
+        },
+        {
+          "name": "cope ~ ryan",
+          "side": "allies",
+          "objscore": 3,
+          "kills": 25,
+          "deaths": 23
+        },
+        {
+          "name": "cope ~ ian",
+          "side": "allies",
+          "objscore": 2,
+          "kills": 28,
+          "deaths": 17
+        },
+        {
+          "name": "o8-[_Leoo! <3 Messi_]",
+          "side": "axis",
+          "objscore": 9,
+          "kills": 26,
+          "deaths": 20
+        },
+        {
+          "name": "o8-[_TillJim_]",
+          "side": "axis",
+          "objscore": 7,
+          "kills": 27,
+          "deaths": 23
+        },
+        {
+          "name": "o8-[_BARONN_]",
+          "side": "axis",
+          "objscore": 5,
+          "kills": 27,
+          "deaths": 24
+        },
+        {
+          "name": "o8-[_chicholson_]",
+          "side": "axis",
+          "objscore": 5,
+          "kills": 18,
+          "deaths": 26
+        },
+        {
+          "name": "o8-[_kroD-_]",
+          "side": "axis",
+          "objscore": 1,
+          "kills": 22,
+          "deaths": 24
+        },
+        {
+          "name": "o8-[_ProstaR!_]",
+          "side": "axis",
+          "objscore": 0,
+          "kills": 10,
+          "deaths": 27
+        }
+      ]
+    }
+  }
+}

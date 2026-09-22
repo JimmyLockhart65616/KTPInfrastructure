@@ -1575,18 +1575,39 @@ SELECT COUNT(*) FROM (
   HAVING COUNT(*) > 1
 ) duplicates
 """)
-    if invalid or duplicate_keys or starts == 0 or deaths == 0:
+    # round_live says whether the round was ACTUALLY running -- DoD restarts a
+    # few seconds after the live command and the scoreboard zeroes at the
+    # restart, so events in that gap belong to nobody's scoreboard.
+    #
+    # Tolerant of both producers on purpose, because the merge order is harness
+    # -> daemon -> plugin: a plugin that does not stamp it leaves every row
+    # NULL, which is the column's documented "unobservable" and not a failure.
+    # What IS a failure is stamping and never reaching 1 -- a half that never
+    # went live did not happen, so the reading is wrong rather than absent.
+    stamped = db.count(
+        "SELECT COUNT(*) FROM ktp_life_events WHERE round_live IS NOT NULL"
+    )
+    live = db.count(
+        "SELECT COUNT(*) FROM ktp_life_events WHERE round_live = 1"
+    )
+    never_live = stamped > 0 and live == 0
+    if invalid or duplicate_keys or starts == 0 or deaths == 0 or never_live:
         return {"code": "life_events", "status": "pipeline",
                 "emitted": emitted, "rows": carried["rows"],
                 "starts": starts, "death_ends": deaths,
                 "invalid": invalid, "duplicate_keys": duplicate_keys,
+                "round_live_stamped": stamped, "round_live_live": live,
                 "detail": "life-boundary rows failed shape/coverage checks: "
                 f"starts={starts}, death_ends={deaths}, invalid={invalid}, "
-                f"duplicate_keys={duplicate_keys}"}
+                f"duplicate_keys={duplicate_keys}, round_live_stamped={stamped}, "
+                f"round_live_live={live}"}
     return {**carried, "starts": starts, "death_ends": deaths,
             "invalid": 0, "duplicate_keys": 0,
+            "round_live_stamped": stamped, "round_live_live": live,
             "detail": f"{carried['rows']}/{emitted} carried; "
-            f"starts={starts}, death_ends={deaths}"}
+            f"starts={starts}, death_ends={deaths}, "
+            + (f"round_live stamped on {stamped} ({live} live)"
+               if stamped else "round_live unstamped (pre-1.24.5 producer)")}
 
 
 def check_life_event_context(db, *, emitted: int,
