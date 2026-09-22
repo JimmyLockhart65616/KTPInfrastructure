@@ -363,3 +363,24 @@ def test_a_closer_round_pays_the_closing_cap_more():
     a = next(e for e in contested["timeline"] if e.get("capout_completed"))
     b = next(e for e in clean["timeline"] if e.get("capout_completed"))
     assert a["terminal_value"] > b["terminal_value"]
+
+
+def test_capouts_and_capout_completed_stay_in_step():
+    """Both consumers read one "owns every flag" test, so they cannot drift.
+
+    A repeat transition during a single hold changes nothing: `capouts`
+    dedupes it and the timeline never emits it (its delta is zero). A fresh
+    round in the same half rearms both.
+    """
+    states, reset = _five_flag_round()
+    states.append(flag_state(1, 4, 2, 20.0, name="F4"))  # already axis: a no-op
+    result = build_flag_swing_shadow(states + reset, [], [], [], ROSTER)
+    assert [(c["team"], c["game_time"]) for c in result["capouts"]] == [(2, 14.0)]
+    completed = [e["game_time"] for e in result["timeline"]
+                 if e["kind"] == "flag" and e["capout_completed"]]
+    assert completed == [14.0]
+    again = [flag_state(1, i, 2, 40.0 + i, name=f"F{i}") for i in range(5)]
+    two = build_flag_swing_shadow(states + reset + again, [], [], [], ROSTER)
+    assert [c["game_time"] for c in two["capouts"]] == [14.0, 44.0]
+    assert [e["game_time"] for e in two["timeline"]
+            if e["kind"] == "flag" and e["capout_completed"]] == [14.0, 44.0]
