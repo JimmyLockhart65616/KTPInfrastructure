@@ -449,6 +449,20 @@ def main():
     except RuntimeError as exc:      # publishing aid must never fail the run
         print(f"  mmr payload unavailable: {exc}")
 
+    # The transparency document: equations, variables and current per-map
+    # values, read from the code and from momentum_params.json (refit by
+    # momentum_report.py). Same publish path as the ratings payload.
+    try:
+        import methodology as METH
+        doc = METH.build(METH.load_params(),
+                         generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                         source_report_count=counts.get("rated_on_actual_participants", 0))
+        (HERE / "rating_methodology_payload.json").write_text(
+            json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"wrote rating_methodology_payload.json ({len(doc['momentum']['maps'])} maps)")
+    except (RuntimeError, OSError, KeyError) as exc:
+        print(f"  methodology payload unavailable: {exc}")
+
     upsets = [r for r in rows if abs(r["p_home"] - r["y"]) > CONFIDENT_MISS]
     cand = challengers(matches, args.holdout)
     beat_champion = [c for c in cand if cand and c["name"] != "champion (openskill default)"

@@ -21,3 +21,4 @@ mmr_openskill_payload.json
 
 # Momentum research output; regenerate with momentum_report.py
 momentum_report.md
+rating_methodology_payload.json
