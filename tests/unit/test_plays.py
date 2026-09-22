@@ -138,3 +138,66 @@ def test_public_block_carries_names_only_and_passes_the_privacy_gate():
     assert "dunce" not in block  # private only: end-of-season material, never the match page
     assert plays["dunce"]["player_id"] == 1  # still computed in the shadow block
     assert [row["name"] for row in block["per_player"]] == ["alpha", "bravo", "charlie", "delta"]
+
+
+def test_a_capout_completion_is_tagged_and_summarised():
+    tl = [dict(flag(300, 0.2, [1]), capout_completed=True)]
+    out = build_plays(tl, ROSTER, LIVES)
+    top = out["match_top"][0]
+    assert "cap-out" in top["tags"] and top["capout_completions"] == 1
+    assert "(capped out)" in top["summary"]
+
+
+def test_a_touch_taken_ahead_of_the_team_is_a_fast_push():
+    tl = [flag(300, 0.2, [1])]
+    touches = [{"half": 1, "player_id": 1, "flag": "axis_hq", "game_time": 300.0,
+                "teammate_gap": 1362, "depth": 0.805, "depth_gain": 0.14}]
+    out = build_plays(tl, ROSTER, LIVES, touches=touches)
+    play = out["match_top"][0]
+    assert "fast push" in play["tags"] and "cap" not in play["tags"]
+    assert play["teammate_gap_at_touch"] == 1362
+    assert "pushed past the team to the flag" in play["summary"]
+
+
+def test_a_touch_taken_with_the_team_is_an_ordinary_cap():
+    tl = [flag(300, 0.2, [1])]
+    touches = [{"half": 1, "player_id": 1, "flag": "axis_hq", "game_time": 300.0,
+                "teammate_gap": 300, "depth": 0.8, "depth_gain": 0.1}]
+    out = build_plays(tl, ROSTER, LIVES, touches=touches)
+    assert out["match_top"][0]["tags"] == ["cap"]
+
+
+def test_an_excursion_still_wins_over_the_fast_push_tag():
+    tl = [flag(300, 0.2, [1])]
+    exc = [{"half": 1, "player_id": 1, "start": 270.0, "end": 300.0, "duration": 30.0,
+            "min_teammate_distance": 1500, "closest_flag": "axis_hq", "closest_flag_distance": 50}]
+    touches = [{"half": 1, "player_id": 1, "flag": "axis_hq", "game_time": 300.0,
+                "teammate_gap": 1500, "depth": 0.9, "depth_gain": 0.2}]
+    out = build_plays(tl, ROSTER, LIVES, exc, touches=touches)
+    assert "sneak cap" in out["match_top"][0]["tags"]
+    assert "fast push" not in out["match_top"][0]["tags"]
+
+
+def test_a_round_ending_cap_is_worth_what_was_still_outstanding():
+    # The round was 77% won before the touch, so closing it is worth 0.23 --
+    # not the 0.10 flag-control move.
+    tl = [dict(flag(300, 0.10, [1]), capout_completed=True, terminal_value=0.23)]
+    play = build_plays(tl, ROSTER, LIVES)["match_top"][0]
+    assert abs(play["value"] - 0.23) < 1e-9 and "cap-out" in play["tags"]
+
+
+def test_a_tap_in_on_a_round_already_won_is_worth_little():
+    tl = [dict(flag(300, 0.10, [1]), capout_completed=True, terminal_value=0.04)]
+    play = build_plays(tl, ROSTER, LIVES)["match_top"][0]
+    assert abs(play["value"] - 0.04) < 1e-9
+
+
+def test_three_players_on_the_flag_split_the_round_win():
+    tl = [dict(flag(300, 0.10, [1, 2], denied=False), capout_completed=True, terminal_value=0.30)]
+    out = build_plays(tl, ROSTER, LIVES)
+    assert all(abs(p["value"] - 0.15) < 1e-9 for p in out["match_top"])
+
+
+def test_an_ordinary_cap_still_prices_on_the_flag_delta():
+    play = build_plays([flag(300, 0.2, [1])], ROSTER, LIVES)["match_top"][0]
+    assert abs(play["value"] - 0.2) < 1e-9

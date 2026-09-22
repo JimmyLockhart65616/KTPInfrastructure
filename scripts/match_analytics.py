@@ -2038,6 +2038,7 @@ def build_report(
     )
     excursions = build_excursions(
         position_timeline, flag_positions, life_boundaries, flag_states,
+        capture_credits=credit_timeline,
         source_available=bool(
             sources.get("positions", False)
             and sources.get("life_boundaries", False)
@@ -2048,6 +2049,7 @@ def build_report(
         players_public,
         life_boundaries,
         excursions.get("rows"),
+        touches=excursions.get("touches"),
         source_status=flag_swing.get("status"),
     )
     progression = build_progression(
