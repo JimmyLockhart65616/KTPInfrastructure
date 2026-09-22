@@ -681,17 +681,22 @@ def cmd_import_mmr(args: argparse.Namespace) -> int:
     a no-op rather than a new revision every week.
     """
     sys.path.insert(0, str(Path(args.repo) / "scripts" / "mmr"))
+    import methodology as METH
     import mmr_payload as MMRP
 
     payload = json.loads(Path(args.payload).read_text(encoding="utf-8"))
-    problems = MMRP.validate_for_import(payload)
+    # Two documents travel this path: the ratings (player rows, aliases only)
+    # and the methodology (no rows at all). Each has its own guard.
+    validators = {MMRP.AGGREGATE_KIND: MMRP.validate_for_import,
+                  METH.AGGREGATE_KIND: METH.validate_for_import}
+    kind = payload.get("kind") if isinstance(payload, dict) else None
+    validate = validators.get(kind)
+    problems = validate(payload) if validate else [f"kind is {kind!r}, expected one of {sorted(validators)}"]
     if problems:
         for problem in problems:
             print(f"refusing: {problem}")
         return 1
-    players = payload["players"]
-    # validate_for_import has already asserted payload["kind"] == AGGREGATE_KIND.
-    kind = MMRP.AGGREGATE_KIND
+    players = payload.get("players", [])
 
     db = LocalMysql()
     body = json.dumps(payload, ensure_ascii=False, sort_keys=True)
@@ -717,7 +722,8 @@ def cmd_import_mmr(args: argparse.Namespace) -> int:
         f"{int(payload.get('report_schema_version', 9))}, {sql_str(sha)}, "
         f"{sql_str(body)})"
     )
-    print(f"  {kind}: wrote revision {int(last_rev) + 1} ({len(players)} players). "
+    what = f"{len(players)} players" if players else "no player rows"
+    print(f"  {kind}: wrote revision {int(last_rev) + 1} ({what}). "
           f"report_sync will publish it on its next run.")
     return 0
 
