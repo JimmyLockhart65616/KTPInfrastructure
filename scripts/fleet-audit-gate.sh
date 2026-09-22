@@ -29,6 +29,12 @@
 #      a week: ktp-identity-reconcile.service sat failed for ten days after its
 #      one post. Age, not presence, is the signal, and it nags weekly by design:
 #      the triage comments on the one open issue until someone closes it.
+#      Age is measured from `fault_since` where the state file has one and from
+#      `since` otherwise. They are different facts: the same unit was stamped
+#      2026-09-17, the hour the producer started watching, for a fault that
+#      began 2026-09-08 -- a 13-day outage this gate would have called four
+#      days old. A fault older than its watcher reads as new, and nothing in
+#      the two dates being equal says they were ever checked against anything.
 #   6. The health check itself not having written for KTP_GATE_HEALTH_STALE_H
 #      (default 6) hours. Nothing else watches the watcher.
 #
@@ -105,13 +111,35 @@ except ValueError:
 if now - updated > stale_h * 3600:
     print("Health check has not written for %dh. " % ((now - updated) // 3600))
     sys.exit(0)
+def stamp(value):
+    try:
+        return datetime.strptime(value, fmt).timestamp()
+    except (TypeError, ValueError):
+        return None
+
+# `since` is when the health check first SAW the item, not when the fault
+# started, so an age taken from it under-counts anything older than the producer
+# watching it -- and under-counting is the direction that keeps a fault below
+# this gate indefinitely. `fault_since` carries an onset wherever a durable
+# signal knows one. It is sparse, and its absence means "no better answer",
+# never "no fault", so the fallback stays `since` and this leg cannot go quiet
+# for want of the new field.
+faults = doc.get("fault_since") or {}
 old = []
 for key, since in (doc.get("since") or {}).items():
-    try:
-        age = (now - datetime.strptime(since, fmt).timestamp()) / 86400
-    except (TypeError, ValueError):
+    detected = stamp(since)
+    if detected is None:
         continue
-    if age >= days:
+    onset = min(t for t in (detected, stamp(faults.get(key))) if t is not None)
+    age = (now - onset) / 86400
+    if age < days:
+        continue
+    seen = (now - detected) / 86400
+    # Both numbers whenever they disagree: the age is what decides, and the
+    # detection date is what explains why nobody had been told.
+    if int(age) != int(seen):
+        old.append("%s (%dd, first seen %dd ago)" % (key, age, seen))
+    else:
         old.append("%s (%dd)" % (key, age))
 if old:
     print("%d health item(s) open over %gd: %s. " % (len(old), days, ", ".join(sorted(old))))

@@ -119,8 +119,13 @@ jobs:
           # fetch plus one command, with no need to rerun the ladder.
           PAYLOAD="$GITHUB_WORKSPACE/scripts/mmr/mmr_openskill_payload.json"
           [ -f "$PAYLOAD" ] && cp "$PAYLOAD" mmr_openskill_payload.json
+          # And the methodology document (equations, variables, per-map
+          # values) -- same import command, no player rows.
+          METHOD="$GITHUB_WORKSPACE/scripts/mmr/rating_methodology_payload.json"
+          [ -f "$METHOD" ] && cp "$METHOD" rating_methodology_payload.json
           git add ratings_current.json
           [ -f mmr_openskill_payload.json ] && git add mmr_openskill_payload.json
+          [ -f rating_methodology_payload.json ] && git add rating_methodology_payload.json
           if git rev-parse --verify HEAD >/dev/null 2>&1 && git diff --cached --quiet; then
             echo "ratings unchanged this week -- nothing to publish"
             exit 0

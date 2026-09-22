@@ -1,4 +1,4 @@
-"""What is broken right now, and since when -- read from the health check's state.
+"""What is broken right now, and how long for -- read from the health check's state.
 
 `ktp-data-server-health.sh` runs hourly as root and is the only thing that
 observes a transition. Its log is root-only; its state file is world-readable
@@ -55,20 +55,34 @@ def view(doc: dict | None, now: datetime | None = None) -> dict:
                 "updated": updated.strftime(TS), "age": age(updated, now)}
 
     since_map = doc.get("since") if isinstance(doc.get("since"), dict) else {}
+    fault_map = doc.get("fault_since") if isinstance(doc.get("fault_since"), dict) else {}
     detail_map = doc.get("detail") if isinstance(doc.get("detail"), dict) else {}
     items = []
     for key in doc.get("down") or []:
         if not isinstance(key, str):
             continue
-        since = _parse(since_map.get(key))
+        # `since` is when the health check first SAW the item, which is younger
+        # than the fault whenever the fault predates the check watching it --
+        # ktp-identity-reconcile read four days for a thirteen-day outage. Age
+        # and sort order both key off the onset wherever the state file has one,
+        # so the row at the top is the longest-open FAULT and not merely the one
+        # noticed first.
+        detected = _parse(since_map.get(key))
+        # min, not "the onset if there is one": the producer already clamps to
+        # `since`, and a file that arrived some other way must not be able to
+        # make an item read YOUNGER than this check has watched it.
+        onset = min([t for t in (detected, _parse(fault_map.get(key))) if t], default=None)
         items.append({
             "key": key,
             "detail": detail_map.get(key) or "",
             # A state file written before `since` existed carries none; say so
             # rather than inventing a start time.
-            "since": since.strftime(TS) if since else None,
-            "age": age(since, now) if since else "unknown",
-            "_sort": since or now,
+            "since": onset.strftime(TS) if onset else None,
+            "age": age(onset, now) if onset else "unknown",
+            # Only where the two disagree, so no row claims more than it can back.
+            "first_seen": (detected.strftime(TS)
+                           if detected and onset and detected != onset else None),
+            "_sort": onset or now,
         })
     # Longest-open first: the thing nobody has acted on is the one to read.
     items.sort(key=lambda i: i["_sort"])

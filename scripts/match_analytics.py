@@ -56,6 +56,7 @@ from scripts.highlight_windows import build_highlight_windows  # noqa: E402
 from scripts.excursions import build_excursions  # noqa: E402
 from scripts.plays import build_plays  # noqa: E402
 from scripts.progression import build_progression  # noqa: E402
+from scripts.roster_teams import apply_canonical_teams  # noqa: E402
 from scripts.flag_swing import (  # noqa: E402
     build_flag_swing_shadow,
 )
@@ -1811,6 +1812,11 @@ def build_report(
                    if sources.get("flag_ownership", False) else [])
     life_boundaries = (query_rows(db, "life_boundary_fact.sql", match_id)
                        if sources.get("life_boundaries", False) else None)
+    # The roster's team is the side held in the LAST half a player appeared
+    # in, so anyone who leaves at the break is filed on the opponent (sides
+    # swap). Correct it from the per-half life feed before anything rolls
+    # players up by team.
+    players = apply_canonical_teams(players, life_boundaries)
     objective_attempts = (
         query_rows(db, "objective_attempt_timeline_fact.sql", match_id)
         if sources.get("objective_attempts", False) else []
@@ -2045,6 +2051,7 @@ def build_report(
     )
     excursions = build_excursions(
         position_timeline, flag_positions, life_boundaries, flag_states,
+        capture_credits=credit_timeline,
         source_available=bool(
             sources.get("positions", False)
             and sources.get("life_boundaries", False)
@@ -2055,6 +2062,7 @@ def build_report(
         players_public,
         life_boundaries,
         excursions.get("rows"),
+        touches=excursions.get("touches"),
         source_status=flag_swing.get("status"),
     )
     progression = build_progression(

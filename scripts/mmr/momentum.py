@@ -265,6 +265,35 @@ def conditional_lift(multis, objs, window=60.0, follow=(0.0, 120.0)):
     return (hw / nw if nw else 0.0), (ho / no if no else 0.0), nw, no
 
 
+MIN_MULTIKILLS_FOR_MAP_CURVE = 150   # below this a map uses the pooled curve
+
+
+def curves_by_map(multis, objs, spans, mmap, min_multikills=MIN_MULTIKILLS_FOR_MAP_CURVE):
+    """{map: {kind: (A, lam, n)}} plus "*" for the pooled fit.
+
+    Maps play at different paces -- some capout constantly, some almost
+    never -- so a map with enough multikills gets its own lift curves. A
+    thin map falls back to the pooled curve rather than to a noisy one.
+    """
+    out = {"*": {}}
+    for kind in ("cap", "capout"):
+        A, lam = fit_lift(lag_lift(multis, objs, spans, kind=kind))
+        out["*"][kind] = (A, lam, len(multis))
+    by_map = defaultdict(list)
+    for m in multis:
+        by_map[mmap.get(m["match"])].append(m)
+    for mp, mk in by_map.items():
+        if mp is None or len(mk) < min_multikills:
+            continue
+        ob = [o for o in objs if mmap.get(o["match"]) == mp]
+        sp = {k: v for k, v in spans.items() if mmap.get(k[0]) == mp}
+        out[mp] = {}
+        for kind in ("cap", "capout"):
+            A, lam = fit_lift(lag_lift(mk, ob, sp, kind=kind))
+            out[mp][kind] = (A, lam, len(mk))
+    return out
+
+
 # ---------------------------------------------------------------- scoring
 
 SCORING_FEATURES = ("cap", "hold3", "hold4", "capout")
@@ -392,7 +421,7 @@ class Ledger:
 
 
 def credit(events, curves, rho, cap_value=CAP_VALUE, capout_value=CAPOUT_VALUE, mk_value=1.0,
-           scoring=None):
+           scoring=None, curves_by_map=None):
     """{(match, half): {pid: {"total", "momentum"}}} over merged multikill + objective events.
 
     `total` is every objective value paid to the player; `momentum` is the
@@ -401,6 +430,8 @@ def credit(events, curves, rho, cap_value=CAP_VALUE, capout_value=CAPOUT_VALUE, 
 
     `scoring` ({map: coef} from fit_scoring) prices objectives in scoreboard
     points; without it, or for a map without a fit, cap_value/capout_value.
+    `curves_by_map` ({map: {kind: (A, lam[, n])}}) overrides `curves` for
+    halves on that map.
 
     A multikill deposits (n-2)*mk_value and is paid nothing itself -- kills
     are already paid in KTPR. A cap pays cap_value; a capout pays
@@ -411,7 +442,9 @@ def credit(events, curves, rho, cap_value=CAP_VALUE, capout_value=CAPOUT_VALUE, 
         by_half[(e["match"], e["half"])].append(e)
     out = {}
     for key, evs in by_half.items():
-        ledgers = {1: Ledger(curves, rho), 2: Ledger(curves, rho)}
+        mp = next((e.get("map") for e in evs if e.get("map")), None)
+        c = {k: v[:2] for k, v in (curves_by_map or {}).get(mp, {}).items()} or curves
+        ledgers = {1: Ledger(c, rho), 2: Ledger(c, rho)}
         for e in sorted(evs, key=lambda e: (e["t"], e["kind"] != "cap")):
             L = ledgers[e["team"]]
             if e["kind"] == "multikill":

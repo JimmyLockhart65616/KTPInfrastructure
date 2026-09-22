@@ -61,7 +61,11 @@ SYNCABLE_AGGREGATE_KINDS = {"map_profiles", "leaderboard_ktpr_v22",
                             # (keep-the-prac #760). Aliases only, no ids --
                             # report_service.py import-mmr refuses a payload
                             # carrying identifiers.
-                            "mmr_openskill"}
+                            "mmr_openskill",
+                            # How the ratings are computed: equations,
+                            # variables, current per-map values. About
+                            # nobody; the website shows it under Stats.
+                            "rating_methodology"}
 
 # Kept under PostgREST's default max-rows so a page is never server-truncated.
 PAGE_SIZE = 500

@@ -9,6 +9,16 @@ priced counterfactually as the cap swing it denied (the break-reel rank).
 The baseline coefficients are UNCALIBRATED PRIORS until fitted on match
 history against the authoritative engine team_score labels; every envelope
 says so. Private shadow only: no writes, no rating impact.
+
+Rounds end; P(win) does not survive the boundary. When a side caps out, the
+engine neutralises every flag at one timestamp and play restarts. Pricing
+those rows as ownership changes books the winning team LOSING everything it
+just won -- measured 2026-09-22 on 1789931256-NY1: a cap-out worth -0.112
+followed three seconds later by +0.381 of phantom swing handed to nobody,
+p walked back to 0.500, and 8%% of all timeline movement across the corpus
+was this artifact (596 resets since 08-31, 62 of them in officials). A reset
+is now a BOUNDARY: no deltas, one `round` row naming the winner, and the
+state machine starts the next round clean.
 """
 from __future__ import annotations
 
@@ -61,6 +71,23 @@ def _int_or_none(value: Any) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _round_boundaries(flag_states: Sequence[dict[str, Any]] | None,
+                      flag_count: int) -> set[tuple[int, float]]:
+    """(half, game_time) of every mass neutralisation -- the engine clearing
+    the map between rounds. Three flags going neutral at one timestamp is
+    not something play produces; the smallest real map here has five."""
+    counts: dict[tuple[int, float], int] = {}
+    for row in flag_states or []:
+        if bool(row.get("is_initial")) or _int_or_none(row.get("owner_team")) not in (0, None):
+            continue
+        half, at = _int_or_none(row.get("half")), _game_time(row)
+        if half is None or at is None:
+            continue
+        counts[(half, at)] = counts.get((half, at), 0) + 1
+    need = max(3, (flag_count + 1) // 2)
+    return {key for key, n in counts.items() if n >= need}
 
 
 def _wall_seconds(value: Any) -> float | None:
@@ -179,6 +206,13 @@ def build_flag_swing_shadow(
         "caveats": [
             "Coefficients are uncalibrated priors until fitted on engine "
             "team_score labels; magnitudes are comparative, not absolute.",
+            "A cap that ends a round carries `terminal_value` = 1 - P(the "
+            "capping side wins the round) just before it: the closing play "
+            "realises the outcome rather than shifting it. `delta` stays "
+            "the ordinary flag-control move, so a consumer reading only "
+            "`delta` is unchanged. How that value splits between the capper "
+            "and the team that set the round up is the momentum ledger's "
+            "fitted job, not a number chosen here.",
         ],
         "timeline": [],
         "players": [],
@@ -205,6 +239,8 @@ def build_flag_swing_shadow(
     spawn_ownership = spawn_ownership or {}
     flag_ids = ({ _int_or_none(r.get("flag_index"))
                  for r in flag_states } | set(spawn_ownership)) - {None}
+    boundaries = _round_boundaries(flag_states, len(flag_ids) or 5)
+    rounds_seen = 0
     if spawn_ownership:
         envelope["caveats"].append(
             "Initial ownership for flag_index "
@@ -272,6 +308,27 @@ def build_flag_swing_shadow(
                 state.alive[pid] = True
         assert state is not None
         before = state.p_allies()
+        if kind == "flag" and (half, at) in boundaries:
+            # Round boundary, not play: price nothing, name the winner, and
+            # start the next round from the reset state.
+            held = {side: state.flags_held(side) for side in (1, 2)}
+            winner = next((side for side in (1, 2)
+                           if held[side] == state.flag_count), None)
+            if winner is None:
+                winner = (1 if held[1] > held[2] else
+                          2 if held[2] > held[1] else None)
+            if not any(e.get("kind") == "round" and e.get("half") == half
+                       and e.get("game_time") == at for e in timeline):
+                rounds_seen += 1
+                timeline.append({
+                    "half": half, "game_time": at, "kind": "round",
+                    "winner": winner,
+                    "reason": "capout" if state.flag_count in held.values() else "expired",
+                    "allies_flags": held[1], "axis_flags": held[2],
+                    "delta": 0.0,
+                })
+            state.owners[_int_or_none(row.get("flag_index"))] = 0
+            continue
         if kind == "flag":
             flag = _int_or_none(row.get("flag_index"))
             owner = _int_or_none(row.get("owner_team"))
@@ -284,6 +341,7 @@ def build_flag_swing_shadow(
                 loser is not None and not is_initial_row
                 and state.owners.get(flag) == loser
                 and state.flags_held(loser) == state.flag_count - 1)
+            capout_completed = False
             if not (is_initial_row and reconstructed):
                 # Collection's own is_initial=1 row is near-always a wrong
                 # "neutral" for a flag we have a trusted reconstructed
@@ -303,6 +361,9 @@ def build_flag_swing_shadow(
                     and state.flags_held(state.capped_out_team) < state.flag_count):
                 state.capped_out_team = None
             delta = state.p_allies() - before
+            capout_completed = bool(
+                owner in (1, 2) and not is_initial_row
+                and state.flags_held(owner) == state.flag_count)
             credited = _credited(half, row.get("flag_name"), row.get("event_time"))
             share = delta / len(credited) if credited else 0.0
             for pid in credited:
@@ -317,6 +378,17 @@ def build_flag_swing_shadow(
                     "allies_flags": state.flags_held(1),
                     "axis_flags": state.flags_held(2),
                     "capout_denied": capout_denied,
+                    "capout_completed": capout_completed,
+                    # A cap that ends the round does not move P(win) -- it
+                    # REALISES it. The closing play is therefore worth the
+                    # probability still outstanding, 1 - P(the capping side
+                    # wins), which is derived from the model rather than
+                    # chosen: closing a round already 95%% won is worth 0.05,
+                    # closing a coin-flip is worth 0.50. Consumers that only
+                    # read `delta` still see an ordinary flag flip.
+                    "terminal_value": (
+                        round((1.0 - before) if owner == 1 else before, 4)
+                        if capout_completed else None),
                     "p_allies_after": round(state.p_allies(), 4),
                     "delta": round(delta, 4),
                 })
@@ -367,6 +439,7 @@ def build_flag_swing_shadow(
             })
         break_reel.sort(key=lambda b: -b["denied_swing"])
 
+    envelope["rounds"] = rounds_seen
     envelope["timeline"] = timeline
     envelope["capouts"] = capouts
     envelope["players"] = [

@@ -229,8 +229,12 @@ jobs:
 
             Read `audit-report.md`, `audit-stdout.txt`, `restart-drift.txt` and
             `health-state.json` in the working directory. The last is the
-            hourly data-server health check's own state: what is down and since
-            when. An item there that has been open for days is not new, but it
+            hourly data-server health check's own state: what is down, when the
+            check first saw it (`since`), and when the fault actually started
+            where anything durable knows (`fault_since`, sparse). Those are
+            different facts and `since` is the younger one -- report an age off
+            `fault_since` when the item has one, and never describe a `since`
+            as when something broke. An item open for days is not new, but it
             is the thing nobody has acted on, and that is exactly what a human
             needs to be told about. Read whatever else in the repository helps
             you explain a finding -- `docs/runbooks/` and `scripts/` especially.
@@ -283,7 +287,7 @@ jobs:
           fi
 
           {
-            echo "_Fleet audit ${{ github.run_id }} — $REASON_"
+            echo "_Fleet audit ${{ github.run_id }} — ${REASON}_"
             echo
             cat triage.md
             echo
