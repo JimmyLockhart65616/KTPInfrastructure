@@ -42,22 +42,37 @@ Before writing, the run prints an advisory scope diff against the manifest alrea
 at --out (or --baseline): which paths this regeneration adds and removes, grouped by
 origin, and for .res-derived paths which maps referenced them. Scope is what the
 client hashes, so an added path is more enforcement on every player and a removed one
-is less. It is ADVISORY -- it prints and never refuses; --diff-limit controls how much
-of a long list is spelled out.
+is less. The diff is ADVISORY by default -- it prints and never refuses; --diff-limit controls
+how much of a long list is spelled out.
+
+--gate-scope arms a refusal on top of that same diff: enforced paths entering or leaving
+scope must then be acknowledged by count (--accept-added N / --accept-removed N), or --out
+is left untouched, the manifest is written to <out>.candidate, and the run exits 2. Either
+--accept flag implies --gate-scope, so a count can never be handed to a gate that is not
+running.
 
 Usage:
   python3 build-game-files-manifest.py [--source-server <host>] [--out <path>]
                                        [--baseline <path>] [--diff-limit <n>]
+                                       [--gate-scope] [--accept-added N] [--accept-removed N]
 
 Defaults:
   --source-server  74.91.121.9 (ATL1 :27015)
   --out            ./game_files_manifest.json (relative to CWD)
   --baseline       whatever is at --out
   --diff-limit     10 paths per origin (0 = every path)
+  --gate-scope     off; the diff prints and the run writes
 
 Re-run after a known map deploy or weekly via cron. Manifest then SCP'd to
 data server at /opt/ktp-ac-api/game_files_manifest.json; the API serves it
 via /api/game-files-manifest with ETag-based caching.
+
+Why the gate exists: source 1 is produced by an act with a different purpose and a
+different owner. Running RESGen over a batch of maps is a FastDL deploy, and on
+2026-09-15 one such run's output was read here as a manifest source and pulled 128 paths
+into enforcement, at severity "violation", as a side effect. The gate is not a policy on
+how wide the manifest should be; it is the missing reader on the join between the two
+halves, for the runs where someone wants that reader armed.
 """
 
 import argparse
@@ -315,8 +330,6 @@ def dead_entry_candidates(entries, stock):
                   if e.get("origin", "").startswith(EXPLICIT_ORIGIN_PREFIX)
                   and not is_stock(e["path"], stock))
 
-
-# --------------------------------------------------------------------------
 
 def parse_res_files(ssh, dod_path):
     """Aggregate references from all maps/*.res files on the source server."""
@@ -817,16 +830,83 @@ def format_scope_diff(diff, baseline_label, limit=DIFF_LIST_LIMIT_DEFAULT):
 
 
 def scope_diff_lines(previous, current, baseline_path, unavailable_reason,
-                     limit=DIFF_LIST_LIMIT_DEFAULT):
-    """The printable diff, or one line saying why there is none."""
+                     limit=DIFF_LIST_LIMIT_DEFAULT, diff=None):
+    """The printable diff, or one line saying why there is none.
+
+    `diff` lets a caller that also gates hand in the diff it already computed, so the
+    report and the decision are provably the same comparison.
+    """
     if previous is None:
         return ["",
                 "=== Scope diff vs baseline (advisory) ===",
                 f"  unavailable: {unavailable_reason}",
                 "  nothing to compare against; the file this run writes is the next baseline"]
     version = previous.get("_meta", {}).get("version", "?")
-    return format_scope_diff(diff_manifests(previous, current),
-                             f"{baseline_path} (version {version})", limit)
+    if diff is None:
+        diff = diff_manifests(previous, current)
+    return format_scope_diff(diff, f"{baseline_path} (version {version})", limit)
+
+
+# --------------------------------------------------------------------------
+# Scope gate: nothing may widen what the AC enforces without someone saying so.
+#
+# The two halves of this pipeline have different owners. Running RESGen over a batch of
+# maps is a FastDL act -- it produces download lists -- and on 2026-09-15 one such run put
+# 33 maps' worth of references on the source tree. The next regeneration read them as a
+# manifest source and pulled the lot into enforcement, at severity "violation" by default,
+# with nobody deciding that. Neither half was wrong; the join between them had no reader.
+#
+# The .res-producing side already prints its entry-list delta and refuses on a failed
+# self-check (build_map_bundle.py). This is that same discipline on the side where the
+# consequence lands on a player, for the runs that ask for it.
+
+
+def enforced_changes(entries):
+    """The entries in a diff slice that count toward a verdict.
+
+    A "review" entry is captured and reported and never scores, so it changes what is
+    disclosed rather than what is enforced. Both are printed; only these gate.
+    """
+    return [e for e in entries if e.get("severity", "violation") != "review"]
+
+
+def gate_scope_change(diff, accept_added, accept_removed, out=None):
+    """True to proceed with the write, False to refuse.
+
+    `out` is resolved per call rather than bound as a default, so the stream this writes
+    to is the one live at the time -- a default would capture sys.stderr at import and
+    make every refusal here invisible to a caller that redirected it.
+
+    The acknowledgement is a COUNT, not a boolean, so it cannot be pasted into a runbook
+    once and keep passing. A flag that says "yes, 128" stops agreeing the moment the
+    regeneration would add 129, which is exactly when someone needs to look again.
+
+    Removals gate too: a path leaving enforcement is coverage loss, and a gate watching
+    only additions is blind in the direction nobody notices. A changed hash does not gate
+    -- files legitimately change on the fleet tree, and a gate that fires on that becomes
+    noise and gets rubber-stamped.
+    """
+    out = sys.stderr if out is None else out
+    ok = True
+    for what, changed, accepted in (
+        ("added", enforced_changes(diff["added"]), accept_added),
+        ("removed", enforced_changes(diff["removed"]), accept_removed),
+    ):
+        observed = len(changed)
+        if observed == 0:
+            continue
+        flag = f"--accept-{what}"
+        if accepted is None:
+            print(f"  REFUSED: {observed} enforced path(s) {what}. Read the diff above, then"
+                  f" re-run with {flag} {observed}.", file=out)
+            ok = False
+        elif accepted != observed:
+            print(f"  REFUSED: {flag} {accepted} does not match the {observed} enforced path(s)"
+                  f" {what}. The manifest changed since you looked.", file=out)
+            ok = False
+        else:
+            print(f"  accepted: {observed} enforced path(s) {what} ({flag} {accepted})", file=out)
+    return ok
 
 
 def main():
@@ -847,14 +927,21 @@ def main():
                     help="Steam depot-31 path list (default: scripts/data/dod-depot31-stock-paths.txt "
                          "beside this script)")
     ap.add_argument("--baseline", default=None,
-                    help="Manifest the scope diff compares against (default: --out, which "
-                         "this run is about to overwrite)")
+                    help="Manifest the scope diff and the scope gate compare against "
+                         "(default: --out, which this run is about to overwrite)")
     ap.add_argument("--diff-limit", type=int, default=DIFF_LIST_LIMIT_DEFAULT,
                     help=f"Paths listed per origin in the scope diff, 0 for all "
                          f"(default: {DIFF_LIST_LIMIT_DEFAULT})")
     ap.add_argument("--ssh-password", default=None,
                     help="SSH password for source-user (default: $KTP_FLEET_SSH_PASSWORD "
                          "or ~/.ktp_fleet_ssh_password)")
+    ap.add_argument("--gate-scope", action="store_true",
+                    help="Refuse to write --out when enforced paths enter or leave scope "
+                         "without a matching --accept count. Implied by either --accept flag.")
+    ap.add_argument("--accept-added", type=int, default=None, metavar="N",
+                    help="Acknowledge exactly N enforced paths entering scope. A wrong N refuses.")
+    ap.add_argument("--accept-removed", type=int, default=None, metavar="N",
+                    help="Acknowledge exactly N enforced paths leaving scope. A wrong N refuses.")
     args = ap.parse_args()
 
     # Before the SSH connect and the tree walk, not after: the stock list is only read once the
@@ -872,6 +959,20 @@ def main():
             "  git archive origin/main scripts/build-game-files-manifest.py "
             "scripts/data/dod-depot31-stock-paths.txt | tar -x -C <workdir>"
         )
+
+    # An explicit arm, because the diff is advisory by ruling: it prints on every run and
+    # refuses on none. An --accept count implies the arm so a count can never be handed to
+    # a gate that is not running.
+    gate_armed = (args.gate_scope or args.accept_added is not None
+                  or args.accept_removed is not None)
+
+    # Resolved and read before the connect, not after the hash pass: a --baseline that
+    # cannot be read is knowable now, and learning it later costs a full sha256 pass over
+    # the game tree on a production host. It also has to precede the open(out_path, "w")
+    # below, which truncates the file that IS the default baseline.
+    out_path = Path(args.out).resolve()
+    baseline_path = Path(args.baseline).resolve() if args.baseline else out_path
+    previous, baseline_unavailable = load_previous_manifest(baseline_path)
 
     if not args.ssh_password:
         args.ssh_password = os.environ.get("KTP_FLEET_SSH_PASSWORD")
@@ -892,15 +993,30 @@ def main():
         manifest = assemble_manifest(entries, f"{args.source_server} {args.source_port_dir}",
                                       args.source_port_dir, args.stock_paths)
 
-        out_path = Path(args.out).resolve()
-
-        # Read the baseline BEFORE the write below, which truncates it: unless
-        # --baseline says otherwise the baseline is the file being overwritten.
-        baseline_path = Path(args.baseline).resolve() if args.baseline else out_path
-        previous, why_not = load_previous_manifest(baseline_path)
-        for line in scope_diff_lines(previous, manifest, baseline_path, why_not,
-                                     args.diff_limit):
+        # One comparison, reported and then decided on, so the gate can only refuse over
+        # the delta the operator was just shown.
+        diff = diff_manifests(previous, manifest) if previous is not None else None
+        for line in scope_diff_lines(previous, manifest, baseline_path,
+                                     baseline_unavailable, args.diff_limit, diff=diff):
             print(line, file=sys.stderr)
+
+        # The gate decides BEFORE anything reaches --out. Writing first and refusing after
+        # would leave the widened manifest on disk as the next run's baseline, so the
+        # second run would find nothing added and pass -- a refusal laundering itself into
+        # an approval.
+        if gate_armed and diff is not None:
+            if not gate_scope_change(diff, args.accept_added, args.accept_removed):
+                candidate = out_path.with_suffix(out_path.suffix + ".candidate")
+                with open(candidate, "w", encoding="utf-8") as f:
+                    json.dump(manifest, f, indent=2)
+                print(f"  {out_path} left UNCHANGED. Candidate written to {candidate}.",
+                      file=sys.stderr)
+                sys.exit(2)
+        elif gate_armed:
+            # Armed with nothing to compare against. Say so loudly rather than let an
+            # operator who asked for a gate read a clean run as an acknowledged one.
+            print("  GATE ARMED BUT NOT RUN: no baseline, so no scope change was "
+                  "acknowledged. The write below is ungated.", file=sys.stderr)
 
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
