@@ -35,8 +35,12 @@ scoring. Drop one and every holder of that file becomes a violation — no path 
 severity moved, no hash changed. The generator's diff does not compare alternates at all, so
 such an install prints *"no change: same paths, same severities, same hashes"*: the single
 worst case this tool exists to catch, described in reassuring words. `--accept-alternates-dropped`
-and `--accept-alternates-gained` are the counts, and a change on a `review` path does not gate
-because it cannot score in either direction.
+and `--accept-alternates-gained` are the counts. The enforcement test is asymmetric, because the
+two directions ask about different points in time: a drop matters iff the path is enforced
+AFTERWARDS — that is when the holder starts scoring — and a gain iff it was enforced BEFORE,
+which is the coverage being given up. ⛔ What it must not become is `before and after`: that
+drops a `review` → `violation` flip arriving together with an alternate drop, two widenings at
+once, and the whole 2x2 is pinned so neither cell can drift.
 
 ⚠️ A re-hash on a path already in scope is printed and NOT gated. That is inherited from the
 generator's ruling — files legitimately change on the fleet tree, and a gate that fires on
@@ -58,7 +62,10 @@ The rest is the convention, made mechanical:
   create is exclusive (`O_EXCL`), so a name already in use gains the time rather than
   overwriting this morning's rollback copy with this afternoon's — a guarantee from the
   server rather than a directory listing, which would be a check that fails open when it
-  cannot read;
+  cannot read. The create gets a `try` of its own so "exists" can only mean exists (a full
+  disk otherwise rendered as a collision), and a failed write removes the file O_EXCL had
+  already created rather than leaving a zero-byte rollback copy at the canonical name — one
+  that looks right in an `ls` and restores nothing;
 - a file that exists but no longer parses is still backed up. "Is there a baseline to gate
   against?" and "is there a file I am about to destroy?" are different questions, and
   answering the second with the first would overwrite a truncated manifest — the copy you

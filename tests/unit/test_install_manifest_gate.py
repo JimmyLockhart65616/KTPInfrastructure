@@ -299,12 +299,45 @@ def test_an_alternate_on_a_review_path_does_not_gate(mod):
 
 
 def test_an_alternate_change_counts_when_severity_moves_with_it(mod):
-    """Enforced on EITHER side, so a path that drops an alternate in the same install
-    that makes it score is not lost between the two checks."""
+    """⛔ The predicate must never become `before AND after`: that would drop a
+    `review` → `violation` flip arriving together with an alternate drop, which is two
+    widenings at once and the one combination nobody would look at twice."""
     before = [alt_entry("a.mdl", ["a" * 64], severity="review")]
     after = [alt_entry("a.mdl", None, severity="violation")]
     dropped, _ = mod.alternate_transitions(manifest(before), manifest(after))
     assert [p for p, _ in dropped] == ["a.mdl"]
+
+
+# (severity before, severity after, a DROP gates, a GAIN gates). The test is asymmetric
+# because the two directions ask about different points in time: a drop matters iff the
+# path is enforced AFTER — that is when the holder starts scoring — and a gain iff it was
+# enforced BEFORE, which is the coverage being given up.
+_ALTERNATE_MATRIX = [
+    ("violation", "violation", True, True),
+    ("violation", "review", False, True),
+    ("review", "violation", True, False),
+    ("review", "review", False, False),
+]
+
+
+@pytest.mark.parametrize("was,now,drop_gates,gain_gates", _ALTERNATE_MATRIX)
+def test_the_alternate_predicate_gates_exactly_the_changes_that_score(mod, was, now,
+                                                                     drop_gates, gain_gates):
+    """The whole 2x2, both directions, so neither cell can drift unnoticed.
+
+    Every cell with a real scoring effect gates — that is the property that matters. The
+    two that do not are the cells where a shared `before or after` test would announce
+    "hashes that now score against a holder" about a path that cannot score at all.
+    """
+    dropped, _ = mod.alternate_transitions(
+        manifest([alt_entry("a.mdl", ["h" * 64], severity=was)]),
+        manifest([alt_entry("a.mdl", None, severity=now)]))
+    assert bool(dropped) is drop_gates
+
+    _, gained = mod.alternate_transitions(
+        manifest([alt_entry("a.mdl", None, severity=was)]),
+        manifest([alt_entry("a.mdl", ["h" * 64], severity=now)]))
+    assert bool(gained) is gain_gates
 
 
 def test_an_added_path_is_not_also_an_alternate_change(mod):
@@ -484,6 +517,41 @@ def test_an_unreadable_live_file_is_not_reported_as_a_name_collision(mod):
         mod.take_backup(sftp, LIVE, "fix", out=out)
     assert "adding the time" not in out.getvalue()
     assert backups(sftp) == []
+
+
+def test_a_failed_backup_write_never_leaves_a_zero_byte_rollback_copy(mod):
+    """🔴 O_EXCL has already created the file, so a write that fails leaves an empty file
+    at the canonical backup name — a rollback copy that looks right in an `ls` and
+    restores nothing, on a fleet that keeps no other copy."""
+    sftp = FakeSFTP({LIVE: b"live"}, fail_on_close=".bak-")
+    out = io.StringIO()
+    with pytest.raises(OSError):
+        mod.take_backup(sftp, LIVE, "fix", out=out)
+
+    assert backups(sftp) == [], "an empty file was left at a backup name"
+    assert "exists" not in out.getvalue(), "a write failure was reported as a collision"
+
+
+def test_a_write_failure_is_not_reported_as_a_name_collision(mod):
+    """The create gets a try of its own so that "exists" can only ever mean exists. With
+    the write in the same block a full disk rendered as a collision, about a name nothing
+    was using."""
+    sftp = FakeSFTP({LIVE: b"live"}, fail_on_close=".bak-")
+    out = io.StringIO()
+    with pytest.raises(OSError):
+        mod.take_backup(sftp, LIVE, "fix", out=out)
+    assert "adding the time" not in out.getvalue()
+
+
+def test_a_real_collision_still_falls_back_to_the_timed_name(mod):
+    taken = mod.backup_name(LIVE, "fix")
+    sftp = FakeSFTP({LIVE: b"live", taken: b"PRECIOUS"})
+    out = io.StringIO()
+
+    backup = mod.take_backup(sftp, LIVE, "fix", out=out)
+    assert backup != taken
+    assert sftp.files[taken] == b"PRECIOUS"
+    assert "exists" in out.getvalue()
 
 
 def test_the_backup_is_chmodded_to_0644(mod):

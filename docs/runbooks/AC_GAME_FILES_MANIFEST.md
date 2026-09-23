@@ -195,7 +195,9 @@ What the script does that the old `scp` + `cp` pair did not:
   findable in an `ls` six months from now. The create is exclusive (`O_EXCL`), so
   a second install the same day under the same reason gains the time instead of
   overwriting the morning's rollback copy — a guarantee from the server rather
-  than a check that could fail open.
+  than a check that could fail open. A backup whose write fails is removed rather
+  than left at the canonical name: an empty file there looks like a rollback copy
+  in an `ls` and restores nothing.
 - **Backs up a file that no longer parses**, too. "Is there a baseline to gate
   against?" and "is there a file I am about to destroy?" are different questions,
   and a truncated manifest is the copy you would most want back.

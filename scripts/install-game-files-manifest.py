@@ -164,9 +164,18 @@ def alternate_transitions(previous, candidate, enforced_severity=None):
     without them they surface as false-positive violations on every legitimate player.
 
     Computed here rather than taken from the generator's diff, because the diff has no
-    field for it. A change counts when the path is enforced on either side: an alternate
-    on a `review` path never scores in either direction, and requiring enforcement on
-    BOTH sides would miss the case where severity and alternates move together.
+    field for it.
+
+    🔑 The enforcement test is ASYMMETRIC, because the two directions ask about different
+    points in time. A DROP matters iff the path is enforced AFTERWARDS — that is when the
+    holder starts scoring. A GAIN matters iff it was enforced BEFORE — that is the
+    coverage being given up. One shared `before or after` test fires correctly in every
+    case that is really a change, but over-reports two: it would announce "hashes that now
+    score against a holder" for a path that is `review` afterwards, where nothing can
+    score. On a codebase whose own rule is that a gate firing on noise gets rubber-stamped,
+    the message being wrong is the cost. ⛔ What it must NOT become is `before and after`:
+    that drops `review` -> `violation` arriving together with an alternate drop, which is
+    two widenings at once.
     """
     enforced = enforced_severity or (lambda e: e.get("severity", "violation") != "review")
     prev = {e["path"]: e for e in previous.get("files", [])}
@@ -175,13 +184,11 @@ def alternate_transitions(previous, candidate, enforced_severity=None):
     dropped, gained = [], []
     for path in sorted(set(prev) & set(cur)):
         before, after = prev[path], cur[path]
-        if not (enforced(before) or enforced(after)):
-            continue
         was = set(before.get("allowed_alternate_hashes") or [])
         now = set(after.get("allowed_alternate_hashes") or [])
-        if was - now:
+        if was - now and enforced(after):
             dropped.append((path, sorted(was - now)))
-        if now - was:
+        if now - was and enforced(before):
             gained.append((path, sorted(now - was)))
     return dropped, gained
 
@@ -424,14 +431,32 @@ def take_backup(sftp, installed_path, reason, out=None):
 
     for attempt in (0, 1):
         backup = backup_name(installed_path, reason, attempt=attempt)
+
+        # The create gets a try of its own, so that "exists" can only ever mean exists.
+        # With the write inside the same block a full disk rendered as a collision, and
+        # the run said so about a name nothing was using.
         try:
-            with sftp.open(backup, "wx") as dst:
-                dst.write(live)
+            dst = sftp.open(backup, "wx")
         except OSError as exc:
             if attempt == 0:
                 print(f"  backup:    {backup} exists ({exc}); adding the time", file=out)
                 continue
             raise
+
+        # O_EXCL has already created the file, so a failed write leaves a ZERO-BYTE file
+        # at the canonical backup name — a rollback copy that looks right in an `ls` and
+        # restores nothing, on a fleet that keeps no other copy. Remove it.
+        try:
+            with dst:
+                dst.write(live)
+        except Exception:
+            try:
+                sftp.remove(backup)
+            except Exception:
+                print(f"  WARNING: {backup} may be incomplete and could not be removed. "
+                      "Delete it by hand — it is not a usable rollback copy.", file=out)
+            raise
+
         sftp.chmod(backup, 0o644)
         print(f"  backup:    {backup}", file=out)
         return backup
