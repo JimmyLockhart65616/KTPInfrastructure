@@ -58,6 +58,13 @@ The rest is the convention, made mechanical:
 from it. `/opt/ktp-ac-api/` also holds `uploads/`, the evidence corpus, and `releases/`;
 nothing here operates on a directory.
 
+It is wired into `ktp_script_freshness` and listed in that suite's `GUARDED` set, covering
+the generator beside it as well. The guard's own failure mode is this script's reason for
+existing: a copy predating the severity gate would install a widening and report success,
+because a check it has never heard of cannot decline. So it runs from the checkout rather
+than from a `git archive` extraction — the checked version of that ritual instead of the
+remembered one.
+
 **No baseline means refuse.** With nothing installed to compare against, the generator
 prints `GATE ARMED BUT NOT RUN` and writes anyway — right for a local file nobody is served.
 Here that would put an unreviewed manifest in front of every player, so "could not compare"

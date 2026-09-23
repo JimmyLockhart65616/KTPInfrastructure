@@ -64,6 +64,9 @@ GUARDED = {
     "stage-mp-logecho.py": "edits dodserver.cfg on every instance",
     "stage-runner.py": "stages artifacts onto the Tier-2 runner",
     "sync-runner-stack.py": "overwrites the Tier-2 runner stack",
+    "install-game-files-manifest.py":
+        "replaces the manifest every AC client is checked against; a copy predating "
+        "the severity gate would install a widening and report success",
 }
 
 # Reached over SSH, but not from a working checkout -- so a gate keyed on

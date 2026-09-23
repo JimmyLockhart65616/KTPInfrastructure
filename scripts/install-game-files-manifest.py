@@ -55,6 +55,13 @@ from pathlib import Path
 
 import paramiko
 
+# Remote-writing entry point: refuse to run from a checkout behind origin/main
+# (ktp_script_freshness.py). The failure mode is this script's own reason for
+# existing — a copy predating the severity gate would install a widening and
+# report success, because a check it has never heard of cannot decline.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ktp_script_freshness import require_current  # noqa: E402
+
 
 # Where the API looks when `GameFilesManifestPath` is unset — the default in
 # KTPAntiCheat.Api/Program.cs. Used only as the fallback for --installed-path;
@@ -451,6 +458,14 @@ def connect(server, user, key_path):
 
 def main(argv=None):
     args = build_arg_parser().parse_args(argv)
+
+    # After parse_args so --help answers without a network, and before --dry-run: a plan
+    # printed by a stale copy is wrong in exactly the way that is hard to notice. `also`
+    # covers the generator because its diff is what this gate decides on — a current
+    # installer reading a stale diff would refuse and accept the wrong things.
+    require_current(__file__, also=["build-game-files-manifest.py"],
+                    purpose="replace the manifest every AC client is checked against")
+
     gen = load_generator()
     err = sys.stderr
 

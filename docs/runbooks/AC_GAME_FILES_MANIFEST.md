@@ -125,19 +125,25 @@ Use `scripts/install-game-files-manifest.py`. It is the copy, with the
 acknowledgement attached to it:
 
 ```bash
-git archive origin/main \
-    scripts/install-game-files-manifest.py \
-    scripts/build-game-files-manifest.py | tar -x
-
+cd <KTPInfrastructure checkout>
 python3 scripts/install-game-files-manifest.py \
-    --manifest ./candidate.json \
+    --manifest /tmp/manifest-<date>/candidate.json \
     --server <data-server> \
     --reason pre-weapon-kit
 ```
 
-Take both files — the installer reuses the generator's scope diff, so an
-operator who read §4 reads the same layout here rather than learning a second
-one.
+⚠️ **Run this one from the checkout, not from the throwaway directory of §1.**
+That is the opposite of the generator and it is deliberate: this script is wired
+into `ktp_script_freshness`, so it refuses unless both it and the generator
+beside it are byte-identical to `origin/main`. Running it out of a `git archive`
+extraction puts it outside any checkout, which the guard treats as no provenance
+and refuses. The checkout run is the *checked* version of the §1 ritual rather
+than the remembered one — a stale installer would not reject the flags it lacks,
+it would never see them, install anyway and print a clean summary.
+
+It reuses the generator's scope diff, which is why the guard covers that file
+too: a current installer deciding on a stale diff would refuse and accept the
+wrong things.
 
 🔴 **The gate is armed by default here, and that is the difference from §3b.**
 The generator's `--gate-scope` is opt-in because a regeneration reaches nobody:
