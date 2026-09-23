@@ -38,12 +38,22 @@ skybox mismatch is reported and its bytes captured for an admin, but it does not
 count toward a verdict. Reverting = move "gfx/env/" back to
 EXCLUDED_PATH_PREFIXES.
 
+Before writing, the run prints an advisory scope diff against the manifest already
+at --out (or --baseline): which paths this regeneration adds and removes, grouped by
+origin, and for .res-derived paths which maps referenced them. Scope is what the
+client hashes, so an added path is more enforcement on every player and a removed one
+is less. It is ADVISORY -- it prints and never refuses; --diff-limit controls how much
+of a long list is spelled out.
+
 Usage:
   python3 build-game-files-manifest.py [--source-server <host>] [--out <path>]
+                                       [--baseline <path>] [--diff-limit <n>]
 
 Defaults:
   --source-server  74.91.121.9 (ATL1 :27015)
   --out            ./game_files_manifest.json (relative to CWD)
+  --baseline       whatever is at --out
+  --diff-limit     10 paths per origin (0 = every path)
 
 Re-run after a known map deploy or weekly via cron. Manifest then SCP'd to
 data server at /opt/ktp-ac-api/game_files_manifest.json; the API serves it
@@ -665,6 +675,160 @@ def assemble_manifest(entries, source_server_label, dod_path, stock_paths_file=N
     }
 
 
+# --------------------------------------------------------------------------
+# Advisory scope diff — what a regeneration changed about enforcement
+# --------------------------------------------------------------------------
+#
+# The generator overwrites its output and says nothing about what moved, so a
+# regeneration run for an unrelated reason can widen what every client is checked
+# against and leave a changed version string as the only record. Most of the manifest
+# is .res-derived, and an unreferenced .res sitting on the source tree enters scope
+# the next time anyone runs this, whatever they ran it for.
+#
+# Advisory only, by operator ruling: it prints, it never refuses. Whether a
+# regeneration should need an acknowledgement is a separate decision to be made
+# against a real distribution of diffs, and this exists partly to produce that.
+
+# Paths listed per origin before the rest is summarised. A big addition spelled out in
+# full is a wall the reader scrolls past, which ends the same way as printing nothing.
+DIFF_LIST_LIMIT_DEFAULT = 10
+
+# Referencing maps named on the per-origin summary line before the tail is counted.
+_DIFF_MAPS_NAMED = 5
+
+
+def load_previous_manifest(path):
+    """(manifest, None) if a prior manifest is readable there, else (None, reason).
+
+    Every failure is a sentence for the operator rather than an exception: a first
+    run has no baseline, and an advisory that can abort the build is a gate.
+    """
+    path = Path(path)
+    if not path.exists():
+        return None, f"no baseline at {path}"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return None, f"baseline at {path} could not be read ({exc})"
+    if not isinstance(data, dict) or not isinstance(data.get("files"), list):
+        return None, f"baseline at {path} has no files[] — not a manifest"
+    return data, None
+
+
+def diff_manifests(previous, current):
+    """Scope diff between two manifests, keyed on path.
+
+    Path membership is the thing: the client only hashes what the manifest lists, so
+    an added path is strictly more enforcement and a removed one strictly less.
+    Severity flips ride along because review -> violation widens enforcement without
+    adding a path, and re-hashes are counted because they are the remaining way the
+    manifest version can move — without that count a run with nothing to report reads
+    as a broken diff next to a version that changed.
+    """
+    prev = {e["path"]: e for e in previous.get("files", [])}
+    cur = {e["path"]: e for e in current.get("files", [])}
+
+    severity_changed = []
+    rehashed = 0
+    for path in sorted(set(prev) & set(cur)):
+        before, after = prev[path], cur[path]
+        if before.get("severity") != after.get("severity"):
+            severity_changed.append((path, before.get("severity"), after.get("severity")))
+        if before.get("sha256") != after.get("sha256"):
+            rehashed += 1
+
+    return {
+        "added": [cur[p] for p in sorted(set(cur) - set(prev))],
+        "removed": [prev[p] for p in sorted(set(prev) - set(cur))],
+        "severity_changed": severity_changed,
+        "rehashed": rehashed,
+        "total_before": len(prev),
+        "total_after": len(cur),
+    }
+
+
+def _plural(n, noun):
+    return f"{n} {noun}" + ("" if n == 1 else "s")
+
+
+def _by_origin(entries):
+    """Origins in descending size — the big group is the one that needs reading."""
+    groups = defaultdict(list)
+    for e in entries:
+        groups[e.get("origin", "?")].append(e)
+    return sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+
+
+def _origin_block(entries, limit):
+    """One origin: a headline that survives any size, then as many paths as fit."""
+    sev = Counter(e.get("severity", "?") for e in entries)
+    lines = ["      severity: " + ", ".join(f"{s} {n}" for s, n in sorted(sev.items()))]
+
+    # "+128, all from one map" and "+128 across nine maps" are different findings and
+    # the paths alone do not distinguish them.
+    maps = Counter(m for e in entries for m in e.get("referenced_by", []))
+    if maps:
+        top = maps.most_common(_DIFF_MAPS_NAMED)
+        named = ", ".join(f"{m} {n}" for m, n in top)
+        rest = len(maps) - len(top)
+        lines.append(f"      maps: {named}" + (f", +{rest} more" if rest else ""))
+
+    shown = entries if limit <= 0 else entries[:limit]
+    lines += [f"        {e['path']}" for e in shown]
+    hidden = len(entries) - len(shown)
+    if hidden:
+        lines.append(f"        ... {hidden} more (--diff-limit 0 lists every path)")
+    return lines
+
+
+def _change_section(title, entries, limit):
+    if not entries:
+        return []
+    groups = _by_origin(entries)
+    lines = [f"  {title} {_plural(len(entries), 'path')}, "
+             f"{_plural(len(groups), 'origin')}:"]
+    for origin, group in groups:
+        lines.append(f"    {origin}  {len(group)}")
+        lines += _origin_block(group, limit)
+    return lines
+
+
+def format_scope_diff(diff, baseline_label, limit=DIFF_LIST_LIMIT_DEFAULT):
+    before, after = diff["total_before"], diff["total_after"]
+    lines = [
+        "",
+        "=== Scope diff vs baseline (advisory) ===",
+        f"  baseline:  {baseline_label}",
+        f"  entries:   {before} -> {after}  ({after - before:+d})",
+    ]
+    lines += _change_section("ADDED", diff["added"], limit)
+    lines += _change_section("REMOVED", diff["removed"], limit)
+
+    if diff["severity_changed"]:
+        lines.append(f"  SEVERITY CHANGED {_plural(len(diff['severity_changed']), 'path')}:")
+        lines += [f"    {p}: {was} -> {now}" for p, was, now in diff["severity_changed"]]
+    if diff["rehashed"]:
+        lines.append(f"  RE-HASHED {_plural(diff['rehashed'], 'path')} "
+                     f"(in scope before and after, new bytes)")
+
+    if not (diff["added"] or diff["removed"] or diff["severity_changed"] or diff["rehashed"]):
+        lines.append("  no change: same paths, same severities, same hashes")
+    return lines
+
+
+def scope_diff_lines(previous, current, baseline_path, unavailable_reason,
+                     limit=DIFF_LIST_LIMIT_DEFAULT):
+    """The printable diff, or one line saying why there is none."""
+    if previous is None:
+        return ["",
+                "=== Scope diff vs baseline (advisory) ===",
+                f"  unavailable: {unavailable_reason}",
+                "  nothing to compare against; the file this run writes is the next baseline"]
+    version = previous.get("_meta", {}).get("version", "?")
+    return format_scope_diff(diff_manifests(previous, current),
+                             f"{baseline_path} (version {version})", limit)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.strip().split("\n\n")[0])
     ap.add_argument("--source-server", default="74.91.121.9",
@@ -682,6 +846,12 @@ def main():
     ap.add_argument("--stock-paths", default=str(STOCK_PATHS_FILE),
                     help="Steam depot-31 path list (default: scripts/data/dod-depot31-stock-paths.txt "
                          "beside this script)")
+    ap.add_argument("--baseline", default=None,
+                    help="Manifest the scope diff compares against (default: --out, which "
+                         "this run is about to overwrite)")
+    ap.add_argument("--diff-limit", type=int, default=DIFF_LIST_LIMIT_DEFAULT,
+                    help=f"Paths listed per origin in the scope diff, 0 for all "
+                         f"(default: {DIFF_LIST_LIMIT_DEFAULT})")
     ap.add_argument("--ssh-password", default=None,
                     help="SSH password for source-user (default: $KTP_FLEET_SSH_PASSWORD "
                          "or ~/.ktp_fleet_ssh_password)")
@@ -723,6 +893,15 @@ def main():
                                       args.source_port_dir, args.stock_paths)
 
         out_path = Path(args.out).resolve()
+
+        # Read the baseline BEFORE the write below, which truncates it: unless
+        # --baseline says otherwise the baseline is the file being overwritten.
+        baseline_path = Path(args.baseline).resolve() if args.baseline else out_path
+        previous, why_not = load_previous_manifest(baseline_path)
+        for line in scope_diff_lines(previous, manifest, baseline_path, why_not,
+                                     args.diff_limit):
+            print(line, file=sys.stderr)
+
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
