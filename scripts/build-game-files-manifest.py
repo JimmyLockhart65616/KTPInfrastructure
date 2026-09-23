@@ -843,6 +843,9 @@ def main():
                     help="Local path to KTPFileChecker ktp_file.ini (the list the plugin loads)")
     ap.add_argument("--out", default="game_files_manifest.json",
                     help="Output JSON path (default: ./game_files_manifest.json)")
+    ap.add_argument("--stock-paths", default=str(STOCK_PATHS_FILE),
+                    help="Steam depot-31 path list (default: scripts/data/dod-depot31-stock-paths.txt "
+                         "beside this script)")
     ap.add_argument("--baseline", default=None,
                     help="Manifest the scope diff compares against (default: --out, which "
                          "this run is about to overwrite)")
@@ -853,6 +856,22 @@ def main():
                     help="SSH password for source-user (default: $KTP_FLEET_SSH_PASSWORD "
                          "or ~/.ktp_fleet_ssh_password)")
     args = ap.parse_args()
+
+    # Before the SSH connect and the tree walk, not after: the stock list is only read once the
+    # entries are assembled, so a missing one used to surface as a FileNotFoundError minutes in,
+    # with the whole hash pass thrown away. It also breaks the standing "run it from
+    # `git show origin/main:scripts/<name>`" recipe, because that copies the script without the
+    # data directory next to it -- so say which recipe works instead of only what is missing.
+    try:
+        load_stock_paths(args.stock_paths)
+    except (OSError, ValueError) as exc:
+        sys.exit(
+            f"stock path list unusable: {exc}\n"
+            "It must sit at <dir>/scripts/data/dod-depot31-stock-paths.txt beside the script, "
+            "or be named with --stock-paths. To run a pinned copy, take both files together:\n"
+            "  git archive origin/main scripts/build-game-files-manifest.py "
+            "scripts/data/dod-depot31-stock-paths.txt | tar -x -C <workdir>"
+        )
 
     if not args.ssh_password:
         args.ssh_password = os.environ.get("KTP_FLEET_SSH_PASSWORD")
@@ -871,7 +890,7 @@ def main():
     try:
         entries = build_manifest(ssh, args.source_port_dir, args.filelist)
         manifest = assemble_manifest(entries, f"{args.source_server} {args.source_port_dir}",
-                                      args.source_port_dir)
+                                      args.source_port_dir, args.stock_paths)
 
         out_path = Path(args.out).resolve()
 
