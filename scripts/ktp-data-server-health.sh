@@ -803,6 +803,7 @@ RL = re.compile(r'(?:^| )rl=(\d+)')
 
 aborted = fieldless = undated = scanned = uploads = 0
 codes, biggest, first, last = {}, 0, None, None
+first_at = last_at = 0.0
 
 for path in files:
     try:
@@ -820,7 +821,8 @@ for path in files:
                 continue
             stamp, request, status = m.group(1), m.group(2), int(m.group(3))
             try:
-                when = datetime.strptime(stamp, "%d/%b/%Y:%H:%M:%S %z").timestamp()
+                at = datetime.strptime(stamp, "%d/%b/%Y:%H:%M:%S %z")
+                when = at.timestamp()
             except ValueError:
                 undated += 1
                 continue
@@ -845,16 +847,25 @@ for path in files:
             rl = RL.search(line)
             if rl:
                 biggest = max(biggest, int(rl.group(1)))
-            when_s = datetime.fromtimestamp(when).strftime("%Y-%m-%d %H:%M:%S")
-            first = when_s if first is None else min(first, when_s)
-            last = when_s if last is None else max(last, when_s)
+            # Rendered from the parsed stamp, never from the epoch:
+            # fromtimestamp() uses the READER's zone, so the same abort printed
+            # 15:51:32 on a workstation and 19:51:32 on a UTC runner. An operator
+            # takes this straight back to the access log, which is in nginx's
+            # local time, so that is the only rendering that greps.
+            first = at if first is None or when < first_at else first
+            if first is at:
+                first_at = when
+            last = at if last is None or when > last_at else last
+            if last is at:
+                last_at = when
 
 out = {"aborted": aborted, "fieldless": fieldless, "undated": undated,
        "scanned": scanned, "uploads": uploads}
 if codes:
     out["breakdown"] = ", ".join("%dx%d" % (n, c) for c, n in sorted(codes.items()))
     out["bytes"] = biggest
-    out["first"], out["last"] = first, last
+    out["first"] = first.strftime("%Y-%m-%d %H:%M:%S")
+    out["last"] = last.strftime("%Y-%m-%d %H:%M:%S")
 for k, v in out.items():
     print("%s\t%s" % (k, v))
 PY

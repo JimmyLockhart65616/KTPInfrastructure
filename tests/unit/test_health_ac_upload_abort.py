@@ -81,7 +81,11 @@ def bash(tmp_path, body, name="probe.sh"):
     # path. Production is Linux and never does this, so unset it here rather than
     # working around it in the shipped script -- and the symptom, an argument
     # that silently does not match, reads as a broken detector.
-    env = dict(os.environ, MSYS_NO_PATHCONV="1", MSYS2_ARG_CONV_EXCL="*")
+    # TZ is pinned away from the fixtures' -0400 on purpose. A timestamp
+    # rendered through the reader's zone printed the same abort as 15:51:32
+    # here and 19:51:32 on the UTC runner, and the alert has to carry the time
+    # that greps the access log.
+    env = dict(os.environ, MSYS_NO_PATHCONV="1", MSYS2_ARG_CONV_EXCL="*", TZ="UTC")
     r = subprocess.run([BASH, p.as_posix()], capture_output=True, text=True, env=env)
     assert r.returncode == 0, r.stderr
     return r.stdout
