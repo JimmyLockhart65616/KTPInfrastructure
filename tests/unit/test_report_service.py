@@ -16,7 +16,8 @@ from unittest import mock
 
 from scripts import report_service
 from scripts.report_service import (
-    OFFICIAL_MATCH_TYPES, _pending_corpus_sql, build_aggregates,
+    DISCOVERED_MATCH_TYPES, OFFICIAL_MATCH_TYPES, _pending_corpus_sql,
+    build_aggregates,
     excluded_by_match_type, explicit_scope_warnings, is_publishable,
     latest_publishable_reports, pending_match_ids, sql_str)
 
@@ -298,23 +299,31 @@ class OfficialMatchTypeFilter(unittest.TestCase):
     def test_filter_is_in_the_pending_query(self):
         db = FakeDb()
         pending_match_ids(db, 8)
-        self.assertIn("m.match_type IN (0, 4)", db.queries[0])
+        self.assertIn("m.match_type IN (0, 4, 2)", db.queries[0])
 
     def test_filter_survives_since(self):
         db = FakeDb()
         pending_match_ids(db, 8, "2026-09-13")
-        self.assertIn("m.match_type IN (0, 4)", db.queries[0])
+        self.assertIn("m.match_type IN (0, 4, 2)", db.queries[0])
         self.assertIn("m.start_time >= '2026-09-13'", db.queries[0])
 
-    def test_scrim_and_12man_are_not_official(self):
+    def test_no_other_type_is_official(self):
+        # 12man (2) is DISCOVERED as a shadow type, which is not the same as
+        # official: it never reaches aggregate or report_sync.
         for t in (1, 2, 3, 5):
             self.assertNotIn(t, OFFICIAL_MATCH_TYPES)
+
+    def test_discovery_adds_12man_but_not_scrim(self):
+        self.assertIn(2, DISCOVERED_MATCH_TYPES)
+        for t in (1, 3, 5):
+            self.assertNotIn(t, DISCOVERED_MATCH_TYPES)
 
     def test_exclusion_report_is_the_complement(self):
         db = FakeDb("\t".join(("mt", "n")) + "\n")
         excluded_by_match_type(db, 8)
         q = db.queries[0]
-        self.assertIn("m.match_type IS NULL OR m.match_type NOT IN (0, 4)", q)
+        self.assertIn("m.match_type IS NULL OR m.match_type NOT IN (0, 4, 2)",
+                      q)
 
     def test_exclusion_report_parses_counts(self):
         rows = "\t".join(("mt", "n")) + "\n" + "\n".join(
