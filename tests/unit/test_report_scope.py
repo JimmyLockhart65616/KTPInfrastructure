@@ -4,8 +4,8 @@ import unittest
 
 from scripts import report_scope
 from scripts.report_scope import (
-    HELD_BY_SINCE, HELD_BY_TYPE, IN_SCOPE, OFFICIAL_MATCH_TYPES, classify,
-    match_scope_columns)
+    DISCOVERED_MATCH_TYPES, HELD_BY_SINCE, HELD_BY_TYPE, IN_SCOPE,
+    OFFICIAL_MATCH_TYPES, SHADOW_MATCH_TYPES, classify, match_scope_columns)
 
 FLOOR = "2026-09-13"
 
@@ -47,6 +47,32 @@ class OneDefinition(unittest.TestCase):
         self.assertIn("BINARY m.match_id = BINARY r.match_id", sql)
         self.assertIn("AS match_start", sql)
         self.assertIn("AS official_start", sql)
+
+
+class ShadowSet(unittest.TestCase):
+    """A shadow type is built but never published (drew, 2026-09-23: 12-mans
+    yes, scrims no). The two sets must not overlap, and the publication scope
+    must not learn about the shadow one."""
+
+    def test_shadow_is_12man_only(self):
+        self.assertEqual(SHADOW_MATCH_TYPES, (2,))
+
+    def test_shadow_and_official_are_disjoint(self):
+        self.assertEqual(set(SHADOW_MATCH_TYPES) & set(OFFICIAL_MATCH_TYPES),
+                         set())
+
+    def test_discovery_is_the_union(self):
+        self.assertEqual(set(DISCOVERED_MATCH_TYPES),
+                         set(OFFICIAL_MATCH_TYPES) | set(SHADOW_MATCH_TYPES))
+
+    def test_publication_scope_never_sees_a_shadow_type(self):
+        # The whole safety of widening discovery rests on this: classify()
+        # reads official_start, and official_start is built from the official
+        # set alone, so a 12-man report is HELD_BY_TYPE at aggregate and sync.
+        sql = match_scope_columns("r")
+        self.assertIn("m.match_type IN (0, 4)", sql)
+        for shadow in SHADOW_MATCH_TYPES:
+            self.assertNotIn(f"{shadow})", sql)
 
 
 if __name__ == "__main__":
