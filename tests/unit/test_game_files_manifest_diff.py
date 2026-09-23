@@ -51,7 +51,7 @@ def mod():
 # ---------------------------------------------------------------- fixtures
 
 
-def entry(path, origin=".res", severity="violation", sha=None, maps=None):
+def entry(path, origin=".res", severity="violation", sha=None, maps=None, alternates=None):
     e = {
         "path": path,
         "sha256": sha or ("0" * 63 + "1"),
@@ -62,6 +62,11 @@ def entry(path, origin=".res", severity="violation", sha=None, maps=None):
     }
     if maps is not None:
         e["referenced_by"] = list(maps)
+    # Absent unless curated, exactly as assemble_manifest writes it: the real manifest
+    # carries no key at all on an entry with no alternate, so a comparison that only
+    # handled the present-and-empty shape would miss every real transition.
+    if alternates is not None:
+        e["allowed_alternate_hashes"] = list(alternates)
     return e
 
 
@@ -209,6 +214,161 @@ def test_identical_manifests_say_so(mod):
 
     assert "no change" in text
     assert "ADDED" not in text and "REMOVED" not in text
+
+
+# ------------------------------------------------- the axis that reads as nothing
+#
+# An operator-curated `allowed_alternate_hashes` entry is what stops a legitimate
+# community copy scoring. Drop one and every holder of that file becomes a violation:
+# no path added, no severity moved, no hash changed. Reporting only path membership,
+# severity and re-hash printed "no change: same paths, same severities, same hashes"
+# over exactly that — the worst change this diff exists to catch, in reassuring words.
+
+ALT_A = "a" * 64
+ALT_B = "b" * 64
+SCORE_PACK = "sound/ambience/axisscore.wav"
+
+
+def test_a_dropped_alternate_is_not_no_change(mod):
+    """The headline case. Nothing else about the entry moves."""
+    before = manifest([entry(SCORE_PACK, alternates=[ALT_A])])
+    after = manifest([entry(SCORE_PACK)])
+
+    d = mod.diff_manifests(before, after)
+    text = "\n".join(mod.format_scope_diff(d, "b"))
+
+    assert d["added"] == [] and d["removed"] == []
+    assert d["severity_changed"] == [] and d["rehashed"] == 0
+    assert "no change" not in text
+    assert "ALTERNATES CHANGED 1 path" in text
+    assert SCORE_PACK in text
+
+
+def test_the_dropped_hash_itself_is_printed(mod):
+    """A count cannot be acted on. The curated set is small enough to spell out, and
+    which hash left is the whole question when restoring one."""
+    before = manifest([entry(SCORE_PACK, alternates=[ALT_A, ALT_B])])
+    after = manifest([entry(SCORE_PACK, alternates=[ALT_B])])
+
+    text = "\n".join(mod.format_scope_diff(mod.diff_manifests(before, after), "b"))
+
+    assert f"DROPPED  {ALT_A}" in text
+    assert ALT_B not in text.split("ALTERNATES CHANGED")[1]
+
+
+def test_a_drop_says_it_starts_scoring(mod):
+    before = manifest([entry(SCORE_PACK, alternates=[ALT_A])])
+    after = manifest([entry(SCORE_PACK)])
+
+    text = "\n".join(mod.format_scope_diff(mod.diff_manifests(before, after), "b"))
+
+    assert "now scores against every holder" in text
+
+
+def test_a_gain_is_reported_and_reads_the_other_way(mod):
+    """Adding an alternate narrows enforcement. Still reported — an advisory blind in
+    the direction nobody notices is how coverage leaves unannounced."""
+    before = manifest([entry(SCORE_PACK)])
+    after = manifest([entry(SCORE_PACK, alternates=[ALT_A])])
+
+    d = mod.diff_manifests(before, after)
+    text = "\n".join(mod.format_scope_diff(d, "b"))
+
+    assert d["alternates_changed"][0]["gained"] == [ALT_A]
+    assert f"ADDED    {ALT_A}" in text
+    assert "no longer scores" in text
+
+
+def test_a_drop_on_a_review_path_does_not_claim_it_scores(mod):
+    """`review` is captured and never reaches a verdict, so nothing starts scoring.
+    Saying otherwise is the noise that gets an advisory rubber-stamped."""
+    path = "gfx/env/skyup.tga"
+    before = manifest([entry(path, severity="review", alternates=[ALT_A])])
+    after = manifest([entry(path, severity="review")])
+
+    text = "\n".join(mod.format_scope_diff(mod.diff_manifests(before, after), "b"))
+
+    assert "ALTERNATES CHANGED 1 path" in text
+    assert "now scores against every holder" not in text
+    assert "captured, never scored" in text
+
+
+def test_the_direction_test_reads_the_right_side_of_the_flip(mod):
+    """A drop arriving WITH review -> violation is two widenings at once, and the drop
+    is judged on where the path ends up. Reading severity_before here would call it
+    harmless on the run where it is worst."""
+    before = manifest([entry(SCORE_PACK, severity="review", alternates=[ALT_A])])
+    after = manifest([entry(SCORE_PACK, severity="violation")])
+
+    text = "\n".join(mod.format_scope_diff(mod.diff_manifests(before, after), "b"))
+
+    assert "review -> violation" in text
+    assert "now scores against every holder" in text
+
+
+def test_an_alternate_change_is_not_double_counted_as_a_path_move(mod):
+    """Computed over the intersection, like severity and re-hash. A removed path takes
+    its alternates with it and is already reported as a removal."""
+    before = manifest([entry("models/goes.mdl", alternates=[ALT_A])])
+    after = manifest([entry("models/arrives.mdl", alternates=[ALT_B])])
+
+    d = mod.diff_manifests(before, after)
+
+    assert d["alternates_changed"] == []
+    assert [e["path"] for e in d["removed"]] == ["models/goes.mdl"]
+
+
+def test_an_unchanged_alternate_set_reports_nothing(mod):
+    """Order and identity, not object equality — the generator rebuilds the list every
+    run, so a diff keyed on anything but content would fire on every regeneration and
+    be ignored within a week."""
+    m1 = manifest([entry(SCORE_PACK, alternates=[ALT_A, ALT_B])])
+    m2 = manifest([entry(SCORE_PACK, alternates=[ALT_B, ALT_A])])
+
+    d = mod.diff_manifests(m1, m2)
+    text = "\n".join(mod.format_scope_diff(d, "b"))
+
+    assert d["alternates_changed"] == []
+    assert "no change" in text
+
+
+def test_the_no_change_line_claims_alternates_too(mod):
+    """The line is what a reader trusts instead of looking. It may only promise what
+    the diff actually compared."""
+    m = manifest([entry(SCORE_PACK, alternates=[ALT_A])])
+
+    text = "\n".join(mod.format_scope_diff(mod.diff_manifests(m, m), "b"))
+
+    assert "same allowed alternates" in text
+
+
+def test_severity_section_says_the_version_will_not_move(mod):
+    """_meta.version hashes (path, sha256, alternates). A severity-only regeneration
+    writes a new file under the SAME version string, and every ETag check downstream
+    keeps serving the old copy — so the reader must not take an unmoved version as
+    evidence that nothing changed."""
+    path = "gfx/env/skyup.tga"
+    before = manifest([entry(path, severity="review")])
+    after = manifest([entry(path, severity="violation")])
+
+    text = "\n".join(mod.format_scope_diff(mod.diff_manifests(before, after), "b"))
+
+    assert "_meta.version does NOT move for these" in text
+
+
+def test_alternates_are_never_truncated_by_diff_limit(mod):
+    """--diff-limit exists because a 128-path wall gets scrolled past. The curated
+    alternate set is a handful of hand-made decisions and does not have that problem,
+    so a limit that hid one would hide the only detail worth reading."""
+    before = manifest([entry(f"sound/s{i}.wav", alternates=[ALT_A]) for i in range(6)])
+    after = manifest([entry(f"sound/s{i}.wav") for i in range(6)])
+
+    text = "\n".join(mod.format_scope_diff(mod.diff_manifests(before, after), "b", limit=1))
+
+    assert "ALTERNATES CHANGED 6 paths" in text
+    for i in range(6):
+        assert f"sound/s{i}.wav" in text
+    assert text.count(f"DROPPED  {ALT_A}") == 6
 
 
 # ---------------------------------------------------------------- readable when large
