@@ -244,3 +244,43 @@ def test_dead_entry_candidates_ignores_res_derived_entries(mod):
         {"path": "models/p_colt.mdl", "origin": "explicit_2026-05-02_full_kit"},
     ]
     assert mod.dead_entry_candidates(entries, stock) == ["models/p_bar.mdl"]
+
+
+def test_stock_paths_is_overridable_and_checked_before_the_ssh_connect(mod, tmp_path, monkeypatch):
+    """The recipe for running a pinned copy is `git show origin/main:scripts/<name>`, which
+    copies the script without scripts/data/ beside it. Read only inside assemble_manifest, a
+    missing list surfaced as a FileNotFoundError after the connect and the whole hash pass.
+    """
+    connected = []
+
+    class Refuse:
+        def set_missing_host_key_policy(self, _):
+            pass
+
+        def connect(self, *a, **kw):
+            connected.append(kw)
+
+    monkeypatch.setattr(mod.paramiko, "SSHClient", Refuse, raising=False)
+    monkeypatch.setattr(mod.paramiko, "AutoAddPolicy", object, raising=False)
+    monkeypatch.setattr(mod.sys, "argv", [
+        "build-game-files-manifest.py",
+        "--stock-paths", str(tmp_path / "absent.txt"),
+        "--ssh-password", "irrelevant",
+    ])
+
+    with pytest.raises(SystemExit) as exit_info:
+        mod.main()
+
+    assert connected == [], "the stock list must be checked before anything is hashed"
+    message = str(exit_info.value)
+    assert "--stock-paths" in message
+    assert "git archive" in message, "say which recipe works, not only what is missing"
+
+
+def test_stock_paths_flag_selects_the_list_actually_used(mod, tmp_path):
+    only = tmp_path / "one.txt"
+    only.write_text("models/p_garand.mdl\n# a comment, ignored\n", encoding="utf-8")
+    stock = mod.load_stock_paths(only)
+    assert mod.is_stock("models/P_Garand.mdl", stock), "depot casing is folded"
+    assert not mod.is_stock("models/p_colt.mdl", stock)
+    assert len(mod.load_stock_paths()) > len(stock), "the default list is still the default"
