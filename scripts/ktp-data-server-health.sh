@@ -739,6 +739,174 @@ else
     down+=("hitreg-reg=query-failed")
 fi
 
+# ---- AC evidence bundles that never reached the API ----
+# Six session bundles were lost in the fortnight to 2026-09-22 and nothing
+# anywhere said a word. Every one was an aborted transfer: the client stopped
+# sending mid-body, nginx answered it directly, and `urt=-` records that
+# ktp-ac-api was never contacted -- so no AC-side log, table or counter has a
+# trace of the upload. The bundle does not exist and nothing knows it was meant
+# to. nginx does log the cause, "client prematurely closed connection", at
+# `info` -- below the default `error` level, which is why
+# api.ktpdod.com.error.log has been 0 bytes since 2026-07-18. The class is
+# invisible by configuration, not by absence.
+#
+# The access log already carries the whole detector, and the discriminator is
+# `urt`, never the status. On 2026-09-20 at 21:03:40 the API itself answered 400
+# in 16 ms (urt=0.016) to a 34 KB body: a bundle that arrived and was rejected,
+# which is a different thing and already visible AC-side. Internet scanners
+# produce `400 urt=-` on `/` all day. Both are excluded by construction. Over
+# the 14 retained days the rule below matches five lines and every one is a real
+# loss -- four 400s and one 408, four of them inside nine minutes of one
+# match-end herd while neighbouring uploads in the same second completed.
+#
+# Keyed on WORK NOT DONE: the evidence is a request that did not finish, not the
+# state of any process. nginx, ktp-ac-api and the uploader are all `active`
+# throughout, which is precisely why this needed its own producer.
+AC_UPLOAD_ACCESS_LOG="${AC_UPLOAD_ACCESS_LOG:-/var/log/nginx/api.ktpdod.com.access.log}"
+AC_UPLOAD_URI="${AC_UPLOAD_URI:-/api/session/upload}"
+# 6h, and 24h is the ceiling the files below can honestly cover: logrotate runs
+# daily with delaycompress, so `.log` is today and `.log.1` is yesterday, both
+# plain text. A longer window would silently read short -- the missing hours
+# live in a .gz this never opens, and absent lines look exactly like no aborts.
+AC_UPLOAD_WINDOW_HOURS="${AC_UPLOAD_WINDOW_HOURS:-6}"
+# One aborted upload is one permanently lost bundle, so the floor is one.
+# CLEAR must be >= 1: at 0 the mid-band test `val >= clear` is true for every
+# count and the item would never clear again. Raise WARN for a real deadband.
+AC_UPLOAD_ABORT_WARN="${AC_UPLOAD_ABORT_WARN:-1}"
+AC_UPLOAD_ABORT_CLEAR="${AC_UPLOAD_ABORT_CLEAR:-1}"
+
+# >>> ktp-ac-upload-abort — extracted verbatim by tests/unit/test_health_ac_upload_abort.py
+# ac_upload_abort_scan <cutoff-epoch> <uri> <file>... -> key<TAB>value rows.
+# The cutoff is an argument rather than read from the clock so the caller, and
+# the test, decide the window.
+#
+# `fieldless` is the leg that makes this survivable across a rotation. rt/urt/rl
+# only exist from the 2026-09-16 log_format change onward; every line written
+# before it structurally cannot carry urt, and a scan of one of those files
+# returns zero aborts out of real traffic -- api.ktpdod.com.access.log.10.gz
+# holds 127 uploads and scores 0, which is a lie an operator would act on. So a
+# line that is inside the window and carries no urt= is counted, never dropped,
+# and the caller raises `unmeasurable` instead of reporting a clean zero. Same
+# for a line whose timestamp will not parse: it cannot be placed inside or
+# outside the window, so it cannot be dismissed.
+ac_upload_abort_scan() {
+    python3 - "$@" <<'PY'
+import re, sys
+from datetime import datetime
+
+cutoff, uri, files = float(sys.argv[1]), sys.argv[2], sys.argv[3:]
+# nginx escapes a literal quote inside a logged variable as \x22, so the request
+# is always delimited by the first pair of bare quotes on the line.
+LINE = re.compile(r'^\S+ \S+ \S+ \[([^\]]+)\] "([^"]*)" (\d{3})\b')
+URT = re.compile(r'(?:^| )urt=(\S+)')
+RL = re.compile(r'(?:^| )rl=(\d+)')
+
+aborted = fieldless = undated = scanned = uploads = 0
+codes, biggest, first, last = {}, 0, None, None
+
+for path in files:
+    try:
+        fh = open(path, "r", encoding="utf-8", errors="replace")
+    except OSError:
+        # Absent .1 on the day of install is normal; an unreadable primary is
+        # the caller's own check, made before this runs.
+        continue
+    with fh:
+        for line in fh:
+            m = LINE.match(line)
+            if not m:
+                if line.strip():
+                    undated += 1
+                continue
+            stamp, request, status = m.group(1), m.group(2), int(m.group(3))
+            try:
+                when = datetime.strptime(stamp, "%d/%b/%Y:%H:%M:%S %z").timestamp()
+            except ValueError:
+                undated += 1
+                continue
+            if when < cutoff:
+                continue
+            scanned += 1
+            urt = URT.search(line)
+            if urt is None:
+                fieldless += 1
+                continue
+            parts = request.split()
+            if len(parts) < 2 or parts[1].split("?", 1)[0] != uri:
+                continue
+            uploads += 1
+            # urt=- is the whole test: nginx answered without ever reaching the
+            # upstream, so the body stopped arriving. A status the API produced
+            # carries a duration here and is not this class.
+            if status < 400 or urt.group(1) != "-":
+                continue
+            aborted += 1
+            codes[status] = codes.get(status, 0) + 1
+            rl = RL.search(line)
+            if rl:
+                biggest = max(biggest, int(rl.group(1)))
+            when_s = datetime.fromtimestamp(when).strftime("%Y-%m-%d %H:%M:%S")
+            first = when_s if first is None else min(first, when_s)
+            last = when_s if last is None else max(last, when_s)
+
+out = {"aborted": aborted, "fieldless": fieldless, "undated": undated,
+       "scanned": scanned, "uploads": uploads}
+if codes:
+    out["breakdown"] = ", ".join("%dx%d" % (n, c) for c, n in sorted(codes.items()))
+    out["bytes"] = biggest
+    out["first"], out["last"] = first, last
+for k, v in out.items():
+    print("%s\t%s" % (k, v))
+PY
+}
+# <<< ktp-ac-upload-abort
+
+if [ "${AC_UPLOAD_WINDOW_HOURS}" -gt 24 ]; then
+    # Refused rather than clamped: a window this code cannot cover would report
+    # a count that reads complete and is not.
+    key="ac-upload-abort=window-unsupported"
+    down+=("$key"); detail[$key]="AC_UPLOAD_WINDOW_HOURS is ${AC_UPLOAD_WINDOW_HOURS}, but only today's and yesterday's access log are read, so anything over 24 would read short and look quiet"
+elif [ ! -r "$AC_UPLOAD_ACCESS_LOG" ]; then
+    # An absent log is the one input whose zero is indistinguishable from
+    # perfect health, so it is a down item rather than a skip.
+    key="ac-upload-abort=log-unreadable"
+    down+=("$key"); detail[$key]="${AC_UPLOAD_ACCESS_LOG} cannot be read, so aborted uploads are unmeasured -- not zero"
+elif acu_rows=$(ac_upload_abort_scan \
+        "$(( now_epoch - AC_UPLOAD_WINDOW_HOURS * 3600 ))" \
+        "$AC_UPLOAD_URI" \
+        "$AC_UPLOAD_ACCESS_LOG" "${AC_UPLOAD_ACCESS_LOG}.1" 2>/dev/null); then
+    declare -A acu=()
+    while IFS=$'\t' read -r _k _v; do
+        if [ -n "${_k:-}" ]; then acu[$_k]=$_v; fi
+    done <<< "$acu_rows"
+    acu_aborted=${acu[aborted]:-0}
+    acu_blind=$(( ${acu[fieldless]:-0} + ${acu[undated]:-0} ))
+    echo "[$now_ts] ac-upload: ${acu_aborted} of ${acu[uploads]:-0} session uploads aborted before the API was reached over ${AC_UPLOAD_WINDOW_HOURS}h (${acu[scanned]:-0} lines scanned, ${acu_blind} unreadable)"
+
+    key="ac-upload-abort"
+    if latched "$key" "$acu_aborted" "$AC_UPLOAD_ABORT_WARN" "$AC_UPLOAD_ABORT_CLEAR"; then
+        # The count lives in `detail`, never in the key. During a match-end herd
+        # it ticks 1 -> 3 -> 4 within one window, and a key carrying the number
+        # would read to the set comparison as a recovery plus a fresh failure on
+        # every tick -- the #388 defect. One burst is one alert.
+        down+=("$key")
+        acu_extra=""
+        if [ -n "${acu[breakdown]:-}" ]; then acu_extra=" (${acu[breakdown]})"; fi
+        if [ -n "${acu[bytes]:-}" ]; then acu_extra+=", largest $(( (${acu[bytes]} + 524288) / 1048576 )) MiB already sent"; fi
+        if [ -n "${acu[last]:-}" ]; then acu_extra+=", latest ${acu[last]}"; fi
+        detail[$key]="${acu_aborted} session upload(s) aborted mid-body in the last ${AC_UPLOAD_WINDOW_HOURS}h${acu_extra} -- ktp-ac-api was never contacted, so those evidence bundles exist nowhere"
+    fi
+    if [ "$acu_blind" -gt 0 ]; then
+        # Reported beside the count, not instead of it: the aborts that WERE
+        # scored are still real. What this says is that the window also held
+        # lines this cannot score, so the count is a floor.
+        key="ac-upload-abort=unmeasurable"
+        down+=("$key"); detail[$key]="${acu_blind} of ${acu[scanned]:-0} access-log lines in the window carry no usable rt/urt/rl fields, so the abort count above is a lower bound -- the log_format predates 2026-09-16 or has been changed back"
+    fi
+else
+    down+=("ac-upload-abort=scan-failed")
+fi
+
 # ---- Build sorted lists for set comparison ----
 # curr.list: sorted, deduplicated set of currently-down items
 # prev.list: read at the top of the run, because the disk checks latch on it
