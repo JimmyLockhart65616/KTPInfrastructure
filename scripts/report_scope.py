@@ -11,6 +11,20 @@ from __future__ import annotations
 # per-site is how .ktpOT ended up cancellable while .ktp was protected.
 OFFICIAL_MATCH_TYPES = (0, 4)
 
+# Types a report is BUILT for but never published: a shadow report exists so
+# analytics can see the play, not so the site can show it. 2 is 12man (drew,
+# 2026-09-23). Scrims (1) deliberately stay out — the hidden-value review
+# already discounts scrim play as loose, so building them buys nothing.
+#
+# Nothing downstream needs a second gate for this: classify() returns
+# HELD_BY_TYPE for a match with no official-type half, so aggregate and
+# report_sync hold a shadow report back on the rule they already apply to a
+# report written by an explicit --match-ids run.
+SHADOW_MATCH_TYPES = (2,)
+
+# What generate DISCOVERS. Publication scope stays OFFICIAL_MATCH_TYPES.
+DISCOVERED_MATCH_TYPES = OFFICIAL_MATCH_TYPES + SHADOW_MATCH_TYPES
+
 IN_SCOPE = "in"
 HELD_BY_SINCE = "since"
 HELD_BY_TYPE = "match_type"
