@@ -179,7 +179,11 @@ What the script does that the old `scp` + `cp` pair did not:
   nothing and reported success.
 - **Takes the backup itself**, named `…json.bak-<reason>-<YYYYMMDD>`, before it
   writes anything. `--reason` is required and lands in that filename, so make it
-  findable in an `ls` six months from now.
+  findable in an `ls` six months from now. A second install the same day under
+  the same reason gains the time rather than overwriting the morning's copy.
+- **Backs up a file that no longer parses**, too. "Is there a baseline to gate
+  against?" and "is there a file I am about to destroy?" are different questions,
+  and a truncated manifest is the copy you would most want back.
 - **Publishes by rename**, staging beside the target rather than in `/tmp`,
   because the rename is only atomic within one filesystem. The API caches on
   mtime alone and serves whatever bytes are there, so the live path must never
@@ -188,12 +192,15 @@ What the script does that the old `scp` + `cp` pair did not:
 - **Declines a byte-identical install** rather than backing a file up against its
   own twin and moving the mtime the cache keys on for no change.
 
-⛔ It writes exactly one file, and every path it touches is the manifest or a
-name derived from it. `/opt/ktp-ac-api/` also holds `uploads/` — the evidence
-corpus — and `releases/`; nothing here operates on a directory, and neither
-should anything you type by hand there.
+⛔ It writes exactly one file, and every path it writes, renames or removes is
+the manifest or a name derived from it. `/opt/ktp-ac-api/` also holds `uploads/`
+— the evidence corpus — and `releases/`. The only call that names the directory
+is a `listdir` to avoid a backup collision, and its result is filtered to
+manifest-derived names before anything uses it. Nothing here operates on a
+directory, and neither should anything you type by hand there.
 
-Keep it `root:root 0644` — the API only reads it. The script sets that.
+It sets the file `0644` and runs as root, so the result is the `root:root 0644`
+the API wants — it only reads the file.
 
 **No restart.** The cache is keyed on mtime, so the copy is the activation.
 Responses carry `Cache-Control: max-age=300`, so allow a few minutes before
