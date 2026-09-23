@@ -43,7 +43,8 @@ from scripts.analytics_report_dto import (KTPR_DISPLAY_SCALE, PROVISIONAL_NOTICE
                                           _name, ktpr_display)
 from scripts.in_game_result import DEFAULT_OBSERVER_ROOT
 from scripts.report_scope import (
-    IN_SCOPE, OFFICIAL_MATCH_TYPES, classify, match_scope_columns, print_held)
+    DISCOVERED_MATCH_TYPES, IN_SCOPE, OFFICIAL_MATCH_TYPES, SHADOW_MATCH_TYPES,
+    classify, match_scope_columns, print_held)
 
 DATABASE = "hlstatsx"
 # Hard-check gate: a FAIL on this code never withholds a match. The shape
@@ -118,7 +119,8 @@ def load_match_analytics(repo: Path):
     return ma
 
 
-# OFFICIAL_MATCH_TYPES lives in scripts/report_scope.py, shared with aggregate and report_sync.
+# OFFICIAL_MATCH_TYPES and DISCOVERED_MATCH_TYPES live in scripts/report_scope.py,
+# shared with aggregate and report_sync.
 
 # ktp_matches.match_type, per that column's own COMMENT on the server.
 MATCH_TYPE_LABELS = {
@@ -178,7 +180,9 @@ def pending_match_ids(db: LocalMysql, schema_version: int,
     # untyped match is not a provably official one, and failing closed
     # publishes nothing rather than publishing pracc traffic as league data.
     # cmd_generate prints what the filter dropped, so the drop is never silent.
-    types = ", ".join(str(t) for t in OFFICIAL_MATCH_TYPES)
+    # DISCOVERED, not OFFICIAL: a shadow type is built here and held back at
+    # publication by classify(), so widening discovery cannot widen the site.
+    types = ", ".join(str(t) for t in DISCOVERED_MATCH_TYPES)
     out = db.sql(_pending_corpus_sql(
         schema_version, since, "DISTINCT m.match_id",
         f"AND m.match_type IN ({types}) ORDER BY m.match_id"))
@@ -188,12 +192,12 @@ def pending_match_ids(db: LocalMysql, schema_version: int,
 
 def excluded_by_match_type(db: LocalMysql, schema_version: int,
                            since: str | None = None) -> dict[str, int]:
-    """What the official-type filter drops, keyed by match_type label.
+    """What the discovery filter drops, keyed by match_type label.
 
     Reported, never acted on. A filter whose effect nobody can see is how a
     wrong type set silently omits real matches instead of failing loudly.
     """
-    types = ", ".join(str(t) for t in OFFICIAL_MATCH_TYPES)
+    types = ", ".join(str(t) for t in DISCOVERED_MATCH_TYPES)
     out = db.sql(_pending_corpus_sql(
         schema_version, since,
         "COALESCE(CAST(m.match_type AS CHAR), 'NULL') AS mt, "
@@ -276,6 +280,12 @@ def cmd_generate(args: argparse.Namespace) -> int:
     print(f"accumulation scorer: {'available' if scorer else 'unavailable'}")
     ids = args.match_ids or pending_match_ids(db, schema_version, args.since)
     print(f"pending: {len(ids)} matches (schema v{schema_version})")
+    # Say it every run: the corpus is deliberately wider than what publishes,
+    # so a reader of this log never has to infer whether a 12-man report is a
+    # leak or the point.
+    print(f"match types built: {', '.join(str(t) for t in OFFICIAL_MATCH_TYPES)}"
+          f" official + {', '.join(str(t) for t in SHADOW_MATCH_TYPES)} shadow "
+          "(built for analytics, held back by aggregate and report_sync)")
     if args.match_ids:
         for warning in explicit_scope_warnings(db, args.match_ids):
             print(f"WARNING: {warning}: persisted anyway, but aggregate and "
