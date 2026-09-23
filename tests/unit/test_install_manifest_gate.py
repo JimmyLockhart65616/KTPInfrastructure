@@ -268,7 +268,7 @@ def test_dropping_an_alternate_widens_with_no_path_severity_or_hash_change(mod, 
     assert d["added"] == [] and d["removed"] == [] and d["severity_changed"] == []
     assert d["rehashed"] == 0
 
-    dropped, gained = mod.alternate_transitions(manifest(before), manifest(after))
+    dropped, gained = mod.alternate_transitions(d)
     assert [p for p, _ in dropped] == ["models/p_garand.mdl"]
     assert gained == []
 
@@ -281,7 +281,7 @@ def test_gaining_an_alternate_gates_on_its_own_flag(mod, gen):
     before = [alt_entry("a.mdl", None)]
     after = [alt_entry("a.mdl", ["b" * 64])]
     d = diff_of(gen, before, after)
-    dropped, gained = mod.alternate_transitions(manifest(before), manifest(after))
+    dropped, gained = mod.alternate_transitions(d)
 
     assert run_gate(mod, gen, d, alternates=(dropped, gained))[0] is False
     assert run_gate(mod, gen, d, alternates=(dropped, gained),
@@ -290,21 +290,24 @@ def test_gaining_an_alternate_gates_on_its_own_flag(mod, gen):
                     alternates_gained=1)[0] is True
 
 
-def test_an_alternate_on_a_review_path_does_not_gate(mod):
+def test_an_alternate_on_a_review_path_does_not_gate(mod, gen):
     """A `review` entry never scores, so its alternates cannot change what a player is
-    scored on in either direction."""
+    scored on in either direction. The generator's diff still REPORTS it — being told
+    about a change and being asked to acknowledge it are different things."""
     before = [alt_entry("gfx/env/skyup.tga", ["a" * 64], severity="review")]
     after = [alt_entry("gfx/env/skyup.tga", None, severity="review")]
-    assert mod.alternate_transitions(manifest(before), manifest(after)) == ([], [])
+    d = diff_of(gen, before, after)
+    assert len(d["alternates_changed"]) == 1
+    assert mod.alternate_transitions(d) == ([], [])
 
 
-def test_an_alternate_change_counts_when_severity_moves_with_it(mod):
+def test_an_alternate_change_counts_when_severity_moves_with_it(mod, gen):
     """⛔ The predicate must never become `before AND after`: that would drop a
     `review` → `violation` flip arriving together with an alternate drop, which is two
     widenings at once and the one combination nobody would look at twice."""
     before = [alt_entry("a.mdl", ["a" * 64], severity="review")]
     after = [alt_entry("a.mdl", None, severity="violation")]
-    dropped, _ = mod.alternate_transitions(manifest(before), manifest(after))
+    dropped, _ = mod.alternate_transitions(diff_of(gen, before, after))
     assert [p for p, _ in dropped] == ["a.mdl"]
 
 
@@ -321,7 +324,7 @@ _ALTERNATE_MATRIX = [
 
 
 @pytest.mark.parametrize("was,now,drop_gates,gain_gates", _ALTERNATE_MATRIX)
-def test_the_alternate_predicate_gates_exactly_the_changes_that_score(mod, was, now,
+def test_the_alternate_predicate_gates_exactly_the_changes_that_score(mod, gen, was, now,
                                                                      drop_gates, gain_gates):
     """The whole 2x2, both directions, so neither cell can drift unnoticed.
 
@@ -329,31 +332,35 @@ def test_the_alternate_predicate_gates_exactly_the_changes_that_score(mod, was, 
     two that do not are the cells where a shared `before or after` test would announce
     "hashes that now score against a holder" about a path that cannot score at all.
     """
-    dropped, _ = mod.alternate_transitions(
-        manifest([alt_entry("a.mdl", ["h" * 64], severity=was)]),
-        manifest([alt_entry("a.mdl", None, severity=now)]))
+    dropped, _ = mod.alternate_transitions(diff_of(
+        gen, [alt_entry("a.mdl", ["h" * 64], severity=was)],
+        [alt_entry("a.mdl", None, severity=now)]))
     assert bool(dropped) is drop_gates
 
-    _, gained = mod.alternate_transitions(
-        manifest([alt_entry("a.mdl", None, severity=was)]),
-        manifest([alt_entry("a.mdl", ["h" * 64], severity=now)]))
+    _, gained = mod.alternate_transitions(diff_of(
+        gen, [alt_entry("a.mdl", None, severity=was)],
+        [alt_entry("a.mdl", ["h" * 64], severity=now)]))
     assert bool(gained) is gain_gates
 
 
-def test_an_added_path_is_not_also_an_alternate_change(mod):
+def test_an_added_path_is_not_also_an_alternate_change(mod, gen):
     """Only paths on both sides — an added path is already counted by the membership
     gate, and counting it twice would ask for two acknowledgements of one decision."""
     before = []
     after = [alt_entry("a.mdl", ["a" * 64])]
-    assert mod.alternate_transitions(manifest(before), manifest(after)) == ([], [])
+    assert mod.alternate_transitions(diff_of(gen, before, after)) == ([], [])
 
 
-def test_the_alternate_verdict_names_the_hashes(mod):
+def test_the_alternate_verdict_classifies_rather_than_relisting(mod):
+    """The hashes are printed once, by the generator's ALTERNATES CHANGED section. This
+    line says which of those reach a verdict, the way format_severity_verdict does — one
+    change described twice in two layouts makes a reader work out whether it is one
+    finding or two."""
     dropped = [("models/p_garand.mdl", ["a" * 64])]
     text = chr(10).join(mod.format_alternate_verdict(dropped, []))
     assert "ALTERNATES DROPPED" in text
     assert "models/p_garand.mdl" in text
-    assert "a" * 64 in text
+    assert "a" * 64 not in text
 
 
 def test_no_alternate_movement_prints_no_section(mod):
@@ -736,27 +743,58 @@ def test_a_present_but_unreadable_file_refuses_even_under_no_gate(mod, monkeypat
     assert sftp.files[LIVE] == b"x"
 
 
-def test_a_dropped_alternate_refuses_through_the_cli(mod, monkeypatch, tmp_path, capsys):
-    """End to end: the install the generator's diff calls 'no change'."""
+def _dropped_alternate_install(tmp_path):
+    """The install this gate was built for: one curated alternate removed, nothing else."""
     before = manifest([dict(entry("models/p_garand.mdl"),
                             allowed_alternate_hashes=["a" * 64])])
-    sftp = FakeSFTP({LIVE: json.dumps(before).encode()})
-    candidate = write_candidate(tmp_path, [entry("models/p_garand.mdl")])
+    return (FakeSFTP({LIVE: json.dumps(before).encode()}),
+            write_candidate(tmp_path, [entry("models/p_garand.mdl")]))
+
+
+def test_a_dropped_alternate_refuses_through_the_cli(mod, monkeypatch, tmp_path, capsys):
+    """🔴 The load-bearing half, and it asserts nothing about the diff's wording.
+
+    The gate decides from the transitions, not from the text printed above it. Coupling
+    the refusal to a phrase in the diff would mean a later rewording silently disarmed
+    it — strictly worse than the defect this gate was added for. Exit code and the
+    acknowledgement flag only; what the diff SAYS is the next test's business.
+    """
+    sftp, candidate = _dropped_alternate_install(tmp_path)
 
     rc = run_main(mod, monkeypatch, tmp_path, sftp,
                   BASE_ARGS + ["--manifest", candidate, "--installed-path", LIVE])
 
-    err = capsys.readouterr().err
     assert rc == 2
-    assert "no change: same paths, same severities, same hashes" in err, \
-        "the generator's diff should still describe it as no change — that is the point"
-    assert "ALTERNATES DROPPED" in err
-    assert "--accept-alternates-dropped 1" in err
+    assert "--accept-alternates-dropped 1" in capsys.readouterr().err
 
     rc = run_main(mod, monkeypatch, tmp_path, sftp,
                   BASE_ARGS + ["--manifest", candidate, "--installed-path", LIVE,
                                "--accept-alternates-dropped", "1"])
     assert rc == 0
+
+
+def test_the_diff_names_the_dropped_alternate_instead_of_saying_no_change(
+        mod, monkeypatch, tmp_path, capsys):
+    """The other half, and the newer one.
+
+    This install used to print `no change: same paths, same severities, same hashes` —
+    the worst change the tooling exists to catch, in reassuring words. The gate refused
+    anyway, which is why that was survivable; an operator who reads "no change" stops
+    reading, which is why it was not acceptable. The generator's diff now names it.
+
+    ⛔ Regressing to the reassuring line is the thing being prevented here. It is pinned
+    apart from the refusal above so that neither can stand in for the other.
+    """
+    sftp, candidate = _dropped_alternate_install(tmp_path)
+
+    run_main(mod, monkeypatch, tmp_path, sftp,
+             BASE_ARGS + ["--manifest", candidate, "--installed-path", LIVE])
+
+    err = capsys.readouterr().err
+    assert "no change" not in err
+    assert "ALTERNATES CHANGED 1 path" in err
+    assert err.count("a" * 64) == 1, \
+        "listed once, by the generator's section — the verdict classifies, it does not re-list"
 
 
 def test_an_unparseable_installed_file_is_still_backed_up(mod, monkeypatch, tmp_path):

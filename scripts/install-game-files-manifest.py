@@ -152,19 +152,16 @@ def severity_transitions(diff):
     return buckets
 
 
-def alternate_transitions(previous, candidate, enforced_severity=None):
-    """Allowed-alternate-hash changes, the third axis neither existing control sees.
+def alternate_transitions(diff, enforced_severity=None):
+    """The allowed-alternate changes that gate, out of the ones the diff reported.
 
     🔴 **Dropping an operator-curated alternate widens enforcement for every player
     holding that file, with no path added, no severity moved and no hash changed.** The
-    generator attaches `allowed_alternate_hashes` and its `diff_manifests` does not
-    compare them, so such an install reports `no change: same paths, same severities,
-    same hashes` — the worst case this tool exists to catch, described in reassuring
-    words. The generator's own note on the four curated entries states the blast radius:
-    without them they surface as false-positive violations on every legitimate player.
-
-    Computed here rather than taken from the generator's diff, because the diff has no
-    field for it.
+    generator's `diff_manifests` reports every such change under `alternates_changed`;
+    this selects the ones that reach a player, which is what an acknowledgement can be
+    asked for. Reading its rows rather than re-walking the two manifests is what keeps
+    the printed diff and the refusal talking about the same comparison — two walks over
+    the same pair are two things that can drift.
 
     🔑 The enforcement test is ASYMMETRIC, because the two directions ask about different
     points in time. A DROP matters iff the path is enforced AFTERWARDS — that is when the
@@ -177,34 +174,33 @@ def alternate_transitions(previous, candidate, enforced_severity=None):
     that drops `review` -> `violation` arriving together with an alternate drop, which is
     two widenings at once.
     """
-    enforced = enforced_severity or (lambda e: e.get("severity", "violation") != "review")
-    prev = {e["path"]: e for e in previous.get("files", [])}
-    cur = {e["path"]: e for e in candidate.get("files", [])}
+    enforced = enforced_severity or (lambda severity: (severity or "violation") != "review")
 
     dropped, gained = [], []
-    for path in sorted(set(prev) & set(cur)):
-        before, after = prev[path], cur[path]
-        was = set(before.get("allowed_alternate_hashes") or [])
-        now = set(after.get("allowed_alternate_hashes") or [])
-        if was - now and enforced(after):
-            dropped.append((path, sorted(was - now)))
-        if now - was and enforced(before):
-            gained.append((path, sorted(now - was)))
+    for row in diff.get("alternates_changed", []):
+        if row["dropped"] and enforced(row["severity_after"]):
+            dropped.append((row["path"], list(row["dropped"])))
+        if row["gained"] and enforced(row["severity_before"]):
+            gained.append((row["path"], list(row["gained"])))
     return dropped, gained
 
 
 def format_alternate_verdict(dropped, gained):
-    """Spelled out per path — these are a handful of curated entries, and each one is a
-    decision about whether a legitimate community file starts failing."""
+    """Which of the reported alternate changes gate, and in which direction.
+
+    The generator's diff has already listed every one of them under ALTERNATES CHANGED,
+    per path and per hash. What it cannot say is which reach a verdict — that depends on
+    the enforcement rule this gate applies — so this classifies rather than re-listing.
+    Same division as `format_severity_verdict`, and for the same reason: an operator
+    reading one change described twice, in two layouts, has to work out whether the two
+    are the same finding.
+    """
     lines = []
     for rows, label, effect in ((dropped, "ALTERNATES DROPPED", "now score against a holder"),
                                 (gained, "ALTERNATES ADDED", "no longer score")):
-        if not rows:
-            continue
-        lines.append(f"  {label} — {len(rows)} path(s), hashes that {effect}:")
-        for path, hashes in rows:
-            lines.append(f"    {path}")
-            lines += [f"      {h}" for h in hashes]
+        if rows:
+            lines.append(f"  {label} — {len(rows)} path(s) whose hashes {effect}: "
+                         + ", ".join(path for path, _ in rows))
     return lines
 
 
@@ -652,8 +648,7 @@ def main(argv=None):
                                          limit, diff=diff):
             print(line, file=err)
 
-        alternates = (alternate_transitions(previous, candidate)
-                      if previous is not None else ((), ()))
+        alternates = alternate_transitions(diff) if diff is not None else ((), ())
         if diff is not None:
             for line in format_severity_verdict(severity_transitions(diff)):
                 print(line, file=err)
