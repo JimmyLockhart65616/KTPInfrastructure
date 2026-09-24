@@ -26,6 +26,7 @@ after the outage rather than before it:
 | 2026-08-25 | `hltv-demo-renamer` wedged on a half-open SSH session and sat `active` | 53h; every match demo in the window went unrenamed and was purged |
 | 2026-07-22 | LinuxGSM `command_monitor.sh` stopped parsing on the LAN box; monitor exited 2 every minute, silently | 9 days, including a 3h outage monitor sat through |
 | 2026-08-12 | `ktp-render-banlist` ran every minute and failed every minute, keeping its exit timestamp fresh | Until the three-legged check was added |
+| 2026-09-08→22 | Six AC evidence bundles were lost to aborted uploads; nginx logs the cause at `info`, below the default `error` level, so `api.ktpdod.com.error.log` has been 0 bytes since 2026-07-18 | The whole fortnight — found by reading the access log, not by an alert |
 
 The pattern is the same every time: **a component that is dead in a way its
 watcher cannot see**. This table is the inventory that makes the next one
@@ -137,6 +138,7 @@ Cron-scheduled work is outside both mechanisms entirely:
 | Perf spike signatures | yes | yes | `ktp-profile-aggregator` → MySQL → Discord, `posted_alert` dedup |
 | Stats daemon rejecting the fleet's capture events | yes | yes | `ktp-data-server-health.sh`, `capture-loss:<event_type>` — trailing 24h per event type from `ktp_capture_health`, warn 5% / clear 2%, floor 200 received. Added after the 09-02→09-08 loss went six days unnoticed |
 | Hits stop turning into damage (registration regresses) | yes (2026-09-18) | yes | `ktp-data-server-health.sh`, `hitreg-reg` — clean live-enemy trace hits vs `ktp_damage_events` within 300 ms, per finished 12-man half in `ktp_hitreg_quality` (KTPHLStatsX 036), trailing 48h, warn 10 / clear 5 per thousand missed, floor 300 hits. Measured normal 0–2. `hitreg-reg=stale` when 12-mans ran for 7d and none was scorable — the watcher saying it has gone blind, not a clean 100%. Lane B runs the same predicate pre-deploy (`check_hit_registration`) |
+| AC evidence bundle never reaches the API (aborted upload) | yes (2026-09-23) | yes | `ktp-data-server-health.sh`, `ac-upload-abort` — a request on `/api/session/upload` that nginx answered itself (`urt=-`) with a 4xx/5xx, over a trailing 6h of `api.ktpdod.com.access.log`, warn 1. The discriminator is `urt`, never the status: a 400 the API produced carries a duration and is a rejected bundle, not a lost one. `ac-upload-abort=unmeasurable` fires when the window holds lines with no `rt`/`urt`/`rl` — the fields only exist from the 2026-09-16 `log_format` change, and a rotated file from before it scores 0 aborts out of real traffic |
 
 ---
 
@@ -188,6 +190,24 @@ Ranked by what they would cost during Season 10.
    stamp, so the onset is a lower bound until this file has carried it once.
    The 09-08 date above was recovered from `syslog.4.gz` and exists nowhere the
    check can read.
+7. **Partly closed 2026-09-23: an nginx log level is an alerting decision nobody
+   made.** `ac-upload-abort` now reads the class that cost six evidence bundles.
+   What stays open is the shape rather than the case: **every vhost on this box
+   logs at the default `error` level**, so "client prematurely closed
+   connection", "upstream prematurely closed" and the rest of the `info` tier are
+   discarded at write time on all of them. `api.ktpdod.com.error.log` being 0
+   bytes since 2026-07-18 reads as clean operation and means only that nothing
+   loud enough to clear the level has happened. The access log rescued this one
+   because `ktp_timed` happens to carry `urt`; **no other vhost logs `urt`**, so
+   the same failure on `hud.ktpdod.com` or `admin.ktpdod.com` is still invisible
+   in both logs at once. Raising a vhost to `info` is not the answer on its own —
+   it is a disk-growth decision, and `ktp-data-server-health.sh` watches
+   `/var/log` growth for the reason in its own comment.
+8. **Upload *volume* is unwatched.** `ac-upload-abort` counts uploads that failed,
+   and cannot see uploads that never started — a client-side regression, a DNS
+   change or a dead uploader all read as a quiet, healthy zero. Deliberately not
+   built here: a naive floor would fire every weekday morning. It needs a
+   seasonal baseline, which is `ktp-telemetry-export` territory.
 
 ### Open right now
 
