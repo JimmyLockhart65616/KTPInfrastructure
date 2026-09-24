@@ -35,8 +35,10 @@ UPLOAD_RETENTION_DAYS="${UPLOAD_RETENTION_DAYS:-0}"
 # until 2027-08-25 because the sweep already took everything older.
 WEAPON_RETENTION_DAYS="${WEAPON_RETENTION_DAYS:-365}"
 # Never shorter than the API purge grace past expiry, or this becomes the real bound and
-# a staged bundle outlives the key that verifies it. The API side pins its own three.
-TOKEN_RETENTION_DAYS="${TOKEN_RETENTION_DAYS:-20}"
+# a staged bundle outlives the key that verifies it. The API side pins its own three, and
+# its grace now carries the offset between a login and the packaging it keys -- a client
+# retries from when the bundle was written, not from when the session began.
+TOKEN_RETENTION_DAYS="${TOKEN_RETENTION_DAYS:-22}"
 BATCH_SIZE="${BATCH_SIZE:-10000}"
 DRY_RUN="${DRY_RUN:-0}"
 
