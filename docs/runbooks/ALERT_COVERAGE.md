@@ -203,6 +203,36 @@ Ranked by what they would cost during Season 10.
    in both logs at once. Raising a vhost to `info` is not the answer on its own —
    it is a disk-growth decision, and `ktp-data-server-health.sh` watches
    `/var/log` growth for the reason in its own comment.
+
+   **Measured 2026-09-24, and now measured every run.** The shape is **22 server
+   blocks, 1 covered, 21 not** — and the covered one is the `:443` half of the
+   upload vhost. Its own `:80` twin inherits the shared `access.log` and
+   `combined`, so **coverage is a property of the server BLOCK, not the
+   `server_name`**: judging by name would report that vhost covered and hide the
+   half that is not. Three `error_log` directives exist in the whole effective
+   config and **none carries a level token**, which is what "every vhost logs at
+   `error`" means concretely.
+
+   Two further couplings, both of which make a silent zero cheaper than it looks.
+   `log_format ktp_timed` is declared **inside the upload vhost's own file**; that
+   works only because `sites-enabled` is included within `http{}`, so a second
+   vhost adopting the format would depend on the first still being enabled.
+   And `grep -r` over `sites-enabled` **does not follow symlinks** — most vhosts
+   there are symlinks — so a survey done that way finds a fraction of the config
+   and reads as complete. Derive from the effective config instead:
+
+   ```bash
+   nginx -T | grep -cE '^[[:space:]]*server[[:space:]]*\{'   # blocks, not files
+   ```
+
+   `ac-upload-abort` now carries this itself: the covered/uncovered split is in
+   the hourly report line with the uncovered blocks named, and
+   `=coverage-regressed` fires if a log in `AC_UPLOAD_URT_LOGS` stops resolving to
+   a urt-capable format or stops being written at all. The gap above is printed
+   and never alerted — an item that can only clear by editing nginx would latch
+   down forever — but losing the *one* log the detector reads is a regression that
+   nothing else catches: `=unmeasurable` only speaks while the window holds upload
+   lines, and on a quiet night `scanned` is 0.
 8. **Upload *volume* is unwatched.** `ac-upload-abort` counts uploads that failed,
    and cannot see uploads that never started — a client-side regression, a DNS
    change or a dead uploader all read as a quiet, healthy zero. Deliberately not

@@ -918,6 +918,148 @@ else
     down+=("ac-upload-abort=scan-failed")
 fi
 
+# ---- Can the detector above still see anything? ----
+# `ac-upload-abort` reads ONE access log because exactly one server block writes a
+# format carrying $upstream_response_time. That is an accident of api.ktpdod.com
+# needing rt/urt/rl for its own reasons, not a decision anyone made about alerting,
+# and it has two consequences worth separating.
+#
+# The gap: an aborted transfer on any OTHER vhost is absent from the error log (all
+# of them run at the default `error` level, and "client prematurely closed
+# connection" is `info`) AND unclassifiable in the access log (`combined` cannot
+# express it). Invisible in both at once. That is known and accepted, so it is
+# printed every run and never alerts -- an item that can only clear by someone
+# editing nginx would latch down forever and train the reader to ignore it.
+#
+# The regression: if the upload vhost's format is edited back to `combined`, the
+# scanner above returns a clean 0 out of real traffic. `unmeasurable` catches that
+# only while the window holds upload lines -- on a quiet night scanned=0 and the
+# field could have been gone for days. So the format is asserted against a BASELINE
+# of the logs that are supposed to carry it, which is a claim that fails loudly and
+# can actually be fixed.
+AC_UPLOAD_URT_LOGS="${AC_UPLOAD_URT_LOGS:-/var/log/nginx/api.ktpdod.com.access.log}"
+
+# >>> ktp-ac-upload-coverage — extracted verbatim by tests/unit/test_health_ac_upload_coverage.py
+# ac_upload_urt_coverage <nginx-T-dump> <expected-log>... -> key<TAB>value rows.
+# The dump is a file argument rather than stdin -- stdin already carries this
+# program -- so the caller decides what is judged and the test hands it a fixture.
+ac_upload_urt_coverage() {
+    python3 - "$@" <<'PY'
+import re, sys
+
+dump, expected = sys.argv[1], sys.argv[2:]
+lines = open(dump, errors="replace").read().splitlines()
+
+# Formats are collected from the whole dump, not per file: a log_format declared
+# inside one vhost file is visible to every vhost, which is itself the coupling
+# this reports on. `combined` is nginx's built-in and is declared nowhere.
+fmts = {"combined": '$remote_addr $time_local "$request" $status $body_bytes_sent'}
+for m in re.finditer(r'log_format\s+(\w+)\s+(.*?);', "\n".join(lines), re.S):
+    fmts[m.group(1)] = " ".join(m.group(2).split())
+
+def urt_capable(name):
+    return "upstream_response_time" in fmts.get(name, "")
+
+def split_log(value):
+    parts = value.split()
+    return parts[0], (parts[1] if len(parts) > 1 else "combined")
+
+# http{}-level access_log, i.e. the one every vhost without its own inherits.
+starts = [i for i, l in enumerate(lines) if re.match(r'\s*server\s*\{', l.split("#", 1)[0])]
+in_server = set()
+for start in starts:
+    depth = 0
+    for j in range(start, len(lines)):
+        code = lines[j].split("#", 1)[0]
+        depth += code.count("{") - code.count("}")
+        in_server.add(j)
+        if depth <= 0:
+            break
+http_log = None
+for i, line in enumerate(lines):
+    m = re.search(r'\baccess_log\s+([^;]+);', line.split("#", 1)[0])
+    if m and i not in in_server:
+        http_log = m.group(1).strip()
+
+# Each block is counted with a brace counter that starts fresh AT the block, so a
+# miscount elsewhere in the dump cannot quietly shift another vhost's verdict.
+blocks, covered, uncovered, seen_logs = 0, [], [], {}
+for start in starts:
+    depth, end = 0, len(lines) - 1
+    for j in range(start, len(lines)):
+        code = lines[j].split("#", 1)[0]
+        depth += code.count("{") - code.count("}")
+        if depth <= 0:
+            end = j
+            break
+    body = [l.split("#", 1)[0] for l in lines[start:end + 1]]
+    names = " ".join(" ".join(re.findall(r'\bserver_name\s+([^;]+);', "\n".join(body))).split())
+    # Only an access_log at server level sets the block's log; one inside a
+    # location{} is an addition to it and cannot be the block's answer.
+    depth, own = 0, []
+    for l in body:
+        m = re.search(r'\baccess_log\s+([^;]+);', l)
+        if m and depth == 1:
+            own.append(m.group(1).strip())
+        depth += l.count("{") - l.count("}")
+    path, fmt = split_log(own[0]) if own else (split_log(http_log) if http_log else ("(none)", "combined"))
+    blocks += 1
+    label = "%s->%s" % (names or "(no server_name)", path.rsplit("/", 1)[-1])
+    (covered if urt_capable(fmt) else uncovered).append(label)
+    seen_logs.setdefault(path, set()).add(fmt)
+
+# A baseline log that no longer resolves to a urt-capable format is the regression.
+# An expected log that appears in NO block is reported the same way rather than
+# passing quietly: a detector pointed at a log nothing writes scores a clean zero.
+lost = []
+for want in expected:
+    fmts_for = seen_logs.get(want)
+    if not fmts_for:
+        lost.append("%s (no server block writes it)" % want)
+    elif not any(urt_capable(f) for f in fmts_for):
+        lost.append("%s (now %s)" % (want, "/".join(sorted(fmts_for))))
+
+rows = {
+    "blocks": blocks,
+    "covered": len(covered),
+    "uncovered": len(uncovered),
+    "formats_urt": ",".join(sorted(k for k in fmts if urt_capable(k))),
+    "lost": "; ".join(lost),
+    # Duplicates carry a multiplier rather than collapsing: two blocks share one
+    # label whenever a vhost has a :443 and a :80 half, and a name list shorter
+    # than the count it sits beside reads as a parser that lost something.
+    "uncovered_names": ", ".join(
+        lbl if uncovered.count(lbl) == 1 else "%s x%d" % (lbl, uncovered.count(lbl))
+        for lbl in sorted(set(uncovered))),
+}
+for k, v in rows.items():
+    print("%s\t%s" % (k, v))
+PY
+}
+# <<< ktp-ac-upload-coverage
+
+ACC_DUMP=$(mktemp)
+nginx -T > "$ACC_DUMP" 2>/dev/null || :
+if [ ! -s "$ACC_DUMP" ]; then
+    # Same shape as =log-unreadable: a config that cannot be read tells us nothing
+    # about coverage, and "nothing" must not render as "covered".
+    key="ac-upload-abort=coverage-unmeasurable"
+    down+=("$key"); detail[$key]="nginx -T produced nothing, so it is unknown whether any vhost still logs upstream_response_time -- the abort count above cannot be trusted to have an input"
+elif acc_rows=$(ac_upload_urt_coverage "$ACC_DUMP" $AC_UPLOAD_URT_LOGS 2>/dev/null); then
+    declare -A acc=()
+    while IFS=$'\t' read -r _k _v; do
+        if [ -n "${_k:-}" ]; then acc[$_k]=$_v; fi
+    done <<< "$acc_rows"
+    echo "[$now_ts] ac-upload: ${acc[covered]:-0} of ${acc[blocks]:-0} nginx server blocks write a log that can express an aborted transfer; ${acc[uncovered]:-0} cannot (${acc[uncovered_names]:-none})"
+    if [ -n "${acc[lost]:-}" ]; then
+        key="ac-upload-abort=coverage-regressed"
+        down+=("$key"); detail[$key]="${acc[lost]} -- the aborted-upload detector reads that log, so it will now report 0 out of real traffic"
+    fi
+else
+    down+=("ac-upload-abort=coverage-failed")
+fi
+rm -f "$ACC_DUMP"
+
 # ---- Build sorted lists for set comparison ----
 # curr.list: sorted, deduplicated set of currently-down items
 # prev.list: read at the top of the run, because the disk checks latch on it
