@@ -27,9 +27,9 @@ PARAMS = {
 }
 
 
-def build():
+def build(**kwargs):
     import methodology as X
-    return X.build(PARAMS, generated_at="2026-09-19T12:00:00+00:00")
+    return X.build(PARAMS, generated_at="2026-09-19T12:00:00+00:00", **kwargs)
 
 
 class Contract(unittest.TestCase):
@@ -52,6 +52,28 @@ class Contract(unittest.TestCase):
         self.assertEqual(m["momentum_curves"], {"uses": "pooled"})
         self.assertEqual(m["scoring"]["uses"], "fallback")
         self.assertEqual(m["scoring"]["fallback"], {"cap": 1.0, "capout": 1.0})
+
+    def test_version_history_builds_from_weekly_summary(self):
+        import tempfile
+        summary_data = {
+            "generated_at": "2026-09-22T13:00:00+00:00",
+            "completed_matches": 16,
+            "accuracy": 0.562,
+            "upsets": 0,
+            "headline": "16 matches, 56.2% accuracy"
+        }
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            import json
+            json.dump(summary_data, f)
+            f.flush()
+            p = build(summary_path=f.name)
+        self.assertEqual(len(p["version_history"]), 1)
+        entry = p["version_history"][0]
+        self.assertEqual(entry["week"], 2)
+        self.assertEqual(entry["date"], "2026-09-22")
+        self.assertEqual(entry["accuracy_pct"], 56.2)
+        self.assertEqual(entry["completed_matches"], 16)
+        self.assertEqual(entry["upsets_pct"], 0.0)
 
     def test_carries_the_columns_the_aggregate_insert_needs(self):
         p = build()
