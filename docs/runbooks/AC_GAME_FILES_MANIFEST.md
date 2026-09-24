@@ -274,9 +274,21 @@ generator: it remains advisory by ruling.
 hashes and allowed alternates; severity is not in it. So a severity-only change
 leaves the version string unchanged, and "the version didn't move" is not
 evidence that nothing changed — it is not evidence at §6 either, which is why
-that step also prints `by_severity`. The ETag is computed over the whole
-document and does move, so clients still re-fetch; it is the human check that is
-fooled, not the client.
+that step also prints `by_severity`. The scope diff now says this on the
+SEVERITY CHANGED line itself, so the caveat travels with the finding instead of
+waiting to be looked up here. The ETag is computed over the whole document and
+does move, so clients still re-fetch; it is the human check that is fooled, not
+the client.
+
+**An allowed-alternate drop used to read as "no change".** A curated
+`allowed_alternate_hashes` entry is what keeps a legitimate community copy from
+scoring; remove one and every holder of that file becomes a violation with no
+path added, no severity moved and no hash changed. The scope diff compared the
+other three axes only, so such a run printed `no change: same paths, same
+severities, same hashes` — the worst change it exists to catch, in reassuring
+words. It is now a fourth axis, listed under ALTERNATES CHANGED per path and per
+hash, saying which direction reaches a player. Still advisory at the generator:
+it prints, it never refuses.
 
 **A backup's mtime is not when the backup was taken.** Some of the copies on the
 box were made with a flag that preserved the source's timestamp, so

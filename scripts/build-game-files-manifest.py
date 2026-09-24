@@ -45,6 +45,12 @@ client hashes, so an added path is more enforcement on every player and a remove
 is less. The diff is ADVISORY by default -- it prints and never refuses; --diff-limit controls
 how much of a long list is spelled out.
 
+The diff also reports allowed_alternate_hashes, the axis that looks like nothing.
+An operator-curated alternate is what keeps a legitimate community copy from scoring,
+so dropping one turns every holder of that file into a violation with no path added,
+no severity moved and no hash changed. Every alternate change is listed per hash and
+never summarised: the curated set is small, and each entry is its own decision.
+
 --gate-scope arms a refusal on top of that same diff: enforced paths entering or leaving
 scope must then be acknowledged by count (--accept-added N / --accept-removed N), or --out
 is left untouched, the manifest is written to <out>.candidate, and the run exits 2. Either
@@ -737,11 +743,21 @@ def diff_manifests(previous, current):
     adding a path, and re-hashes are counted because they are the remaining way the
     manifest version can move — without that count a run with nothing to report reads
     as a broken diff next to a version that changed.
+
+    `allowed_alternate_hashes` is the fourth thing compared, and it is the one that
+    reads as nothing. An operator-curated alternate is what stops a legitimate
+    community copy scoring; drop one and every holder becomes a violation with no path
+    added, no severity moved and no hash changed. Reporting only the other three axes
+    printed "no change" over exactly that.
+
+    Severity, re-hash and alternates are all computed over paths present on BOTH sides,
+    so they never double-count something already reported as added or removed.
     """
     prev = {e["path"]: e for e in previous.get("files", [])}
     cur = {e["path"]: e for e in current.get("files", [])}
 
     severity_changed = []
+    alternates_changed = []
     rehashed = 0
     for path in sorted(set(prev) & set(cur)):
         before, after = prev[path], cur[path]
@@ -749,11 +765,22 @@ def diff_manifests(previous, current):
             severity_changed.append((path, before.get("severity"), after.get("severity")))
         if before.get("sha256") != after.get("sha256"):
             rehashed += 1
+        was = set(before.get("allowed_alternate_hashes") or [])
+        now = set(after.get("allowed_alternate_hashes") or [])
+        if was != now:
+            alternates_changed.append({
+                "path": path,
+                "dropped": sorted(was - now),
+                "gained": sorted(now - was),
+                "severity_before": before.get("severity"),
+                "severity_after": after.get("severity"),
+            })
 
     return {
         "added": [cur[p] for p in sorted(set(cur) - set(prev))],
         "removed": [prev[p] for p in sorted(set(prev) - set(cur))],
         "severity_changed": severity_changed,
+        "alternates_changed": alternates_changed,
         "rehashed": rehashed,
         "total_before": len(prev),
         "total_after": len(cur),
@@ -762,6 +789,17 @@ def diff_manifests(previous, current):
 
 def _plural(n, noun):
     return f"{n} {noun}" + ("" if n == 1 else "s")
+
+
+def _is_enforced(severity):
+    """Does a mismatch at this severity reach a verdict?
+
+    One home for the meaning, because the diff and the gate have to agree on it: a
+    `review` entry is captured and reported and never scores, so it changes what is
+    disclosed rather than what is enforced. A missing severity is `violation` — the
+    generator's default, and the safe reading of an entry that does not say.
+    """
+    return (severity or "violation") != "review"
 
 
 def _by_origin(entries):
@@ -806,8 +844,43 @@ def _change_section(title, entries, limit):
     return lines
 
 
+def _alternates_section(rows):
+    """Every alternate change, spelled out per path and per hash.
+
+    No --diff-limit here: ALTERNATE_HASHES is a handful of hand-curated entries, and
+    each hash is a separate decision about whether a legitimate community file starts
+    failing. A summarised count would hide the only detail worth reading.
+
+    Which direction reaches a player depends on WHEN the path is enforced, and the test
+    differs per direction: a drop starts scoring iff the path is enforced AFTERWARDS, a
+    gain gives up coverage iff it was enforced BEFORE. Reading one severity for both
+    would announce "now scores" about a path that is `review` afterwards, where nothing
+    can score.
+    """
+    if not rows:
+        return []
+    lines = [f"  ALTERNATES CHANGED {_plural(len(rows), 'path')} "
+             f"(curated hashes a legitimate community copy is allowed to match):"]
+    for row in rows:
+        sev_before, sev_after = row["severity_before"], row["severity_after"]
+        sev = sev_before if sev_after == sev_before else f"{sev_before} -> {sev_after}"
+        lines.append(f"    {row['path']}  [{sev}]")
+        for h in row["dropped"]:
+            lines.append(f"      DROPPED  {h}" + (
+                "  <- now scores against every holder of that copy"
+                if _is_enforced(sev_after) else
+                "  <- severity is review afterwards, so it is captured, never scored"))
+        for h in row["gained"]:
+            lines.append(f"      ADDED    {h}" + (
+                "  <- no longer scores"
+                if _is_enforced(sev_before) else
+                "  <- severity was review before, so nothing was scoring"))
+    return lines
+
+
 def format_scope_diff(diff, baseline_label, limit=DIFF_LIST_LIMIT_DEFAULT):
     before, after = diff["total_before"], diff["total_after"]
+    alternates = diff.get("alternates_changed") or []
     lines = [
         "",
         "=== Scope diff vs baseline (advisory) ===",
@@ -816,16 +889,25 @@ def format_scope_diff(diff, baseline_label, limit=DIFF_LIST_LIMIT_DEFAULT):
     ]
     lines += _change_section("ADDED", diff["added"], limit)
     lines += _change_section("REMOVED", diff["removed"], limit)
+    lines += _alternates_section(alternates)
 
     if diff["severity_changed"]:
-        lines.append(f"  SEVERITY CHANGED {_plural(len(diff['severity_changed']), 'path')}:")
+        # _meta.version hashes (path, sha256, alternates). Severity is not in it, so a
+        # severity-only regeneration writes a file with the SAME version string — and
+        # every downstream ETag check keeps serving the old copy. Said here because
+        # this is where a reader decides whether the version they see is the whole story.
+        lines.append(f"  SEVERITY CHANGED {_plural(len(diff['severity_changed']), 'path')} "
+                     f"(_meta.version does NOT move for these: it hashes path, sha256 "
+                     f"and alternates only):")
         lines += [f"    {p}: {was} -> {now}" for p, was, now in diff["severity_changed"]]
     if diff["rehashed"]:
         lines.append(f"  RE-HASHED {_plural(diff['rehashed'], 'path')} "
                      f"(in scope before and after, new bytes)")
 
-    if not (diff["added"] or diff["removed"] or diff["severity_changed"] or diff["rehashed"]):
-        lines.append("  no change: same paths, same severities, same hashes")
+    if not (diff["added"] or diff["removed"] or diff["severity_changed"]
+            or alternates or diff["rehashed"]):
+        lines.append("  no change: same paths, same severities, same hashes, "
+                     "same allowed alternates")
     return lines
 
 
@@ -867,7 +949,7 @@ def enforced_changes(entries):
     A "review" entry is captured and reported and never scores, so it changes what is
     disclosed rather than what is enforced. Both are printed; only these gate.
     """
-    return [e for e in entries if e.get("severity", "violation") != "review"]
+    return [e for e in entries if _is_enforced(e.get("severity"))]
 
 
 def gate_scope_change(diff, accept_added, accept_removed, out=None):
