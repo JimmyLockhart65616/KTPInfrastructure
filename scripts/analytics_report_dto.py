@@ -30,7 +30,7 @@ from scripts.in_game_result import unavailable as in_game_unavailable
 from scripts.kill_streaks import DEFINITION as KILL_STREAK_DEFINITION
 from scripts.kill_streaks import DEFINITION_VERSION as KILL_STREAK_DEFINITION_VERSION
 
-CONTRACT_VERSION = "analytics-report-dto-v1.7.0"  # docs/ANALYTICS_REPORT_DTO_CONTRACT.md
+CONTRACT_VERSION = "analytics-report-dto-v1.8.0"  # docs/ANALYTICS_REPORT_DTO_CONTRACT.md
 
 # hlstatsx DATETIMEs are naive league-local time: the data server runs
 # America/New_York. The website column is timestamptz, which reads a naive
@@ -436,8 +436,9 @@ def _box_score_scale(players: list[dict]) -> dict:
 
 def _progression_block(se: dict, names_by_id: dict) -> dict:
     """Public form of shadow_explorations.progression: cumulative series per
-    player per half (kills, deaths, damage) and per team (flag differential),
-    as [game_time, cumulative] points. Names only; ids never cross."""
+    player per half (kills, deaths, damage, cap_breaks, cap_participation)
+    and per team (flag differential), as [game_time, cumulative] points.
+    Names only; ids never cross."""
     pr = se.get("progression") or {}
     return {
         "status": pr.get("status") or "unavailable",

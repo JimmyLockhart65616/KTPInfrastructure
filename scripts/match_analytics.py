@@ -102,7 +102,7 @@ from scripts.side_splits import (  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 SQL_DIR = REPO / "sql" / "analytics"
-SCHEMA_VERSION = 19  # 9: spatial_layers; 10: in_game_result + player_halves; 11: kill_streaks + side/class splits; 12: objective score + grenade damage/kills, per-team and per-minute rates; 13: wave 1/2 player facts (damage_applied, life shots, score attribution) + duel_stats; 14: grenade throws + flight time; 15: aim shadow (computed placement + AC on-hit precision); 16: shadow_explorations.highlight_windows (key moments ranked on flag_swing); 17: shadow_explorations.progression (cumulative per-player series per half); 18: shadow_explorations.excursions + plays (per-player top plays, match top three, dunce); 19: map_control + progression.flag_differential translated engine-side -> report-team convention (were silently backwards in half 1 of every two-half match); shadow_explorations.capouts
+SCHEMA_VERSION = 20  # 9: spatial_layers; 10: in_game_result + player_halves; 11: kill_streaks + side/class splits; 12: objective score + grenade damage/kills, per-team and per-minute rates; 13: wave 1/2 player facts (damage_applied, life shots, score attribution) + duel_stats; 14: grenade throws + flight time; 15: aim shadow (computed placement + AC on-hit precision); 16: shadow_explorations.highlight_windows (key moments ranked on flag_swing); 17: shadow_explorations.progression (cumulative per-player series per half); 18: shadow_explorations.excursions + plays (per-player top plays, match top three, dunce); 19: map_control + progression.flag_differential translated engine-side -> report-team convention (were silently backwards in half 1 of every two-half match); shadow_explorations.capouts; 20: progression gains cap_breaks (producer clock already on hlstats_Events_PlayerActions since migrate_021, just never probed for) and cap_participation (reuses credit_timeline, already computed for flag_swing/excursions -- no new query)
 # The health streams EVERY producer contract emits, schema 21 onward. All of
 # these must appear exactly once per half; a missing one means that stream went
 # dark, which is the defect this list exists to catch.
@@ -400,6 +400,11 @@ SELECT
     WHERE table_schema = DATABASE() AND table_name = 'hlstats_Events_PlayerActions'
       AND column_name IN ('producer_match_id', 'producer_half')) = 2)
     AS break_producer_half,
+  ((SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'hlstats_Events_PlayerActions'
+      AND column_name IN ('producer_match_id', 'producer_half',
+                          'producer_game_time', 'producer_event_epoch')) = 4)
+    AS break_event_clock,
   ((SELECT COUNT(*) FROM information_schema.columns
     WHERE table_schema = DATABASE() AND column_name = 'half'
       AND table_name IN ('hlstats_Events_Frags', 'hlstats_Events_Teamkills',
@@ -1788,6 +1793,8 @@ def build_report(
     )
     assist_timeline = (query_rows(db, "assist_timeline_fact.sql", match_id)
                        if sources.get("assist_context", False) else None)
+    cap_break_timeline = (query_rows(db, "cap_break_fact.sql", match_id)
+                          if sources.get("break_event_clock", False) else None)
     frag_context = (
         query_rows(db, "frag_context_fact.sql", match_id)
         if (
@@ -2070,12 +2077,19 @@ def build_report(
         damage_timeline,
         flag_swing.get("timeline"),
         players_public,
+        cap_break_rows=cap_break_timeline,
+        # Reuse credit_timeline (already computed above for flag_swing/
+        # excursions' cap credit): same producer-clocked per-credit rows,
+        # no second query.
+        cap_participation_rows=credit_timeline,
         spawn_ownership=spawn_ownership,
         frags_available=enriched_frag_available,
         damage_available=bool(
             sources.get("per_hit_damage", False)
             and sources.get("damage_event_clock", False)),
         flags_available=flag_swing.get("status") == "available",
+        cap_breaks_available=sources.get("break_event_clock", False),
+        cap_participation_available=bool(sources.get("capture_credits", True)),
         temporal_valid=source_mode != "replay",
     )
     if progression.get("teams"):

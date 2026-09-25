@@ -7,7 +7,7 @@ pipeline) would derive it separately and the two would disagree, which is the
 divergence the HUD momentum work already measured. So the running totals are
 built here, in the producer, and the DTO ships the points.
 
-Three per-player metrics and one per-team metric, each a series per half:
+Five per-player metrics and one per-team metric, each a series per half:
 
   kills            frags with a producer clock where the killer is on the
                    other team (team kills and suicides do not count, matching
@@ -15,6 +15,15 @@ Three per-player metrics and one per-team metric, each a series per half:
   deaths           every frag with a clock where the player is the victim
   damage           `damage_capped` dealt to the other team, from the per-hit
                    damage rows -- only when that source was captured
+  cap_breaks       cap breaks with a producer clock (hlstats_Actions
+                   code='cap_break', break_context correlated -- migrate_021
+                   put the clock on hlstats_Events_PlayerActions itself, no
+                   separate table)
+  cap_participation  capture credits with a producer clock: reuses
+                   credit_timeline, the per-credit rows
+                   capture_credit_timeline_fact.sql already computes for
+                   flag_swing's cap-credit join (±3s of wall clock against
+                   ktp_flag_state_events) -- no second query here
   flag_differential (team)  flags held by team 1 minus flags held by team 2,
                    from the flag_swing timeline's flag events seeded with the
                    same spawn ownership flag_swing used, so the two agree on
@@ -23,11 +32,6 @@ Three per-player metrics and one per-team metric, each a series per half:
 The x-axis is the producer's game_time WITHIN the half -- each half is its own
 map load and the clock restarts -- so every series begins at [0, 0] and halves
 are separate panels downstream. No round index is invented; DoD has none.
-
-Two DoD-native metrics the research named are deliberately absent for now:
-cap participation (its per-event rows are keyed on wall clock, not game time)
-and cap breaks (no fact query loads per-event break rows at all). Both are
-documented follow-ups, not silently zero series.
 
 Player ids stay in this (private) block; analytics_report_dto re-keys to names.
 """
@@ -39,7 +43,7 @@ from typing import Any, Iterable, Sequence
 DEFINITION = "progression_v1"
 DEFINITION_VERSION = 1
 
-PLAYER_METRICS = ("kills", "deaths", "damage")
+PLAYER_METRICS = ("kills", "deaths", "damage", "cap_breaks", "cap_participation")
 TEAM_METRICS = ("flag_differential",)
 
 
@@ -100,10 +104,14 @@ def build_progression(
     flag_swing_timeline: Sequence[dict[str, Any]] | None,
     roster: Sequence[dict[str, Any]] | None,
     *,
+    cap_break_rows: Sequence[dict[str, Any]] | None = None,
+    cap_participation_rows: Sequence[dict[str, Any]] | None = None,
     spawn_ownership: dict[int, int] | None = None,
     frags_available: bool = True,
     damage_available: bool = True,
     flags_available: bool = True,
+    cap_breaks_available: bool = True,
+    cap_participation_available: bool = True,
     temporal_valid: bool = True,
 ) -> dict[str, Any]:
     """Build the progression block.
@@ -112,7 +120,9 @@ def build_progression(
     victim_team. ``damage_rows``: half, game_time, attacker_id, victim_id,
     attacker_team, victim_team, damage_capped. ``flag_swing_timeline``:
     flag_swing_v1's timeline (flag events carry half, game_time, flag_index,
-    owner). ``roster`` rows: player_id, team.
+    owner). ``cap_break_rows``: half, game_time, breaker_id (cap_break_fact.sql).
+    ``cap_participation_rows``: half, game_time, player_id (credit_timeline /
+    capture_credit_timeline_fact.sql). ``roster`` rows: player_id, team.
     """
     envelope: dict[str, Any] = {
         "definition": DEFINITION,
@@ -123,6 +133,8 @@ def build_progression(
             "kills": "cross-team frags with a clock",
             "deaths": "all frags with a clock, as victim",
             "damage": "damage_capped dealt cross-team",
+            "cap_breaks": "cap breaks with a producer clock",
+            "cap_participation": "capture credits correlated to a producer clock",
             "flag_differential": "team 1 flags minus team 2 flags",
         },
         "status": "available",
@@ -132,9 +144,12 @@ def build_progression(
         "metrics": list(PLAYER_METRICS),
         "team_metrics": list(TEAM_METRICS),
         "available": {"kills": False, "deaths": False, "damage": False,
+                      "cap_breaks": False, "cap_participation": False,
                       "flag_differential": False},
         "coverage": {"frags_with_clock": 0, "frags_total": 0,
-                     "damage_with_clock": 0, "damage_total": 0},
+                     "damage_with_clock": 0, "damage_total": 0,
+                     "cap_breaks_with_clock": 0, "cap_breaks_total": 0,
+                     "cap_participation_with_clock": 0, "cap_participation_total": 0},
         "caveats": [
             "Series count only events carrying a producer clock; a final point "
             "can trail the box score when some events have none -- coverage "
@@ -195,6 +210,34 @@ def build_progression(
         envelope["coverage"]["damage_with_clock"] = with_clock
         if with_clock:
             envelope["available"]["damage"] = True
+
+    if cap_breaks_available and cap_break_rows:
+        rows = list(cap_break_rows)
+        envelope["coverage"]["cap_breaks_total"] = len(rows)
+        with_clock = 0
+        for half, at, _order, row in _sorted_events(rows):
+            with_clock += 1
+            halves.add(half)
+            breaker = _int(row.get("breaker_id"))
+            if breaker in teams:
+                per_player[(breaker, half, "cap_breaks")].add(at, 1)
+        envelope["coverage"]["cap_breaks_with_clock"] = with_clock
+        if with_clock:
+            envelope["available"]["cap_breaks"] = True
+
+    if cap_participation_available and cap_participation_rows:
+        rows = list(cap_participation_rows)
+        envelope["coverage"]["cap_participation_total"] = len(rows)
+        with_clock = 0
+        for half, at, _order, row in _sorted_events(rows):
+            with_clock += 1
+            halves.add(half)
+            capper = _int(row.get("player_id"))
+            if capper in teams:
+                per_player[(capper, half, "cap_participation")].add(at, 1)
+        envelope["coverage"]["cap_participation_with_clock"] = with_clock
+        if with_clock:
+            envelope["available"]["cap_participation"] = True
 
     # Every rostered player gets a series for every available metric in every
     # half seen, even if it is just [[0, 0]] -- a missing series would read as
