@@ -232,6 +232,23 @@ def load_params(path=PARAMS):
 PAYLOAD = HERE / "rating_methodology_payload.json"
 
 
+def weeks_lost(new_history, prior_history):
+    """Weeks in `prior_history` that `new_history` has dropped.
+
+    The history only ever grows: a week already published is a fact about the
+    season, and the only reason to emit fewer is that something upstream lost
+    them. The restore step cannot tell a transient clone failure from "the
+    branch does not exist yet" -- both leave it with no prior payload -- so
+    without this the publish would overwrite the season's earlier weeks in
+    silence. Compared as SETS, not lengths: losing week 1 while gaining week 3
+    keeps the count and is still a loss.
+    """
+    def ws(h):
+        return {r["week"] for r in (h or [])
+                if isinstance(r, dict) and r.get("week") is not None}
+    return sorted(ws(prior_history) - ws(new_history))
+
+
 def load_prior_history(path=PAYLOAD):
     """`version_history` from a previously published payload; [] if there is none.
 
@@ -268,3 +285,19 @@ def validate_for_import(payload):
     if leaked:
         problems.append(f"payload carries player-shaped keys {leaked}; this document is about nobody")
     return problems
+
+
+if __name__ == "__main__":
+    # The weekly workflow's publish guard, run from the data branch's checkout:
+    #   python methodology.py <payload about to publish> <payload already there>
+    # Exits non-zero, with the annotation the job surfaces, if publishing would
+    # drop a week the branch already carries.
+    _new, _old = (load_prior_history(p) for p in sys.argv[1:3])
+    _lost = weeks_lost(_new, _old)
+    if _lost:
+        raise SystemExit(
+            f"::error::refusing to publish: the methodology history would lose "
+            f"week(s) {_lost} (publishing {len(_new)}, the branch has {len(_old)}). "
+            f"The restore step most likely failed -- re-run the job rather than "
+            f"overwriting the season's history.")
+    print(f"history check: publishing {len(_new)} week(s), none lost")

@@ -156,6 +156,60 @@ class VersionHistory(unittest.TestCase):
         (d / "junk.json").write_text("{not json", encoding="utf-8")
         self.assertEqual(self.X.load_prior_history(d / "junk.json"), [])
 
+    def test_a_publish_that_would_drop_a_published_week_is_caught(self):
+        """The guard the weekly workflow runs before overwriting the data branch.
+
+        A transient clone failure in the restore step is indistinguishable from
+        "mmr-ratings does not exist yet", and both leave the run with no prior
+        history -- so the publish would quietly replace the season with one week.
+        """
+        published = [{"week": 1, "accuracy_pct": 55.6}, {"week": 2, "accuracy_pct": 56.2}]
+        # The restore failed, so this run only knows about week 3.
+        self.assertEqual(self.X.weeks_lost([{"week": 3}], published), [1, 2])
+        # A normal week appends and loses nothing.
+        self.assertEqual(self.X.weeks_lost(published + [{"week": 3}], published), [])
+        # A re-run that republishes the same weeks loses nothing.
+        self.assertEqual(self.X.weeks_lost(published, published), [])
+        # Counted as sets: losing week 1 while gaining week 3 keeps the length.
+        self.assertEqual(self.X.weeks_lost([{"week": 2}, {"week": 3}], published), [1])
+        # Nothing published yet -- the first run cannot lose anything.
+        self.assertEqual(self.X.weeks_lost([{"week": 1}], []), [])
+        self.assertEqual(self.X.weeks_lost([], None), [])
+        # A malformed row is not mistaken for a week.
+        self.assertEqual(self.X.weeks_lost([], [{"accuracy_pct": 50.0}, "junk"]), [])
+
+    def test_the_guard_runs_as_the_workflow_invokes_it(self):
+        """The workflow calls `python methodology.py <new> <published>`.
+
+        Exercised as a subprocess, not just as a function: the previous two
+        failures in this feature both passed their unit tests and broke at the
+        seam between a caller and what it called.
+        """
+        import subprocess
+        import tempfile
+        from pathlib import Path as P
+        d = P(tempfile.mkdtemp())
+
+        def payload(p, weeks):
+            (d / p).write_text(json.dumps(
+                {"kind": "rating_methodology",
+                 "version_history": [{"week": w} for w in weeks]}), encoding="utf-8")
+            return str(d / p)
+
+        script = str(P(__file__).resolve().parents[2] / "scripts" / "mmr" / "methodology.py")
+        published = payload("old.json", [1, 2])
+
+        ok = subprocess.run([sys.executable, script, payload("new_ok.json", [1, 2, 3]), published],
+                            capture_output=True, text=True)
+        self.assertEqual(ok.returncode, 0, ok.stderr)
+        self.assertIn("3 week(s), none lost", ok.stdout)
+
+        bad = subprocess.run([sys.executable, script, payload("new_bad.json", [3]), published],
+                             capture_output=True, text=True)
+        self.assertNotEqual(bad.returncode, 0, "a lossy publish was allowed")
+        self.assertIn("::error::", bad.stderr)
+        self.assertIn("[1, 2]", bad.stderr)
+
     def test_history_carries_no_player_rows_either(self):
         body = json.dumps(build(summary=WK2))
         for k in ("players", "player_id", "steam_id", "alias"):
