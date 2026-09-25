@@ -121,6 +121,7 @@ DEFAULT_SEED_FILES = (
 NOT_APPLIED_MIGRATIONS = {
     "sql/migrate_002_half_damage_score.sql": "its columns are already in ktp_schema.sql",
     "sql/migrate_026_match_reports.sql": "report-store tables the daemon never writes",
+    "sql/migrate_037_matches_half_not_null.sql": "ktp_schema.sql already declares half NOT NULL",
 }
 
 # Both workflow schema blocks expand this file, so DEFAULT_SCHEMA_FILES stays the only list.

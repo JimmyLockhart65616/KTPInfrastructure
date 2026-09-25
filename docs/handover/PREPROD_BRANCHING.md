@@ -40,6 +40,9 @@ to a branch requiring it. A fast-forward sidesteps it by reusing `main`'s own al
 annotated *"No preprod branch; nothing to reconcile."* and exited 0 rather than painting an
 ordinary push red.
 
+⛔ What breaks a reconciler of this shape for good is the merge button — see *Branches and
+pull requests* in [CONTRIBUTING.md](../../CONTRIBUTING.md).
+
 ## Policy
 
 Every KTP repository uses a permanent `preprod` branch as the integration

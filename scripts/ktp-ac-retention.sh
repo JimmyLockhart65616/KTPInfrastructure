@@ -29,8 +29,16 @@ UPLOADS_DIR="${UPLOADS_DIR:-/opt/ktp-ac-api/uploads}"
 # wrong failure mode for an append-only archive -- an operator who forgets to set it
 # loses bundles, which is what happened before the 2026-08-16 hold. 0 = retain all.
 UPLOAD_RETENTION_DAYS="${UPLOAD_RETENTION_DAYS:-0}"
-WEAPON_RETENTION_DAYS="${WEAPON_RETENTION_DAYS:-30}"
-TOKEN_RETENTION_DAYS="${TOKEN_RETENTION_DAYS:-7}"
+# Weapon rows are what explain a retained bundle, and bundles are held indefinitely --
+# at 30d a session reviewed a month later had an empty weapon timeline in its dossier.
+# 365d is the bounded version of forever: ~10 GB steady state, and it deletes nothing
+# until 2027-08-25 because the sweep already took everything older.
+WEAPON_RETENTION_DAYS="${WEAPON_RETENTION_DAYS:-365}"
+# Never shorter than the API purge grace past expiry, or this becomes the real bound and
+# a staged bundle outlives the key that verifies it. The API side pins its own three, and
+# its grace now carries the offset between a login and the packaging it keys -- a client
+# retries from when the bundle was written, not from when the session began.
+TOKEN_RETENTION_DAYS="${TOKEN_RETENTION_DAYS:-22}"
 BATCH_SIZE="${BATCH_SIZE:-10000}"
 DRY_RUN="${DRY_RUN:-0}"
 
