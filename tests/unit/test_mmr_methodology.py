@@ -62,8 +62,12 @@ class Contract(unittest.TestCase):
         self.assertIsInstance(p["report_schema_version"], int)
 
 
-WK2 = {"generated_at": "2026-09-21T14:05:00+00:00", "completed_matches": 16,
-       "accuracy": 0.5625, "log_loss": 0.6908, "upsets": 0,
+# Copied verbatim from the week-2 run's own weekly_summary.json artifact
+# (run 35641684672). run_weekly writes strftime("%Y-%m-%d %H:%M UTC"), NOT
+# ISO 8601 -- the first cut of this feature parsed only ISO and so emitted an
+# empty history against every real summary while invented-ISO tests passed.
+WK2 = {"generated_at": "2026-09-21 18:57 UTC", "completed_matches": 16,
+       "accuracy": 0.562, "log_loss": 0.6908, "upsets": 0,
        "headline": "16 matches rated, 56% accuracy"}
 
 
@@ -84,12 +88,27 @@ class VersionHistory(unittest.TestCase):
         self.assertEqual(row["upsets_pct"], 0.0)
         self.assertEqual(row["log_loss"], 0.6908)
 
+    def test_the_production_timestamp_format_parses(self):
+        """run_weekly writes a DISPLAY timestamp, not ISO 8601.
+
+        These three strings are copied from the weekly_summary.json artifacts of
+        runs 35045720142, 35641684672 and 35729323529. Parsing only ISO here is
+        what made the first cut of this feature publish an empty history on every
+        real run with a green job, so the real shape is pinned, not assumed.
+        """
+        self.assertEqual(self.X.week_of("2026-09-16 01:51 UTC"), 1)
+        self.assertEqual(self.X.week_of("2026-09-21 18:57 UTC"), 2)
+        self.assertEqual(self.X.week_of("2026-09-22 12:47 UTC"), 2)
+        self.assertEqual(self.X.as_date("2026-09-21 18:57 UTC").isoformat(), "2026-09-21")
+
     def test_the_week_comes_from_the_runs_own_timestamp(self):
         # Season starts 2026-09-13, so the 13th is week 1 and the 20th week 2.
+        # ISO stays accepted -- report_service and any future producer may use it.
         self.assertEqual(self.X.week_of("2026-09-13T00:00:00+00:00"), 1)
         self.assertEqual(self.X.week_of("2026-09-19T23:59:00+00:00"), 1)
         self.assertEqual(self.X.week_of("2026-09-20T00:00:00+00:00"), 2)
         self.assertEqual(self.X.week_of("2026-09-28T14:00:00+00:00"), 3)
+        self.assertEqual(self.X.week_of("2026-09-13"), 1)
 
     def test_a_week_with_nothing_rated_is_not_a_zero_percent_row(self):
         # The pre-season run writes a summary with no matches; a 0% row there
