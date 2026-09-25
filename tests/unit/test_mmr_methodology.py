@@ -53,32 +53,94 @@ class Contract(unittest.TestCase):
         self.assertEqual(m["scoring"]["uses"], "fallback")
         self.assertEqual(m["scoring"]["fallback"], {"cap": 1.0, "capout": 1.0})
 
-    def test_version_history_builds_from_weekly_summary(self):
-        import tempfile
-        summary_data = {
-            "generated_at": "2026-09-22T13:00:00+00:00",
-            "completed_matches": 16,
-            "accuracy": 0.562,
-            "upsets": 0,
-            "headline": "16 matches, 56.2% accuracy"
-        }
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            import json
-            json.dump(summary_data, f)
-            f.flush()
-            p = build(summary_path=f.name)
-        self.assertEqual(len(p["version_history"]), 1)
-        entry = p["version_history"][0]
-        self.assertEqual(entry["week"], 2)
-        self.assertEqual(entry["date"], "2026-09-22")
-        self.assertEqual(entry["accuracy_pct"], 56.2)
-        self.assertEqual(entry["completed_matches"], 16)
-        self.assertEqual(entry["upsets_pct"], 0.0)
+    def test_version_history_is_empty_rather_than_absent_before_any_run(self):
+        self.assertEqual(build()["version_history"], [])
 
     def test_carries_the_columns_the_aggregate_insert_needs(self):
         p = build()
         self.assertIsInstance(p["source_report_count"], int)
         self.assertIsInstance(p["report_schema_version"], int)
+
+
+WK2 = {"generated_at": "2026-09-21T14:05:00+00:00", "completed_matches": 16,
+       "accuracy": 0.5625, "log_loss": 0.6908, "upsets": 0,
+       "headline": "16 matches rated, 56% accuracy"}
+
+
+class VersionHistory(unittest.TestCase):
+    """How the ratings have improved as data landed -- drew's transparency call
+    2026-09-23: a reader should see the trend, not just today's numbers."""
+
+    def setUp(self):
+        import methodology as X
+        self.X = X
+
+    def test_a_weeks_row_carries_its_accuracy_sample_and_date(self):
+        row = self.X.week_entry(WK2)
+        self.assertEqual(row["week"], 2)
+        self.assertEqual(row["date"], "2026-09-21")
+        self.assertEqual(row["accuracy_pct"], 56.2)
+        self.assertEqual(row["completed_matches"], 16)
+        self.assertEqual(row["upsets_pct"], 0.0)
+        self.assertEqual(row["log_loss"], 0.6908)
+
+    def test_the_week_comes_from_the_runs_own_timestamp(self):
+        # Season starts 2026-09-13, so the 13th is week 1 and the 20th week 2.
+        self.assertEqual(self.X.week_of("2026-09-13T00:00:00+00:00"), 1)
+        self.assertEqual(self.X.week_of("2026-09-19T23:59:00+00:00"), 1)
+        self.assertEqual(self.X.week_of("2026-09-20T00:00:00+00:00"), 2)
+        self.assertEqual(self.X.week_of("2026-09-28T14:00:00+00:00"), 3)
+
+    def test_a_week_with_nothing_rated_is_not_a_zero_percent_row(self):
+        # The pre-season run writes a summary with no matches; a 0% row there
+        # would read as the ratings having got worse.
+        self.assertIsNone(self.X.week_entry(
+            {"generated_at": "2026-09-14T14:00:00+00:00", "completed_matches": 0,
+             "headline": "No completed matches yet"}))
+
+    def test_an_unreadable_summary_drops_its_row_rather_than_failing_the_run(self):
+        self.assertIsNone(self.X.week_entry({"completed_matches": 16}))
+        self.assertIsNone(self.X.week_entry(None))
+        self.assertIsNone(self.X.week_of("not a date"))
+
+    def test_weeks_accumulate_oldest_first(self):
+        p = build(summary=WK2, prior_history=[{"week": 1, "date": "2026-09-14",
+                                              "accuracy_pct": 44.4, "completed_matches": 9}])
+        self.assertEqual([r["week"] for r in p["version_history"]], [1, 2])
+        self.assertEqual(p["version_history"][0]["accuracy_pct"], 44.4)
+        self.assertEqual(p["version_history"][1]["accuracy_pct"], 56.2)
+
+    def test_a_rerun_of_a_week_replaces_that_row_instead_of_appending_a_second(self):
+        # Every value is refit on the whole corpus each run, so the newer row is
+        # the truth about that week; two rows for week 2 would read as progress.
+        stale = {"week": 2, "date": "2026-09-21", "accuracy_pct": 50.0, "completed_matches": 14}
+        p = build(summary=WK2, prior_history=[stale])
+        self.assertEqual([r["week"] for r in p["version_history"]], [2])
+        self.assertEqual(p["version_history"][0]["accuracy_pct"], 56.2)
+
+    def test_prior_history_comes_from_the_last_published_payload(self):
+        import json as J
+        import tempfile
+        from pathlib import Path as P
+        d = P(tempfile.mkdtemp())
+        (d / "payload.json").write_text(J.dumps(
+            {"kind": "rating_methodology", "version_history": [{"week": 1, "accuracy_pct": 44.4}]}),
+            encoding="utf-8")
+        self.assertEqual(self.X.load_prior_history(d / "payload.json"),
+                         [{"week": 1, "accuracy_pct": 44.4}])
+
+    def test_a_missing_or_corrupt_prior_payload_starts_the_history_over_quietly(self):
+        import tempfile
+        from pathlib import Path as P
+        d = P(tempfile.mkdtemp())
+        self.assertEqual(self.X.load_prior_history(d / "absent.json"), [])
+        (d / "junk.json").write_text("{not json", encoding="utf-8")
+        self.assertEqual(self.X.load_prior_history(d / "junk.json"), [])
+
+    def test_history_carries_no_player_rows_either(self):
+        body = json.dumps(build(summary=WK2))
+        for k in ("players", "player_id", "steam_id", "alias"):
+            self.assertNotIn(f'"{k}"', body)
 
 
 class PinnedToSource(unittest.TestCase):

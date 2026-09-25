@@ -449,20 +449,6 @@ def main():
     except RuntimeError as exc:      # publishing aid must never fail the run
         print(f"  mmr payload unavailable: {exc}")
 
-    # The transparency document: equations, variables and current per-map
-    # values, read from the code and from momentum_params.json (refit by
-    # momentum_report.py). Same publish path as the ratings payload.
-    try:
-        import methodology as METH
-        doc = METH.build(METH.load_params(),
-                         generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                         source_report_count=counts.get("rated_on_actual_participants", 0))
-        (HERE / "rating_methodology_payload.json").write_text(
-            json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"wrote rating_methodology_payload.json ({len(doc['momentum']['maps'])} maps)")
-    except (RuntimeError, OSError, KeyError) as exc:
-        print(f"  methodology payload unavailable: {exc}")
-
     upsets = [r for r in rows if abs(r["p_home"] - r["y"]) > CONFIDENT_MISS]
     cand = challengers(matches, args.holdout)
     beat_champion = [c for c in cand if cand and c["name"] != "champion (openskill default)"
@@ -527,7 +513,7 @@ def main():
                            f"({beat_champion[0]['log_loss']:.4f} vs champion). Worth a human look "
                            "before adopting -- one week is a small sample."]
     (HERE / "weekly_digest.md").write_text("\n".join(digest) + "\n", encoding="utf-8")
-    (HERE / "weekly_summary.json").write_text(json.dumps(dict(
+    summary = dict(
         generated_at=now, completed_matches=len(matches), pending=counts["pending"],
         ringer_appearances=counts.get("ringer_appearances", 0),
         accuracy=metrics["acc"], log_loss=metrics["log_loss"], brier=metrics["brier"], ece=metrics["ece"],
@@ -537,9 +523,32 @@ def main():
         headline=(f"{len(matches)} matches rated, {metrics['acc']:.0%} accuracy"
                   + (f", {len(upsets)} upsets" if upsets else "")
                   + (", challenger beat champion" if beat_champion else "")),
-    ), indent=1), encoding="utf-8")
+    )
+    (HERE / "weekly_summary.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
     print(f"accuracy={metrics['acc']:.1%} log_loss={metrics['log_loss']:.4f} upsets={len(upsets)}")
     print("wrote weekly_digest.md, weekly_summary.json, ratings_current.json")
+
+    # The transparency document: equations, variables and current per-map
+    # values, read from the code and from momentum_params.json (refit by
+    # momentum_report.py). Same publish path as the ratings payload.
+    #
+    # Built here, after this run's summary exists, because the document carries
+    # the week-by-week accuracy history and the prior weeks come from the
+    # payload the last run published (restored from `mmr-ratings` by the
+    # workflow). Read the prior BEFORE writing over it.
+    try:
+        import methodology as METH
+        prior_history = METH.load_prior_history()
+        doc = METH.build(METH.load_params(),
+                         generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                         source_report_count=counts.get("rated_on_actual_participants", 0),
+                         summary=summary, prior_history=prior_history)
+        (HERE / "rating_methodology_payload.json").write_text(
+            json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"wrote rating_methodology_payload.json ({len(doc['momentum']['maps'])} maps, "
+              f"{len(doc['version_history'])} week(s) of history)")
+    except (RuntimeError, OSError, KeyError) as exc:
+        print(f"  methodology payload unavailable: {exc}")
 
 
 if __name__ == "__main__":
