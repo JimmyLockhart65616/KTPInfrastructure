@@ -146,7 +146,16 @@ jobs:
           # And the methodology document (equations, variables, per-map
           # values) -- same import command, no player rows.
           METHOD="$GITHUB_WORKSPACE/scripts/mmr/rating_methodology_payload.json"
-          [ -f "$METHOD" ] && cp "$METHOD" rating_methodology_payload.json
+          # The accuracy history only ever grows. The restore step cannot tell a
+          # transient clone failure from "mmr-ratings does not exist yet" -- both
+          # leave the run with no prior payload -- so without this check a blip
+          # up there would overwrite the season's earlier weeks and say nothing.
+          # The published copy is already in hand here, so this costs one read.
+          if [ -f "$METHOD" ]; then
+            python "$GITHUB_WORKSPACE/scripts/mmr/methodology.py" \
+              "$METHOD" rating_methodology_payload.json
+            cp "$METHOD" rating_methodology_payload.json
+          fi
           git add ratings_current.json
           [ -f mmr_openskill_payload.json ] && git add mmr_openskill_payload.json
           [ -f rating_methodology_payload.json ] && git add rating_methodology_payload.json
