@@ -27,6 +27,14 @@ def hit(t, attacker, victim, amount, half=1):
             "victim_team": 1 if victim in (1, 2) else 2, "damage_capped": amount}
 
 
+def break_(t, breaker, half=1):
+    return {"half": half, "game_time": t, "breaker_id": breaker}
+
+
+def cap(t, player, half=1):
+    return {"half": half, "game_time": t, "player_id": player}
+
+
 def flag_event(t, flag_index, owner, half=1):
     return {"half": half, "game_time": t, "kind": "flag", "flag_index": flag_index,
             "owner": owner, "p_allies_after": 0.5, "delta": 0.1}
@@ -70,7 +78,10 @@ def test_events_without_a_clock_are_skipped_and_counted_in_coverage():
     block = build_progression(frags, None, None, ROSTER, damage_available=False, flags_available=False)
     assert series(block, 1, 1, "kills") == [[0, 0], [10, 1]]
     assert block["coverage"] == {"frags_with_clock": 1, "frags_total": 2,
-                                 "damage_with_clock": 0, "damage_total": 0}
+                                 "damage_with_clock": 0, "damage_total": 0,
+                                 "cap_breaks_with_clock": 0, "cap_breaks_total": 0,
+                                 "cap_participation_with_clock": 0,
+                                 "cap_participation_total": 0}
 
 
 def test_damage_accumulates_cross_team_only_and_same_tick_collapses():
@@ -80,6 +91,44 @@ def test_damage_accumulates_cross_team_only_and_same_tick_collapses():
     assert block["available"]["kills"] is False
     assert series(block, 1, 1, "damage") == [[0, 0], [3, 65]]
     assert series(block, 3, 1, "damage") == [[0, 0], [12, 60]]
+
+
+def test_cap_breaks_are_running_totals_from_zero_per_half():
+    breaks = [break_(15, 1), break_(45, 1), break_(20, 3, half=2)]
+    block = build_progression([], None, None, ROSTER, cap_break_rows=breaks,
+                              frags_available=False, damage_available=False,
+                              flags_available=False)
+    assert block["available"]["cap_breaks"] is True
+    assert series(block, 1, 1, "cap_breaks") == [[0, 0], [15, 1], [45, 2]]
+    assert series(block, 3, 2, "cap_breaks") == [[0, 0], [20, 1]]
+    assert block["coverage"]["cap_breaks_with_clock"] == 3
+    assert block["coverage"]["cap_breaks_total"] == 3
+
+
+def test_cap_breaks_absent_reads_unavailable_not_zero():
+    block = build_progression([frag(10, 1, 3, 1, 2)], None, None, ROSTER,
+                              damage_available=False, flags_available=False)
+    assert block["available"]["cap_breaks"] is False
+    assert all(row["metric"] != "cap_breaks" for row in block["players"])
+
+
+def test_cap_participation_are_running_totals_from_zero_per_half():
+    caps = [cap(60, 2), cap(90, 2), cap(40, 3, half=2)]
+    block = build_progression([], None, None, ROSTER, cap_participation_rows=caps,
+                              frags_available=False, damage_available=False,
+                              flags_available=False)
+    assert block["available"]["cap_participation"] is True
+    assert series(block, 2, 1, "cap_participation") == [[0, 0], [60, 1], [90, 2]]
+    assert series(block, 3, 2, "cap_participation") == [[0, 0], [40, 1]]
+    assert block["coverage"]["cap_participation_with_clock"] == 3
+    assert block["coverage"]["cap_participation_total"] == 3
+
+
+def test_cap_participation_absent_reads_unavailable_not_zero():
+    block = build_progression([frag(10, 1, 3, 1, 2)], None, None, ROSTER,
+                              damage_available=False, flags_available=False)
+    assert block["available"]["cap_participation"] is False
+    assert all(row["metric"] != "cap_participation" for row in block["players"])
 
 
 def test_flag_differential_starts_from_spawn_ownership_and_mirrors_for_team_2():
@@ -143,7 +192,7 @@ def test_box_score_scale_scopes_over_all_players_and_flips_lower_is_better():
 def test_sanitized_report_carries_both_new_blocks():
     from tests.unit.test_analytics_report_dto import internal_report
     out = dto.sanitize_report(internal_report())
-    assert out["contract_version"] == "analytics-report-dto-v1.7.0"
+    assert out["contract_version"] == "analytics-report-dto-v1.8.0"
     assert out["progression"]["status"] == "unavailable"
     assert out["box_score_scale"]["fields"]["kills"]["max_in_match"] == 3
     assert out["box_score_scale"]["fields"]["kills"]["best"] == ["A"]

@@ -10,3 +10,9 @@ SHELL=/bin/bash
 # Demos: after the DBs. Incremental after the first run -- rsync --checksum
 # skips what already matches, so a weekly pass moves only the new matches.
 0 5 * * 0   root  . /etc/ktp/offsite.conf && /usr/local/bin/ktp-demo-offsite.sh >> /var/log/ktp-offsite.log 2>&1
+# AC replay corpus: after the demos. ENCRYPTED to public age recipients before
+# it leaves, so this leg proves the bytes ARRIVED and cannot prove they decrypt
+# -- the private halves are deliberately not on this host. --commit is not
+# optional: without it the script dry-runs, reports OK and ships nothing.
+# Recoverability is ktp-corpus-drill.sh, and it runs where a key is, not here.
+0 6 * * 0   root  . /etc/ktp/offsite.conf && /usr/local/bin/ktp-corpus-offsite.sh --commit >> /var/log/ktp-offsite.log 2>&1

@@ -268,6 +268,7 @@ def test_contract_fixture_generates_complete_private_report(tmp_path):
         "grenade_entities": False,
         "player_halves": True,
         "break_producer_half": False,
+        "break_event_clock": False,
         # Migrations 032-034 and the AC ledger are not in the phase-a fixture:
         # probed, absent, and every dependent box-score key is None.
         "wave1_fields": False,
@@ -313,7 +314,7 @@ def test_contract_fixture_generates_complete_private_report(tmp_path):
             )
         else:
             assert player["damage_per_life"] is None
-    assert report["schema_version"] == 19
+    assert report["schema_version"] == 20
     assert report["shadow_timelines"]["status"] == "available"
     assert len(report["shadow_timelines"]["opening_duels"]) == 2
     assert report["shadow_timelines"]["fast_multikills"] == []
