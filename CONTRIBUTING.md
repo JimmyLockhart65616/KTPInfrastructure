@@ -178,6 +178,13 @@ new deployable file type without an entry there.
   this says nothing about them. Lane B still tests those components from `preprod`; only the
   harness — this repository — comes from `main`.
 - **Never commit to `main` directly.** Branch, push the branch, open a PR.
+- **Never reconcile a fast-forward-guarded branch with the merge button.** No GitHub merge
+  method fast-forwards — merge, squash and rebase each write a commit the base's upstream will
+  never contain — so one click permanently breaks a guard of the form `git merge-base
+  --is-ancestor <upstream> <target>`, and a guard that warns and exits 0 when it fails then
+  reports success for good while looking like it ran. Reconcile by fast-forward push, or let
+  the automation do it. No branch here is guarded that way today; KTPAMXX, KTPMatchHandler and
+  KTPHLStatsX still keep `preprod`, which is where this bites.
 - **Branch naming** follows the prefix the work belongs to: `feat/`, `fix/`, `ci/`, `docs/`,
   `config/`, `test/`, `audit/`, plus a short kebab-case description —
   `fix/monitor-rcon-runtime`, `ci/zlib-pin`, `docs/preprod-card-reconcile`.

@@ -282,6 +282,31 @@ It reads `/var/log/ktp-report-service.log`, which the unit writes via
 `StandardOutput=append:`. If that file is absent the `RAN` check fails, which
 is the correct answer to "did it run" rather than a fault in the verifier.
 
+## Importing the weekly MMR payload
+
+The ladder runs in CI, which holds no write credential here, so it publishes a file on the
+`mmr-ratings` branch and the box inserts it:
+
+```bash
+cd /opt/ktp-reports/KTPInfrastructure
+sudo -u ktpreports python3 -m scripts.report_service --repo . import-mmr /tmp/<payload>.json
+```
+
+Run it from the serving checkout, as `ktpreports`. `import-mmr` loads its validators out of
+`--repo`, so a personal or behind checkout guards a production write with code the box is not
+running; and the grant is `auth_socket`, tied to that account name. Stage the payload outside
+the checkout — it is not a tracked file and does not belong in one.
+
+Only `mmr_openskill_payload.json` and `rating_methodology_payload.json` are importable.
+**Never substitute `ratings_current.json`.** It is the ladder's internal state, keyed by raw
+numeric player ids, and this aggregate is published to a public page. `validate_for_import`
+does refuse it — it carries no `kind` and no `players` — but on shape, so the identifier leak
+is stopped by accident rather than by a check that names it.
+
+Acceptance is a row, not a log line: `SELECT COUNT(*) FROM ktp_web_season_aggregates WHERE
+kind='mmr_openskill'`. The website's profile card stays empty until players clear the payload's
+own `min_matches` floor, so an empty card after a good import is expected, not a failure.
+
 ## The `--since` floor
 
 `ktp-reports.service` pins `--since 2026-09-13`, and every step also requires an
