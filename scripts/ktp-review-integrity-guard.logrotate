@@ -1,0 +1,25 @@
+# /etc/logrotate.d/ktp-review-integrity-guard
+#
+# Deployed alongside scripts/ktp-review-integrity-guard.py, which appends one run per day.
+#
+# The log is the only place the reviewing actor behind a finding is written down — the
+# Discord embed carries session ids and counts and nothing else on purpose — so this is
+# the record somebody reads weeks after the alert. Rotating it on journald's two-day
+# horizon would rebuild the hole it fills.
+#
+# The file is opened per append, so it needs no copytruncate.
+
+/var/log/ktp-review-integrity-guard.log
+{
+        monthly
+        rotate 12
+        # Bounds a guard that starts failing every run with a long CANNOT CHECK.
+        maxsize 32M
+        missingok
+        notifempty
+        compress
+        # Keeps .1 plain text, so grepping across a rotation boundary needs no zcat
+        # the day after one.
+        delaycompress
+        create 0640 root root
+}

@@ -1,0 +1,39 @@
+# KTP AntiCheat review-integrity guard — sessions stamped clean over a flagged
+# verdict with no rationale recorded.
+#
+# Script: /usr/local/bin/ktp-review-integrity-guard (canonical: KTPInfrastructure/scripts/).
+# Guard:  /usr/local/bin/ktp-check-clean-over-flagged.py (canonical: KTPAntiCheat/scripts/,
+#         check-clean-over-flagged.py — it stays there, with its test suite and its CI job).
+#
+# The wrapper exists because the guard is written to SSH into the data server and pull its
+# own snapshot; on the data server that is a loopback to nowhere, since root's key is
+# deliberately not in root's authorized_keys. The wrapper asks the guard for its SQL, runs
+# it on the local socket, and feeds it back through the guard's own --snapshot path. Every
+# SELECT, control and exit code stays in the guard.
+#
+# READ-ONLY. Every statement the guard issues is a SELECT. It applies nothing and it is
+# not a verdict input.
+#
+# 06:15 ET daily — clear of the 03:00 fleet restart, the 03:30 soak verify, the 04:30
+# perf rollup, the 04:40 AC retention sweep and the 05:00 digests, and early enough that
+# a finding is read with the morning's Discord.
+#
+# WHY --since. The findings that predate the watermark are a historical set that stopped
+# in July, and the operator's decision is not to hand-triage them. They are not hidden by
+# the window: the guard prints how many it excluded and says they are still open, on every
+# run including a clean one. Moving this date forward to silence a finding is the one
+# change nobody should make quietly.
+#
+# ALERTING. Discord via /etc/ktp/discord-relay.conf, and only when the finding set gains a
+# session — a standing finding re-posted every morning trains everyone to mute the channel.
+# A clean run posts nothing. An exit 2 always posts: "could not look" reading as "nothing
+# there" is the exact defect this guard was built for.
+#
+# The log is rotated by /etc/logrotate.d/ktp-review-integrity-guard (monthly, 12 kept).
+# Last pull and alert state: /var/lib/ktp-review-integrity-guard/.
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=''
+
+15 6 * * *   root  /usr/local/bin/ktp-review-integrity-guard --since 2026-07-23 >> /var/log/ktp-review-integrity-guard.log 2>&1
