@@ -47,6 +47,30 @@ jobs:
       - name: Install dependencies
         run: pip install --quiet openskill==6.2.0
 
+      # The methodology document carries a week-by-week accuracy history, and
+      # every run starts from a fresh checkout -- so the only copy of the
+      # earlier weeks is the payload the last run published. Restore it before
+      # the run; run_weekly.py reads its version_history and appends this week.
+      # Absent on the first ever run, which is why this never fails the job.
+      - name: Restore the previous methodology payload (accuracy history)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          PRIOR="$RUNNER_TEMP/mmr-prior"
+          rm -rf "$PRIOR"
+          if ! git clone --quiet --depth 1 --branch mmr-ratings "$REMOTE" "$PRIOR" 2>/dev/null; then
+            echo "no mmr-ratings branch yet -- history starts with this run"
+            exit 0
+          fi
+          if [ -f "$PRIOR/rating_methodology_payload.json" ]; then
+            cp "$PRIOR/rating_methodology_payload.json" scripts/mmr/
+            echo "restored the previous methodology payload"
+          else
+            echo "mmr-ratings carries no methodology payload yet -- history starts with this run"
+          fi
+
       - name: Run weekly MMR update
         env:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.KTP_SUPABASE_PUBLISHABLE_KEY }}

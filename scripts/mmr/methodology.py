@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import date, datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -99,8 +100,73 @@ MOMENTUM = {
 }
 
 
-def build(params, *, generated_at, source_report_count=0, report_schema_version=9):
-    """The payload. `params` is momentum_params.json as a dict."""
+# S10's first match week. A run's week number is derived from its own
+# timestamp, so a re-run of an old week lands on that week, not on today's.
+SEASON_START = date(2026, 9, 13)
+
+
+def week_of(generated_at):
+    """Season week number for an ISO 8601 timestamp, or None if unreadable."""
+    try:
+        d = datetime.fromisoformat(str(generated_at).replace("Z", "+00:00")).date()
+    except (TypeError, ValueError):
+        return None
+    days = (d - SEASON_START).days
+    return (days // 7) + 1 if days >= 0 else None
+
+
+def week_entry(summary):
+    """One `version_history` row from a `weekly_summary.json` dict.
+
+    None when the summary carries no usable timestamp, or no rated matches --
+    a week with nothing rated has no accuracy to report and must not land as
+    a 0% row the reader would read as a regression.
+    """
+    if not isinstance(summary, dict):
+        return None
+    week = week_of(summary.get("generated_at"))
+    matches = summary.get("completed_matches") or 0
+    if week is None or not matches:
+        return None
+    upsets = summary.get("upsets") or 0
+    return {
+        "week": week,
+        "date": datetime.fromisoformat(
+            str(summary["generated_at"]).replace("Z", "+00:00")).date().isoformat(),
+        "accuracy_pct": round((summary.get("accuracy") or 0) * 100, 1),
+        "log_loss": summary.get("log_loss"),
+        "completed_matches": matches,
+        "upsets": upsets,
+        "upsets_pct": round(upsets / matches * 100, 1),
+        "headline": summary.get("headline", ""),
+    }
+
+
+def merge_history(prior, entry):
+    """`prior` history with `entry` folded in: one row per week, oldest first.
+
+    A re-run of a week REPLACES that week's row rather than appending a second:
+    every value is refit on the whole corpus each run, so the newer row is the
+    truth about that week and two rows for one week would read as progression.
+    """
+    by_week = {}
+    for row in prior or []:
+        if isinstance(row, dict) and row.get("week") is not None:
+            by_week[row["week"]] = row
+    if entry:
+        by_week[entry["week"]] = entry
+    return [by_week[w] for w in sorted(by_week)]
+
+
+def build(params, *, generated_at, source_report_count=0, report_schema_version=9,
+          summary=None, prior_history=None):
+    """The payload. `params` is momentum_params.json as a dict.
+
+    `summary` is this run's `weekly_summary.json` as a dict, and `prior_history`
+    the `version_history` of the previous published payload. Both are passed in
+    rather than read from disk: on a CI runner the checkout is fresh, so a file
+    read here would find nothing and the history would silently stay empty.
+    """
     maps = {}
     for mp, m in sorted(params.get("maps", {}).items()):
         maps[mp] = {
@@ -109,6 +175,7 @@ def build(params, *, generated_at, source_report_count=0, report_schema_version=
             "scoring": m["scoring"] if m.get("scoring") else {"uses": "fallback",
                                                                 "fallback": params["definitions"]["fallback"]["scoring"]},
         }
+
     return {
         "kind": AGGREGATE_KIND,
         "method_version": METHOD_VERSION,
@@ -127,6 +194,7 @@ def build(params, *, generated_at, source_report_count=0, report_schema_version=
             "pooled_curves": params.get("pooled", {}),
             "maps": maps,
         },
+        "version_history": merge_history(prior_history, week_entry(summary)),
         "source_report_count": int(source_report_count),
         "report_schema_version": int(report_schema_version),
     }
@@ -134,6 +202,25 @@ def build(params, *, generated_at, source_report_count=0, report_schema_version=
 
 def load_params(path=PARAMS):
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+PAYLOAD = HERE / "rating_methodology_payload.json"
+
+
+def load_prior_history(path=PAYLOAD):
+    """`version_history` from a previously published payload; [] if there is none.
+
+    The previous payload is the only place a past week survives: every run
+    starts from a fresh checkout, and the season's weeks live on the
+    `mmr-ratings` branch, not in the repo. The weekly workflow restores that
+    file into the workspace before the run so this finds it.
+    """
+    try:
+        prior = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    history = prior.get("version_history") if isinstance(prior, dict) else None
+    return history if isinstance(history, list) else []
 
 
 FORBIDDEN_KEYS = ("players", "player_id", "steam_id", "steam_id64", "alias")
