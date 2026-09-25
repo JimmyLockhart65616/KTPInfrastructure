@@ -13,6 +13,7 @@ as `mmr_openskill` (CI writes the file, the operator imports it).
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import date, datetime
 from pathlib import Path
@@ -105,11 +106,36 @@ MOMENTUM = {
 SEASON_START = date(2026, 9, 13)
 
 
-def week_of(generated_at):
-    """Season week number for an ISO 8601 timestamp, or None if unreadable."""
+def as_date(value):
+    """The date in a run's `generated_at`, or None if there isn't one.
+
+    `weekly_summary.json` carries a DISPLAY timestamp, not ISO 8601 --
+    run_weekly writes `strftime("%Y-%m-%d %H:%M UTC")`, e.g.
+    "2026-09-21 18:57 UTC". Parsing only ISO here is what made the first cut of
+    this feature emit an empty history against every real summary while the
+    tests, which used invented ISO strings, passed. Both shapes are accepted,
+    and `test_the_production_timestamp_format_parses` pins the real one.
+    """
+    s = str(value or "").strip()
+    if not s:
+        return None
+    s = re.sub(r"\s+(UTC|GMT|Z)$", "", s)
     try:
-        d = datetime.fromisoformat(str(generated_at).replace("Z", "+00:00")).date()
-    except (TypeError, ValueError):
+        return datetime.fromisoformat(s).date()
+    except ValueError:
+        pass
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def week_of(generated_at):
+    """Season week number for a run's `generated_at`, or None if unreadable."""
+    d = as_date(generated_at)
+    if d is None:
         return None
     days = (d - SEASON_START).days
     return (days // 7) + 1 if days >= 0 else None
@@ -131,8 +157,7 @@ def week_entry(summary):
     upsets = summary.get("upsets") or 0
     return {
         "week": week,
-        "date": datetime.fromisoformat(
-            str(summary["generated_at"]).replace("Z", "+00:00")).date().isoformat(),
+        "date": as_date(summary["generated_at"]).isoformat(),
         "accuracy_pct": round((summary.get("accuracy") or 0) * 100, 1),
         "log_loss": summary.get("log_loss"),
         "completed_matches": matches,
