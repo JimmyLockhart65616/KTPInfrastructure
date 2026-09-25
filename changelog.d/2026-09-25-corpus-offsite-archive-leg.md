@@ -1,5 +1,11 @@
 ### `scripts`: the AC replay corpus gets a third destination, off the game fleet (2026-09-25)
 
+> 🔻 **SUPERSEDED THE SAME DAY by `2026-09-25-corpus-offsite-encryption.md`, and the part that
+> changed is the part a reader would trust: this leg shipped the bundles AND the manifest in the
+> clear.** A bundle is named for the player and their SteamID, so the remote directory listing was a
+> roster. Nothing described below ever ran — it was never installed in this form. Read the
+> encryption entry for what is actually deployed.
+
 `scripts/ktp-corpus-offsite.sh` copies `/opt/ktp-ac-api/uploads` to the shell-less archive
 box, alongside the demo archive and the DB dumps that already go there. The corpus had two
 provider-diverse copies and still had a gap: both of them are production game servers, which
