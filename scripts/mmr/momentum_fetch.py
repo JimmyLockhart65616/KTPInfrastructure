@@ -1,8 +1,9 @@
 """Pull the raw event stream the momentum ledger needs, from the data server.
 
 Officials (match_type 0) and 12mans (match_type 1) that have flag events.
-S9 officials predate flag capture, so as of 2026-09-19 that is 9 officials +
-123 twelve-mans; each S10 week adds its officials. Rerun before each fit.
+S9 officials predate flag capture, so the officials count is S10-only and the
+12man count grows with every night played. Rerun before each fit and read the
+count off the run, never off this docstring.
 
 Reads over ssh with the operator's read-only grants (mysql via auth_socket
 inside the session -- no tunnel, no credential on this side). Writes one TSV
