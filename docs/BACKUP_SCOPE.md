@@ -18,10 +18,18 @@ refuse to run with them unset.
 
 ## 1. What is actually wired today
 
-`/etc/cron.d/ktp-offsite` runs two jobs on Sunday: `ktp-db-offsite.sh` at 04:00 and
-`ktp-demo-offsite.sh` at 05:00. Both read `KTP_OFFSITE_HOSTS`, and that variable names **two**
-provider-diverse hosts we already own. The most recent run reports every file present on every
-target.
+`/etc/cron.d/ktp-offsite` runs three jobs on Sunday: `ktp-db-offsite.sh` at 04:00,
+`ktp-demo-offsite.sh` at 05:00 and `ktp-corpus-offsite.sh --commit` at 06:00 (added 2026-09-25).
+The first two read `KTP_OFFSITE_HOSTS`, and that variable names **two** provider-diverse hosts we
+already own. The most recent run reports every file present on every target.
+
+> 🔑 **The corpus leg is the one that cannot verify its own backup, and that is deliberate.** It
+> encrypts every bundle to public `age` recipients before it leaves and holds no private half, so
+> it proves the bytes ARRIVED and can never prove they decrypt. `ktp-corpus-drill.sh` is the other
+> half and it runs where a key is — **not on this host, not in cron here**. A schedule for the leg
+> without a standing owner for the drill is a backup nobody has read. ⛔ **`--commit` is not
+> optional in that cron line:** without it the script dry-runs, prints its OK lines and ships
+> nothing, which is the exact shape of a backup that reports success while writing no bytes.
 
 > ⚠️ **"Present on every target" is a presence claim, not a content claim.** The Denver/Chicago
 > path (`ssh H "... [ -f $DEST/$f ] ..."`, `ktp-demo-offsite.sh`) only asks whether a name exists
@@ -34,15 +42,59 @@ target.
 > was insufficient. The gap is documented inline at `ktp-demo-offsite.sh` (the comment above the
 > rsync-only loop) but the two targets still run genuinely different strength checks today.
 
-The archive box bought for exactly this purpose is **wired to nothing**. Nothing on the data server
-references it — no script, no config, no cron entry — and it holds only the `.ssh` directory that
-was created when access was proven. Access itself is fine; a purchased, reachable, empty box reads
-as "offsite is handled" on every document that mentions it, which is why it is stated here first.
+🔻 **CORRECTED — the archive box is now wired, and this section said the opposite for a month.** It
+was **wired to nothing** when this was written: no script, no config, no cron entry, and only the
+`.ssh` directory created when access was proven. The shell-less rsync path in section 2 landed
+2026-08-28 and gave it the DB dumps and the demo archive; the corpus leg landed 2026-09-25 and it
+now holds all three. ⚠️ **A purchased, reachable, EMPTY box reads as "offsite is handled" on every
+document that mentions it** — which is why the original sentence led this section, and why the
+correction has to be dated rather than swapped in silently.
 
 > ⚠️ **Two copies on hosts we run are not the same protection as one copy outside the estate.** The
-> two current targets are real and verified. They are also both boxes we administer with the same
-> keys and the same habits, so a bad sync, a mistaken `rm`, or a compromised workstation reaches
-> both. That is the gap the archive box was bought to close and has not closed yet.
+> two `KTP_OFFSITE_HOSTS` targets are real and verified. They are also both boxes we administer with
+> the same keys and the same habits, so a bad sync, a mistaken `rm`, or a compromised workstation
+> reaches both. That is the gap the archive box was bought to close, and for the DB dumps, the demo
+> archive and the corpus it now closes it. ⚠️ **What it does NOT close: all three legs land in the
+> same sub-account, so one account loss takes all three at once.** Accepted, not overlooked.
+
+### 1.1 What the corpus leg reads from the conf
+
+`/etc/ktp/offsite.conf` is not in this repository and must not be — it names the targets. The corpus
+leg adds three variables to it, and this is their shape so the install is recoverable from here
+rather than from one box's disk:
+
+```sh
+# Its OWN destination directory. The script REFUSES a value equal to the demo or
+# DB one: sharing a directory interleaves two archives whose retention and restore
+# audiences differ, and the symptom would be no error anywhere. Relative, like its
+# siblings -- an absolute path nests a directory inside the sub-account root and
+# the backup still looks like it worked.
+export KTP_OFFSITE_RSYNC_CORPUS_DIR="ktp-ac-corpus"
+
+# PUBLIC age recipients, whitespace separated. Public keys: safe in the conf and
+# safe in a log. TWO, because one key is a single point of PERMANENT loss -- the
+# corpus cannot be regenerated, so a lost private half leaves ciphertext that
+# decrypts for nobody. A private key here is REFUSED, not ignored.
+export KTP_CORPUS_AGE_RECIPIENTS="age1__RECIPIENT_1__ age1__RECIPIENT_2__"
+
+# Local ciphertext cache, one .age per bundle, so it is sized like the corpus.
+# Deliberately NOT under the source: a cache inside it would be swept into the
+# next selection and re-encrypted forever. The script refuses that too.
+export KTP_CORPUS_ENC_CACHE="/var/lib/ktp-corpus-offsite/enc"
+```
+
+🔴 **The private halves are the whole design and they are NOT here, NOT on the data server and NOT on
+the archive box.** They are the operator's, in two places that do not fail together. ⛔ **Never write
+one into this repo, the conf, a log or a ticket** — and note that GitHub's secret scanning matches
+registered provider formats only, so it would not stop you.
+
+⚠️ **Real data does something the synthetic drill cannot produce: byte-identical bundles collapse.**
+Objects are named for the sha256 of the plaintext, so two bundles with the same content in the same
+day-dir share one remote object. The first real run selected 854 bundles and wrote 842 objects, and
+both numbers are correct. The restore handles it (it fetches `sort -u` objects and writes every
+manifest row), but the leg's own log line calls the cache `$COUNT object(s)` when it holds fewer, and
+**the drill's `OBJS -eq N` assert would fail on real data** — it passes only because the drill's
+bundles are random bytes.
 
 ## 2. Why "add it as a third target" does not work
 
@@ -184,13 +236,21 @@ because nothing in it is named "manifest" — that is a fact about the probe, no
 
 ## 5. Order of work
 
-1. **Push script**, in the shape of `ktp-db-offsite.sh`: never deletes, verifies on the remote, and
-   treats an empty source as a failure rather than a no-op.
-2. **Seed and verify the retain set byte-exact on the far side** — verify by listing and hashing what
-   arrived, never by a clean exit code.
-3. **Turn on the archive box's automatic snapshots** before anything is deleted anywhere.
-4. **Only then** the `12man`/`scrim` retention pass.
-5. Runbook.
+1. ✅ **Push script**, in the shape of `ktp-db-offsite.sh`: never deletes, verifies on the remote, and
+   treats an empty source as a failure rather than a no-op. *(Demos and DB dumps 2026-08-28; the
+   encrypted corpus leg 2026-09-25.)*
+2. ✅ **Seed and verify the retain set byte-exact on the far side** — verify by listing and hashing what
+   arrived, never by a clean exit code. *(Corpus: seeded and checksum-verified 2026-09-25, and a
+   sample day pulled back, decrypted and diffed against source. Demos: still the size+mtime claim.)*
+3. ⬜ **Turn on the archive box's automatic snapshots** before anything is deleted anywhere.
+4. ⬜ **Only then** the `12man`/`scrim` retention pass.
+5. ⬜ Runbook.
+
+🔑 **One item this list never had, and the corpus leg makes unavoidable: a standing owner for the
+restore drill.** Nothing scheduled anywhere decrypts, by design, so a wrong recipient or a lost
+identity file stays invisible until the corpus is needed. ⛔ **It cannot be cron'd on the data server**
+— that would put a private key on the one host the design keeps it off. It is a quarterly act on the
+machine that holds a key.
 
 ⛔ **Nothing is deleted until the keep-set is verified on the far side.**
 ⛔ **Retention keys on type and date, never size.** Demo size tracks duration, so a size filter
