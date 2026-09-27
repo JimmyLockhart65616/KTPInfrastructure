@@ -15,7 +15,9 @@ Three sources combined:
      + grenade viewmodels at severity "review")
 
 Excluded buckets (allowed modification): overviews/*, flag models
-(w_aflag/gflag/wflag).
+(w_aflag/gflag/wflag), and maps/*.res -- a self-referencing .res reaches clients over
+FastDL, so enforcing a list the server itself sends only re-scored whoever held the
+previous copy.
 
 Every entry carries a `stock` flag: is this path in Steam depot 31, i.e. does a clean
 install have it? Downstream that is what separates a player who deleted their footstep
@@ -99,6 +101,12 @@ import paramiko
 # --------------------------------------------------------------------------
 
 EXCLUDED_PATH_PREFIXES = ("overviews/",)
+
+# A map's own resource list. The server builds and sends the authoritative list, so a
+# player's local copy changes nothing they render and enforcing its hash buys no
+# detection -- while it is rewritten on every map redeploy, which re-scores everyone
+# still holding the copy FastDL gave them.
+EXCLUDED_EXTENSIONS = (".res",)
 
 # Report-only scope. In the manifest, captured and shown to an admin, but the
 # client's IsReview branch keeps it out of modified_game_files -- so it never
@@ -449,7 +457,9 @@ def build_manifest(ssh, dod_path, filelist_path):
     res_excluded = 0
     res_missing = []
     for path, ref_maps in sorted(references.items()):
-        if any(path.startswith(p) for p in EXCLUDED_PATH_PREFIXES) or path in EXCLUDED_EXACT:
+        if (any(path.startswith(p) for p in EXCLUDED_PATH_PREFIXES)
+                or path.lower().endswith(EXCLUDED_EXTENSIONS)
+                or path in EXCLUDED_EXACT):
             res_excluded += 1
             continue
         result = hash_remote_file(ssh, f"{dod_path}/{path}")
@@ -679,6 +689,9 @@ def assemble_manifest(entries, source_server_label, dod_path, stock_paths_file=N
             "excluded_buckets": [
                 "models/{w_aflag,w_gflag,w_wflag}.mdl (flag — cosmetic, allowed)",
                 "overviews/* (top-down map BMPs — cosmetic, allowed)",
+                "maps/*.res (a map's resource list — the server sends the authoritative "
+                "one; enforcing the client's copy detects nothing and re-scores on every "
+                "map redeploy)",
                 # maps/*.bsp: NOT cosmetic, and this is a stated gap rather than a ruling.
                 # A client-side BSP edit that removes cover is a real wallhack — the server
                 # stays authoritative for collision, so the player is still blocked, but
