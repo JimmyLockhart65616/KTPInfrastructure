@@ -258,11 +258,16 @@ def check_row(text: str, basename: str, md5: str, version: str | None = None) ->
             return RowFinding(basename, md5, component, False, "row",
                               f"{component} row does NOT carry {md5}{says} -- "
                               f"the row was not flipped after activation.{elsewhere}")
-        # A mapped component with no row is a table rename, not a pass.
+        # A mapped component with no row is a table rename, not a pass -- and it is
+        # what every pinned artifact reports when the file being checked is not the
+        # one the rows actually live in, so say that before blaming the mapping.
         found = md5 in text.lower()
         return RowFinding(basename, md5, component, found, "no-row",
-                          f"no version-table row named `{component}` -- the table was renamed or the "
-                          f"mapping in COMPONENT_BY_BASENAME is stale. "
+                          f"no version-table row named `{component}` in this file -- the table was "
+                          f"renamed, the mapping in COMPONENT_BY_BASENAME is stale, or the rows moved "
+                          f"to a different file (every pinned artifact failing the same way is the "
+                          f"tell). Default is .claude/skills/fleet-versions/SKILL.md, one level above "
+                          f"this repo; pass --claude-md or set $KTP_CLAUDE_MD to check elsewhere. "
                           f"{'md5 is present somewhere in the file' if found else 'md5 is ABSENT from the file'}.")
 
     found = md5 in text.lower()
@@ -367,12 +372,17 @@ def mark_reconciled(path: str, entry: dict, by: str) -> None:
 # --------------------------------------------------------------------------
 
 def default_claude_md() -> str:
-    """Root CLAUDE.md -- the version table lives one level above this repo."""
+    """Where the version-table rows live: the fleet-versions skill, one level
+    above this repo -- the rows moved out of the root CLAUDE.md itself, which
+    now only points at the skill. $KTP_CLAUDE_MD overrides this for a
+    different copy (a worktree, a rehearsal file); it does not have to be
+    named CLAUDE.md."""
     env = os.environ.get("KTP_CLAUDE_MD")
     if env:
         return os.path.expanduser(env)
     here = os.path.dirname(os.path.abspath(__file__))
-    return os.path.abspath(os.path.join(here, "..", "..", "CLAUDE.md"))
+    return os.path.abspath(os.path.join(
+        here, "..", "..", ".claude", "skills", "fleet-versions", "SKILL.md"))
 
 
 def read_claude_md(path: str | None = None) -> tuple[str, str] | None:
@@ -413,9 +423,11 @@ def gate(claude_md: str | None = None, now: float | None = None,
     got = read_claude_md(claude_md)
     if got is None:
         return GateResult("inconclusive", [
-            f"Row-flip gate: {len(due)} activated wave(s) to check, but CLAUDE.md could not be read "
-            f"at {claude_md or default_claude_md()}.",
-            "Set $KTP_CLAUDE_MD to the root CLAUDE.md. An unverifiable gate is not a passed gate.",
+            f"Row-flip gate: {len(due)} activated wave(s) to check, but the version-row file could "
+            f"not be read at {claude_md or default_claude_md()}.",
+            "Set $KTP_CLAUDE_MD (or pass --claude-md) to the file that carries the rows -- default is "
+            ".claude/skills/fleet-versions/SKILL.md, one level above this repo. An unverifiable gate "
+            "is not a passed gate.",
         ])
 
     path, text = got
@@ -873,7 +885,10 @@ def _cmd_record(args) -> int:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--claude-md", help="Root CLAUDE.md (default: $KTP_CLAUDE_MD, else ../../CLAUDE.md)")
+    ap.add_argument("--claude-md",
+                    help="File carrying the version-table rows (default: $KTP_CLAUDE_MD, else "
+                         "../../.claude/skills/fleet-versions/SKILL.md -- the rows moved out of the "
+                         "root CLAUDE.md; this flag/env var name is unchanged)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("status", help="List recorded waves.")
