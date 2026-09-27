@@ -89,9 +89,16 @@ on n=3 and n=2, and both collapsed when the delayed casts brought them to n=6. N
 evidence. What has held across both samples is the cap-out denial zero, now on n=10: a human
 watching does not register these at all.
 
-Class-specific language (someone arriving unseen, someone holding alone) fires on 9 of 36 priced
-windows against a 16% random baseline — lift 1.56, and it is the channel that catches denials,
-which draw no reaction at all.
+### Class-specific language is a dead end too
+
+Phrases like "on his own", "quietly" or "in behind" looked like the channel that catches denials:
+in-sample they fire on 9 of 36 priced windows against a 16% baseline, lift 1.56. That number is
+circular — the phrases were chosen by looking at the same windows they were scored on. Evaluated
+**leave-one-cast-out**, choosing the list on four casts and scoring it on the fifth, it fires on
+**0% of held-out priced windows against a 10% baseline**. The strong-looking phrases were single
+occurrences; only "cap out" clears selection at all, and it does not generalise.
+
+The phrase scan is kept for reading what was said around a play. It is not a signal.
 
 **The sample is small and it shows.** Only matches that were actually cast can be checked this
 way, so this calibrates against a subset and will never label a whole season. Because of that,

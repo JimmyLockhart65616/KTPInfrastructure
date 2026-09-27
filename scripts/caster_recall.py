@@ -15,9 +15,15 @@ noticed. Scored the right way round on the same 25 plays, the answer is specific
 The denial zero has held across both samples and is now on n=10: a human watching does not register
 these at all, which is why they need pricing rather than discounting. The two classes that looked
 strong at n=3 and n=2 did NOT survive reaching n=6 -- which is the whole argument for --record, since
-a number nobody wrote down cannot be seen to move. Class-specific language -- someone arriving
-unseen, someone holding alone -- fires on 9 of 36 against a 16% baseline (lift 1.56) and is what
-catches the denials that draw no reaction at all. Treat every number here as existence, not rate.
+a number nobody wrote down cannot be seen to move. CLASS-SPECIFIC LANGUAGE IS ALSO A DEAD END, measured 2026-09-27. Phrases like "on his own",
+"quietly" or "in behind" looked discriminating in-sample (9 of 36 priced windows against a 16%
+baseline, lift 1.56) -- but those phrases were chosen by looking at the same 36 windows they were
+then scored on, which is circular. Evaluated leave-one-cast-out (choose the phrases on four casts,
+score them on the fifth), the list fires on 0% of held-out priced windows against a 10% baseline:
+lift 0.00. The apparently strong phrases were single occurrences; only "cap out" clears selection
+at all, and it does not generalise. `ninja_hits` is kept because printing what was said around a
+play is useful for reading, NOT because it is a signal. Treat every number here as existence, not
+rate.
 
   caster_recall.py [--class-only <substring>]
   caster_recall.py --record <path.tsv>    append this run's per-class lift and report what moved
