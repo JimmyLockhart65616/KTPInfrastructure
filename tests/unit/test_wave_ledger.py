@@ -164,10 +164,43 @@ def test_renamed_table_row_is_reported_not_assumed():
     assert "renamed" in f.detail
 
 
+def test_no_row_message_says_the_rows_may_have_moved():
+    """The real 2026-09 case this reproduces isn't a rename -- it's every one of
+    16 pinned artifacts failing check_row() the same way because the rows moved
+    to a different file entirely (root CLAUDE.md -> the fleet-versions skill).
+    The message has to name that possibility and where the rows live now, not
+    just blame COMPONENT_BY_BASENAME."""
+    text = CLAUDE_MD.replace("| KTP-ReHLDS |", "| KTP ReHLDS Engine |")
+    f = wl.check_row(text, "engine_i486.so", ENGINE_LIVE)
+    assert "moved" in f.detail
+    assert "fleet-versions/SKILL.md" in f.detail
+
+
 def test_every_mapped_component_name_is_a_plausible_row_name():
     for basename, component in wl.COMPONENT_BY_BASENAME.items():
         assert component and not component.startswith(" "), basename
         assert wl._norm(component), basename
+
+
+# -- where the rows live by default -----------------------------------------
+
+def test_default_claude_md_points_at_the_fleet_versions_skill(monkeypatch):
+    """The rows moved out of the root CLAUDE.md on 2026-09; the default has to
+    follow them or every check/reconcile run silently reads the wrong file."""
+    monkeypatch.delenv("KTP_CLAUDE_MD", raising=False)
+    p = wl.default_claude_md()
+    assert p.endswith(os.path.join(".claude", "skills", "fleet-versions", "SKILL.md"))
+    # Not the old target -- a stale reader of this path would still "succeed"
+    # against a root CLAUDE.md that no longer carries the rows it is checking.
+    assert not p.endswith(os.path.join("scripts", "..", "..", "CLAUDE.md"))
+    assert os.path.basename(p) == "SKILL.md"
+
+
+def test_ktp_claude_md_env_still_overrides_the_default(monkeypatch, tmp_path):
+    """The env var name did not change -- only what it defaults to when unset."""
+    override = tmp_path / "rehearsal.md"
+    monkeypatch.setenv("KTP_CLAUDE_MD", str(override))
+    assert wl.default_claude_md() == str(override)
 
 
 # -- the ledger ------------------------------------------------------------
