@@ -28,6 +28,16 @@ DISCOVERED_MATCH_TYPES = OFFICIAL_MATCH_TYPES + SHADOW_MATCH_TYPES
 IN_SCOPE = "in"
 HELD_BY_SINCE = "since"
 HELD_BY_TYPE = "match_type"
+# No row in ktp.match_game_link: the website's roster-overlap correlation
+# could not bind this game match to a scheduled fixture.
+#
+# This exists because match_type alone is structurally racy. generate() reads
+# whatever match_type says at cron-tick time; an admin who types `.ktp` by
+# mistake and corrects it minutes later has already had the report published,
+# and report_sync only ever inserts, so Supabase never un-publishes. That is
+# not hypothetical -- 1790186507-NY1 reached the site exactly that way on
+# 2026-09-23. A fixture link cannot be produced by a mistyped command.
+HELD_NO_FIXTURE = "fixture_link"
 
 
 def match_scope_columns(alias: str) -> str:
@@ -71,3 +81,23 @@ def print_held(held: dict[str, int], since: str) -> None:
         types = ", ".join(str(t) for t in OFFICIAL_MATCH_TYPES)
         print(f"held back by match_type (official only: {types}): "
               f"{held[HELD_BY_TYPE]} publishable report(s)")
+
+
+def print_unlinked(match_ids: list[str], enforcing: bool) -> None:
+    """Name every match with no fixture link, one per line.
+
+    Named, not counted. The dangerous case for this gate is the inverse of the
+    bug it fixes: if the website's correlation sweep stops running, real
+    matches stop linking and this withholds reports that should publish. That
+    failure is recoverable -- a late report, never a wrong one -- but only if
+    somebody can see it, and a bare count in a nightly log is not seeing it.
+    """
+    if not match_ids:
+        return
+    verb = "held back" if enforcing else "WOULD be held back"
+    print(f"{verb}, no ktp.match_game_link fixture binding: "
+          f"{len(match_ids)} publishable report(s)")
+    for match_id in sorted(match_ids):
+        print(f"  {match_id}: no scheduled fixture correlates to it")
+    if not enforcing:
+        print("  (--require-fixture-link is off; these still published)")

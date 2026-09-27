@@ -128,7 +128,9 @@ class TestPendingReports(unittest.TestCase):
         with mock.patch.object(report_sync, "mysql",
                                lambda q: self._mysql_out()):
             with mock.patch.object(report_sync, "supabase", server):
-                todo = report_sync.pending_reports("2026-09-13")
+                # Paging axis: this fixture's 1500 synthetic matches have no
+                # fixture links, and the gate has its own tests below.
+                todo = report_sync.pending_reports("2026-09-13", False)
         self.assertEqual(len(todo), self.LOCAL - self.SYNCED)
         self.assertEqual(todo[0][0], f"m{self.SYNCED:05d}")
         self.assertTrue(server.calls > 1)
@@ -165,6 +167,8 @@ class TestReportRowTimestamps(unittest.TestCase):
             if method == "POST":
                 posted.append(body)
                 return None
+            if path.startswith("/rest/v1/match_game_link"):
+                return linked(path, self.MATCH)
             return []
 
         with mock.patch.object(report_sync, "mysql", fake_mysql):
@@ -184,6 +188,22 @@ class TestReportRowTimestamps(unittest.TestCase):
         right, so finding an offset somewhere would not discriminate."""
         self.assertEqual(self._posted_row()["generated_at"],
                          "2026-09-14T21:05:00+00:00")
+
+
+def linked(path, *match_ids):
+    """PostgREST's shape for ktp.match_game_link with its embedded game_match.
+
+    Reports only publish when a scheduled fixture correlates to them, so an
+    end-to-end stub that serves nothing here withholds everything — which
+    looks like the code under test being broken.
+
+    Honours `offset` because supabase_all pages until it sees an empty one: a
+    stub that returns the same rows forever hangs until MAX_PAGES instead of
+    failing on the assertion under test.
+    """
+    if "offset=0&" not in path:
+        return []
+    return [{"game_match": {"game_match_id": m}} for m in match_ids]
 
 
 def aggregate_line(kind, payload_json, revision=1):
@@ -284,7 +304,11 @@ class TestSinceFloor(unittest.TestCase):
                                lambda q: self._mysql_out()):
             with mock.patch.object(report_sync, "supabase",
                                    lambda p, method="GET", body=None: []):
-                return [m for m, _, _ in report_sync.pending_reports(since)]
+                # This class tests the DATE axis; the fixture-link gate has
+                # its own tests below. Leaving it on would make every case
+                # here fail for the wrong reason.
+                return [m for m, _, _ in
+                        report_sync.pending_reports(since, False)]
 
     def test_pre_floor_report_is_held_back(self):
         self.assertNotIn("1.3-6774-ATL1", self._pending(self.FLOOR))
@@ -303,7 +327,7 @@ class TestSinceFloor(unittest.TestCase):
                                lambda q: seen.append(q) or self._mysql_out()):
             with mock.patch.object(report_sync, "supabase",
                                    lambda p, method="GET", body=None: []):
-                report_sync.pending_reports(self.FLOOR)
+                report_sync.pending_reports(self.FLOOR, False)
         self.assertIn("m.start_time", seen[0])
         self.assertIn("ktp_matches", seen[0])
 
@@ -356,8 +380,9 @@ class TestMatchTypeScope(unittest.TestCase):
                 with mock.patch("builtins.print",
                                 lambda *a, **k: printed.append(" ".join(
                                     str(x) for x in a))):
+                    # Type axis only — see the note in TestSinceFloor.
                     todo = [m for m, _, _ in
-                            report_sync.pending_reports(self.FLOOR)]
+                            report_sync.pending_reports(self.FLOOR, False)]
         return todo, seen, printed
 
     def test_only_the_official_in_date_match_syncs(self):
@@ -605,7 +630,7 @@ class TestRevalidateTrigger(unittest.TestCase):
         calls = []
         with mock.patch.dict("os.environ", self.ENV), \
                 mock.patch.object(report_sync, "sync_reports",
-                                  lambda dry_run, since: n), \
+                                  lambda dry_run, since, require_link=True: n), \
                 mock.patch.object(report_sync, "sync_aggregates",
                                   lambda dry_run: 0), \
                 mock.patch.object(report_sync, "revalidate_site",
@@ -638,7 +663,7 @@ class TestRevalidateNeverFailsTheRun(unittest.TestCase):
     def _run_main(self, urlopen_side_effect):
         with mock.patch.dict("os.environ", self.ENV), \
                 mock.patch.object(report_sync, "sync_reports",
-                                  lambda dry_run, since: 1), \
+                                  lambda dry_run, since, require_link=True: 1), \
                 mock.patch.object(report_sync, "sync_aggregates",
                                   lambda dry_run: 0), \
                 mock.patch("sys.stderr", io.StringIO()), \
@@ -687,3 +712,109 @@ class TestExceptHook(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFixtureLinkGate(unittest.TestCase):
+    """A report publishes only if a scheduled fixture correlates to it.
+
+    The gate match_type cannot be. generate() reads match_type at cron-tick
+    time, so an admin who types `.ktp` by mistake and corrects it minutes
+    later has already had the report published -- and report_sync only ever
+    inserts, so Supabase never un-publishes it. 1790186507-NY1 reached the
+    live site exactly that way. A mistyped command cannot produce a fixture
+    link, which is why this closes what a type check structurally cannot.
+    """
+
+    FLOOR = "2026-09-13"
+    OFFICIAL = "1.3-7001-DAL1"      # a real fixture, linked
+    MISTYPED = "1790186507-NY1"     # the 12man that reached the site
+
+    def _mysql_out(self):
+        head = "match_id\tschema_version\trevision\tmatch_start\tofficial_start"
+        # BOTH are in scope by date and by type: match_type has already been
+        # applied and already let the mistyped one through. That is the whole
+        # point -- a fixture that passes the old gate must fail this one.
+        started = "2026-09-14 21:00:00"
+        return "\n".join([head] + [f"{m}\t9\t1\t{started}\t{started}"
+                                   for m in (self.OFFICIAL, self.MISTYPED)])
+
+    def _run(self, require_link=True, links=(OFFICIAL,)):
+        printed = []
+
+        def fake_supabase(path, method="GET", body=None):
+            if path.startswith("/rest/v1/match_game_link"):
+                return linked(path, *links)
+            return []
+
+        with mock.patch.object(report_sync, "mysql",
+                               lambda q: self._mysql_out()),                 mock.patch.object(report_sync, "supabase", fake_supabase),                 mock.patch("builtins.print",
+                           lambda *a, **k: printed.append(
+                               " ".join(str(x) for x in a))):
+            todo = [m for m, _, _ in
+                    report_sync.pending_reports(self.FLOOR, require_link)]
+        return todo, printed
+
+    def test_the_mistyped_match_is_withheld(self):
+        todo, _ = self._run()
+        self.assertNotIn(self.MISTYPED, todo)
+
+    def test_the_real_fixture_still_publishes(self):
+        """Positive control: withholding everything would pass the test above."""
+        todo, _ = self._run()
+        self.assertEqual(todo, [self.OFFICIAL])
+
+    def test_the_withheld_match_is_named_not_just_counted(self):
+        """A count in a nightly log is not an alert. If the website's
+        correlation sweep stops running, this gate withholds real reports, and
+        the only way anyone notices is by reading which ones."""
+        _, printed = self._run()
+        self.assertTrue(any(self.MISTYPED in line for line in printed),
+                        f"withheld match not named in output: {printed}")
+
+    def test_off_by_flag_publishes_it_but_still_says_so(self):
+        """--no-require-fixture-link is an operator escape hatch, not a mute
+        button: the decision to publish anyway should be made against a list."""
+        todo, printed = self._run(require_link=False)
+        self.assertIn(self.MISTYPED, todo)
+        self.assertTrue(any(self.MISTYPED in line for line in printed))
+        self.assertTrue(any("WOULD be held back" in line for line in printed))
+
+    def test_nothing_linked_withholds_everything_rather_than_publishing(self):
+        """The failure direction if the sweep is down. A late report is
+        recoverable; a wrongly-published one is not."""
+        todo, _ = self._run(links=())
+        self.assertEqual(todo, [])
+
+    def test_a_link_for_some_other_match_does_not_admit_this_one(self):
+        todo, _ = self._run(links=("some-unrelated-match",))
+        self.assertEqual(todo, [])
+
+    def test_link_set_reads_the_embedded_game_match_id(self):
+        """Pinning the query DIRECTION. Embedding match_game_link FROM
+        game_match returns an empty array for rows a direct query shows as
+        linked -- which reads as 'nothing is linked' and, with the gate on,
+        withholds every report on the site."""
+        seen = []
+
+        def fake_supabase(path, method="GET", body=None):
+            seen.append(path)
+            return linked(path, self.OFFICIAL)
+
+        with mock.patch.object(report_sync, "supabase", fake_supabase):
+            got = report_sync.fixture_linked_match_ids()
+        self.assertEqual(got, {self.OFFICIAL})
+        self.assertTrue(seen[0].startswith("/rest/v1/match_game_link"),
+                        f"queried the wrong direction: {seen[0]}")
+        self.assertIn("game_match(game_match_id)", seen[0])
+
+    def test_a_malformed_link_row_is_skipped_not_crashed(self):
+        def fake_supabase(path, method="GET", body=None):
+            if "offset=0&" not in path:
+                return []
+            return [{"game_match": None},
+                    {},
+                    {"game_match": {"game_match_id": self.OFFICIAL}}]
+
+        with mock.patch.object(report_sync, "supabase", fake_supabase):
+            self.assertEqual(report_sync.fixture_linked_match_ids(),
+                             {self.OFFICIAL})

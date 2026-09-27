@@ -48,7 +48,7 @@ import urllib.request
 from scripts.analytics_report_dto import assert_sanitized, sanitize_report
 from scripts.player_alias import apply_aliases, fetch_alias_index
 from scripts.report_scope import (
-    IN_SCOPE, classify, match_scope_columns, print_held)
+    IN_SCOPE, classify, match_scope_columns, print_held, print_unlinked)
 from scripts.report_service import _os_user
 
 DATABASE = "hlstatsx"
@@ -169,7 +169,28 @@ def supabase_all(path: str) -> list[dict]:
     raise RuntimeError(f"{path}: still returning rows after {MAX_PAGES} pages")
 
 
-def pending_reports(since: str) -> list[tuple[str, int, int]]:
+def fixture_linked_match_ids() -> set[str]:
+    """Game match ids the website has bound to a scheduled league fixture.
+
+    `ktp.match_game_link` is written by keep-the-prac's correlation sweep,
+    which scores roster overlap between a game match's two sides and the
+    fixtures in a 24h window, auto-links above a confidence floor, and records
+    a `queue_reason` on ktp.game_match when it declines. So an id missing here
+    is a considered verdict with a reason attached, not an absence of data.
+
+    Read through the embedded game_match, NOT by embedding match_game_link
+    from game_match: that direction returned an empty array for rows a direct
+    query showed as linked, which would read as "nothing is linked" and, with
+    the gate on, withhold every report.
+    """
+    rows = supabase_all(
+        "/rest/v1/match_game_link?select=game_match(game_match_id)")
+    return {gm["game_match_id"] for row in rows
+            if (gm := row.get("game_match")) and gm.get("game_match_id")}
+
+
+def pending_reports(since: str, require_fixture_link: bool = True
+                    ) -> list[tuple[str, int, int]]:
     """Latest publishable (match_id, schema_version, revision) per in-season
     match, minus rows Supabase already has."""
     out = mysql(
@@ -189,6 +210,19 @@ def pending_reports(since: str) -> list[tuple[str, int, int]]:
         else:
             held[verdict] = held.get(verdict, 0) + 1
     print_held(held, since)
+
+    # Second gate, and the one match_type cannot be: a report publishes only
+    # if a real scheduled fixture correlates to it. Measured over the whole
+    # published corpus on 2026-09-26 -- 19 distinct matches on the site, 18
+    # linked, and the single unlinked one was 1790186507-NY1, the 12man that
+    # should never have been there. Zero legitimate reports would have been
+    # withheld.
+    linked = fixture_linked_match_ids()
+    unlinked = sorted({m for m, _, _ in local} - linked)
+    print_unlinked(unlinked, require_fixture_link)
+    if require_fixture_link and unlinked:
+        local = {row for row in local if row[0] in linked}
+
     have = {(row["match_id"], row["report_schema_version"], row["revision"])
             for row in supabase_all(
                 "/rest/v1/match_report"
@@ -207,8 +241,9 @@ def fetch_report(match_id: str, schema_version: int, revision: int) -> dict:
     return json.loads(lines[1])
 
 
-def sync_reports(dry_run: bool, since: str) -> int:
-    todo = pending_reports(since)
+def sync_reports(dry_run: bool, since: str,
+                 require_fixture_link: bool = True) -> int:
+    todo = pending_reports(since, require_fixture_link)
     print(f"reports to sync: {len(todo)}")
     alias_index = fetch_alias_index(supabase_all) if todo else {}
     print(f"website aliases: {len(alias_index)} steam ids")
@@ -346,12 +381,23 @@ def main(argv: list[str] | None = None) -> int:
     # every pre-season test and pracc report it can see.
     ap.add_argument("--since", type=since_arg, required=True,
                     help="season floor on the match's ktp_matches.start_time")
+    # On by default: the failure it prevents is unrecoverable (report_sync
+    # only ever inserts, so a wrongly-published report sits on the site until
+    # someone deletes it by hand), and the failure it can cause is not (a
+    # report publishes on the next run once the link lands). Off is for an
+    # operator who has just seen it withhold something and needs the report
+    # out tonight -- print_unlinked names what it dropped, so that decision is
+    # made against a list, not a count.
+    ap.add_argument("--no-require-fixture-link", dest="require_fixture_link",
+                    action="store_false",
+                    help="publish a report even if no scheduled fixture "
+                         "correlates to it (see ktp.match_game_link)")
     args = ap.parse_args(argv)
     for var in ("KTP_SUPABASE_URL", "KTP_SUPABASE_SECRET_KEY"):
         if not os.environ.get(var):
             print(f"missing env {var}", file=sys.stderr)
             return 2
-    n = sync_reports(args.dry_run, args.since)
+    n = sync_reports(args.dry_run, args.since, args.require_fixture_link)
     m = sync_aggregates(args.dry_run)
     print(f"done: {n} reports, {m} aggregates")
     # sync_reports() raises on any failed POST, so reaching here with n > 0
