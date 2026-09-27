@@ -3,14 +3,15 @@
 `scripts/plays.py` and `scripts/excursions.py` price plays whose value is not in kills or damage —
 a solo cap, a cap-out denial, a collapse into the enemy spawn. Nothing in the data says whether a
 human watching thought those mattered, or how much. A cast does: it is a continuous human judgement
-over the same timeline. These two scripts attach one to the other.
+over the same timeline. These scripts attach one to the other, and keep doing it weekly.
 
+- `caster_weekly.py` — the standing job: find new casts, transcribe, export, align, clean up.
 - `caster_align.py` — put the commentary next to every priced play, plus score events and flag
   changes, for reading.
 - `caster_recall.py` — measure whether priced plays draw more reaction than a random moment in the
   same match, by play class.
 
-Both are stdlib-only and make no network calls.
+All three are stdlib-only. Only `caster_weekly.py` reaches the network, and only by shelling out to the tools named below.
 
 ## Inputs live outside this repo
 
@@ -91,3 +92,37 @@ including 4 of the 7 silent denials — denials get narrated calmly rather than 
 **The sample is small.** Twenty-five plays over four matches shows existence, never a rate. Only
 matches that were actually cast can be checked this way, so this calibrates against a subset; it
 will never label a whole season.
+
+
+## The weekly job
+
+`caster_weekly.py` is the whole intake in one command, so nobody has to remember six steps in
+order:
+
+```
+caster_weekly.py scan      # casts newer than the store knows; writes stubs, downloads nothing
+caster_weekly.py status    # what is placed, fetched, aligned, and what is waiting on you
+caster_weekly.py run       # transcribe + export + align everything that is ready
+```
+
+`run` fetches audio, transcribes it with that match's roster as the decoding prompt, **deletes the
+audio in the same step** (in a `finally`, so a run that dies partway still leaves only text),
+exports the match's events, and aligns. `--dry-run` prints the plan and touches nothing.
+
+### Two steps it will not take for you
+
+Both were measured wrong when automated, so the job stops and says what it needs instead of
+guessing.
+
+1. **Placing a cast against a match.** Title and time give a shortlist; the transcript settles it.
+   Live versus delayed decides which anchor applies, and guessing wrong aligns the commentary to
+   the wrong match entirely.
+2. **Finding the half end in a delayed cast.** See the alignment section above — name correlation
+   does not converge. A human reads the transcript for where the score is called and sets `anchor`.
+
+`status` lists exactly which casts sit in those two states. Everything else `run` handles.
+
+### Consent is enforced, not assumed
+
+The store must carry a `_consent` string naming who agreed to be transcribed and when. Without it
+nothing downloads. It is someone's voice, and the check exists so the rule cannot quietly lapse.
