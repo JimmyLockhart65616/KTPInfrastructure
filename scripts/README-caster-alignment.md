@@ -76,22 +76,28 @@ multi-kill-explained bursts are subtracted, and it still mostly surfaces highlig
 The useful direction is the reverse, which is `caster_recall.py`: not "were the loud moments
 priced plays" but "do priced plays get noticed, and by how much". Scored that way on 25 plays:
 
-| Class | n | Lift over baseline |
-|---|---:|---:|
-| Deep collapse / spawn pressure | 3 | 1.77 |
-| Attempt, reached the flag | 2 | 1.78 |
-| Solo run-through cap | 8 | 0.98 |
-| Sneak cap | 5 | 1.01 |
-| Cap-out denial | 7 | **0.00** (median reaction zero) |
+| Class | n | Lift, 25 plays (09-24) | Lift, 36 plays (09-27) |
+|---|---:|---:|---:|
+| Cap-out denial | 10 | 0.00 | **0.00** |
+| Solo run-through cap | 9 | 0.98 | 1.10 |
+| Deep collapse / spawn pressure | 6 | 1.77 | **1.06** |
+| Attempt, reached the flag | 6 | 1.78 | **0.00** |
+| Sneak cap | 5 | 1.01 | 1.01 |
 
-A human watching registers a player bleeding into the enemy spawn and does not register a cap-out
-denial at all. That zero is a finding, not a gap: low salience is the reason these plays need
-pricing. Class-specific language (someone arriving unseen, someone holding alone) fires on 9 of 25
-including 4 of the 7 silent denials — denials get narrated calmly rather than shouted.
+**Two of those moved enough to retract.** Deep collapse and attempt were measured at 1.77 and 1.78
+on n=3 and n=2, and both collapsed when the delayed casts brought them to n=6. Neither was ever
+evidence. What has held across both samples is the cap-out denial zero, now on n=10: a human
+watching does not register these at all.
 
-**The sample is small.** Twenty-five plays over four matches shows existence, never a rate. Only
-matches that were actually cast can be checked this way, so this calibrates against a subset; it
-will never label a whole season.
+Class-specific language (someone arriving unseen, someone holding alone) fires on 9 of 36 priced
+windows against a 16% random baseline — lift 1.56, and it is the channel that catches denials,
+which draw no reaction at all.
+
+**The sample is small and it shows.** Only matches that were actually cast can be checked this
+way, so this calibrates against a subset and will never label a whole season. Because of that,
+`--record <path.tsv>` appends every run's per-class lift and reports what moved since the last
+one: the stopping rule here is "the numbers stopped changing", which is unanswerable from memory.
+The first two recordings are exactly why — see the retraction above.
 
 
 ## The weekly job
