@@ -8,6 +8,7 @@ remembering six steps in order.
   caster_weekly.py status          what is placed, fetched, aligned, and what waits on a human
   caster_weekly.py run [--cast ID] transcribe + export + align every cast that is ready
   caster_weekly.py run --dry-run   print the plan, touch nothing
+  caster_weekly.py coverage        what share of officials the cast corpus actually covers
 
 TWO THINGS IT DELIBERATELY WILL NOT DO, because both were measured wrong when automated:
 
@@ -324,6 +325,25 @@ def cmd_run(a):
               "`kind` to \"delayed\" and `anchor` to the MM:SS where the half-end score is read.")
 
 
+OFFICIALS_Q = ("SELECT COUNT(DISTINCT match_id) FROM ktp_matches "
+               "WHERE match_type=0 AND start_time >= '{since}'")
+
+
+def cmd_coverage(a):
+    """Only matches that were cast can ever be checked this way, so any verdict drawn from this
+    corpus has to be read against its share of the season. Printing it is the cheapest way to stop
+    a subset being mistaken for the whole."""
+    data = load_store()
+    covered = {m for c in casts(data).values() for m in (c.get("matches") or {})}
+    rows = [r for r in sql(OFFICIALS_Q.format(since=a.since)).splitlines()[1:] if r.strip()]
+    total = int(rows[0]) if rows else 0
+    pct = f"{len(covered) / total:.0%}" if total else "—"
+    print(f"cast corpus covers {len(covered)} of {total} officials since {a.since} — {pct}")
+    print("A verdict from this corpus is a verdict about the cast subset, never the season.")
+    for m in sorted(covered):
+        print(f"  {m}")
+
+
 def cmd_status(a):
     data = load_store()
     rows = [(c.get("start", 0), cid, state_of(cid, c), c.get("title", "")) for cid, c in casts(data).items()]
@@ -344,6 +364,9 @@ def main():
     s.add_argument("--since", default="", help="YYYY-MM-DD floor; default is the newest cast in the store")
     s.set_defaults(fn=cmd_scan)
     s = sub.add_parser("status"); s.set_defaults(fn=cmd_status)
+    s = sub.add_parser("coverage")
+    s.add_argument("--since", default="2026-09-13", help="season start, YYYY-MM-DD")
+    s.set_defaults(fn=cmd_coverage)
     s = sub.add_parser("run")
     s.add_argument("--cast", default="")
     s.add_argument("--dry-run", action="store_true")
